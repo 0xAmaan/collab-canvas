@@ -4,6 +4,7 @@
     "": {
       "name": "cc",
       "dependencies": {
+        "@clerk/clerk-react": "^5.51.0",
         "@clerk/nextjs": "^6.33.3",
         "@types/fabric": "^5.3.10",
         "convex": "^1.27.5",

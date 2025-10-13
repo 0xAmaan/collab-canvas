@@ -4,8 +4,9 @@
 export default {
   providers: [
     {
-      domain: "https://fancy-husky-19.clerk.accounts.dev",
-      applicationID: "convex",
+      // Use the JWT issuer domain from environment variable
+      domain: process.env.CLERK_JWT_ISSUER_DOMAIN,
+      applicationID: "convex", // Must match the JWT template name in Clerk Dashboard
     },
   ],
 };

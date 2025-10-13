@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "npx convex deploy && next build --turbopack",
     "start": "next start",
     "test:convex": "bun tests/convex.test.mjs"
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.51.0",
     "@clerk/nextjs": "^6.33.3",
     "@types/fabric": "^5.3.10",
     "convex": "^1.27.5",

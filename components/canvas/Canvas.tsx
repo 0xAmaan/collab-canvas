@@ -12,8 +12,8 @@ import { calculateZoomFromWheel } from "@/lib/viewport-utils";
 import { zoomToPoint } from "@/lib/canvas-utils";
 import { createFabricRect, getShapeFromFabricObject } from "./Shape";
 import { configureSelectionStyle } from "./SelectionBox";
-import { generateShapeId } from "@/lib/shape-utils";
 import { SELECTION_COLORS } from "@/constants/colors";
+import { useShapes } from "@/hooks/useShapes";
 import type { Shape } from "@/types/shapes";
 import type { Tool } from "../toolbar/Toolbar";
 
@@ -33,8 +33,12 @@ export function Canvas({
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [isMounted, setIsMounted] = useState(false);
 
-  // Local shape state (will be replaced with Convex in PR #6)
-  const [shapes, setShapes] = useState<Shape[]>([]);
+  // Real-time shape state from Convex
+  const {
+    shapes,
+    createShape: createShapeInConvex,
+    moveShape: moveShapeInConvex,
+  } = useShapes();
 
   // Track panning state
   const isPanningRef = useRef(false);
@@ -74,7 +78,7 @@ export function Canvas({
 
   // Finalize rectangle creation
   const finalizeRectangle = useCallback(
-    (rect: Rect) => {
+    async (rect: Rect) => {
       // Only create if rectangle has meaningful size
       if ((rect.width || 0) < 5 || (rect.height || 0) < 5) {
         // Too small, remove it
@@ -84,26 +88,32 @@ export function Canvas({
         return;
       }
 
-      const newShape: Shape = {
-        _id: generateShapeId(),
-        type: "rectangle",
-        x: rect.left || 0,
-        y: rect.top || 0,
-        width: rect.width || DEFAULT_SHAPE.WIDTH,
-        height: rect.height || DEFAULT_SHAPE.HEIGHT,
-        fillColor: DEFAULT_SHAPE.FILL_COLOR, // Always use blue
-        createdBy: userId,
-        createdAt: Date.now(),
-        lastModified: Date.now(),
-        lastModifiedBy: userId,
-      };
+      try {
+        // Create shape in Convex
+        const shapeId = await createShapeInConvex({
+          type: "rectangle",
+          x: rect.left || 0,
+          y: rect.top || 0,
+          width: rect.width || DEFAULT_SHAPE.WIDTH,
+          height: rect.height || DEFAULT_SHAPE.HEIGHT,
+          fillColor: DEFAULT_SHAPE.FILL_COLOR,
+          createdBy: userId,
+          createdAt: Date.now(),
+          lastModified: Date.now(),
+          lastModifiedBy: userId,
+        });
 
-      // Store the shape ID in the rect's data
-      rect.set("data", { shapeId: newShape._id });
-
-      setShapes((prev) => [...prev, newShape]);
+        // Store the real shape ID in the rect's data
+        rect.set("data", { shapeId: shapeId });
+      } catch (error) {
+        console.error("Failed to create shape:", error);
+        // Remove the rectangle from canvas on error
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.remove(rect);
+        }
+      }
     },
-    [userId],
+    [userId, createShapeInConvex],
   );
 
   // Initialize Fabric.js canvas
@@ -124,23 +134,35 @@ export function Canvas({
 
     fabricCanvasRef.current = fabricCanvas;
 
-    // Setup mouse wheel zoom
+    // Setup mouse wheel handling
     fabricCanvas.on("mouse:wheel", (opt) => {
       const e = opt.e as WheelEvent;
       e.preventDefault();
       e.stopPropagation();
 
-      const delta = e.deltaY;
-      const currentZoom = fabricCanvas.getZoom();
-      const newZoom = calculateZoomFromWheel(currentZoom, delta);
+      // Pinch gesture (ctrlKey) = zoom, two-finger scroll = pan
+      if (e.ctrlKey) {
+        // ZOOM: Pinch gesture detected
+        const delta = e.deltaY;
+        const currentZoom = fabricCanvas.getZoom();
+        const newZoom = calculateZoomFromWheel(currentZoom, delta);
 
-      // Zoom toward mouse cursor position
-      const point = {
-        x: e.offsetX,
-        y: e.offsetY,
-      };
+        // Zoom toward mouse cursor position
+        const point = {
+          x: e.offsetX,
+          y: e.offsetY,
+        };
 
-      zoomToPoint(fabricCanvas, point, newZoom);
+        zoomToPoint(fabricCanvas, point, newZoom);
+      } else {
+        // PAN: Two-finger scroll
+        const vpt = fabricCanvas.viewportTransform;
+        if (vpt) {
+          vpt[4] -= e.deltaX;
+          vpt[5] -= e.deltaY;
+          fabricCanvas.requestRenderAll();
+        }
+      }
     });
 
     // Handle mouse down events
@@ -282,29 +304,25 @@ export function Canvas({
       isDraggingShapeRef.current = false;
     });
 
-    // Handle object movement (update local state)
-    fabricCanvas.on("object:modified", (opt) => {
+    // Handle object movement (sync to Convex)
+    fabricCanvas.on("object:modified", async (opt) => {
       if (!opt.target) return;
 
       // Access custom data using get method
       const data = opt.target.get("data") as { shapeId?: string } | undefined;
       const shapeId = data?.shapeId;
 
-      if (shapeId) {
-        setShapes((prev) =>
-          prev.map((shape) => {
-            if (shape._id === shapeId) {
-              return {
-                ...shape,
-                x: opt.target?.left || shape.x,
-                y: opt.target?.top || shape.y,
-                lastModified: Date.now(),
-                lastModifiedBy: userId,
-              };
-            }
-            return shape;
-          }),
-        );
+      if (
+        shapeId &&
+        opt.target.left !== undefined &&
+        opt.target.top !== undefined
+      ) {
+        try {
+          // Sync to Convex
+          await moveShapeInConvex(shapeId, opt.target.left, opt.target.top);
+        } catch (error) {
+          console.error("Failed to sync shape movement:", error);
+        }
       }
     });
 
@@ -403,8 +421,8 @@ export function Canvas({
           <div>Tool: {activeTool}</div>
           <div className="mt-1 text-gray-300">
             {activeTool === "rectangle"
-              ? "Click to create rectangle"
-              : "Alt+Drag to pan • Scroll to zoom"}
+              ? "Click & drag to create rectangle"
+              : "2-finger scroll to pan • Pinch to zoom"}
           </div>
         </div>
       )}

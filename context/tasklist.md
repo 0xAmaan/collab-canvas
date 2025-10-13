@@ -788,10 +788,10 @@ Use this checklist to track overall progress:
 
 ### Canvas Core
 - [x] PR #4: Canvas Viewport ✅ (Complete - viewport, pan, zoom, and canvas rendering implemented)
-- [ ] PR #5: Shape Creation ✅
+- [x] PR #5: Shape Creation ✅ (Complete - drag-to-create, selection, dragging, keyboard shortcuts, all fixes applied)
 
 ### Multiplayer (MVP Critical)
-- [ ] PR #6: Real-time Sync ✅
+- [x] PR #6: Real-time Sync ✅ (Complete - Convex integration, optimistic updates, real-time collaboration)
 - [ ] PR #7: Multiplayer Cursors ✅
 - [ ] PR #8: Presence Panel ✅
 
