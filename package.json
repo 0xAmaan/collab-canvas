@@ -1,0 +1,27 @@
+{
+  "name": "collab-canvas",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --turbopack",
+    "build": "next build --turbopack",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^6.33.3",
+    "@types/fabric": "^5.3.10",
+    "convex": "^1.27.5",
+    "fabric": "^6.7.1",
+    "next": "15.5.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3",
+    "@types/node": "^24.7.2",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@tailwindcss/postcss": "^4.1.14",
+    "tailwindcss": "^4.1.14"
+  }
+}
