@@ -297,63 +297,63 @@ collabcanvas/
 **Dependencies:** PR #4
 
 #### Subtasks:
-- [ ] Create shape utilities (`src/lib/shape-utils.ts`)
-  - [ ] Generate unique shape ID
-  - [ ] Check if point is inside shape bounds
-  - [ ] Calculate shape bounds after transform
-- [ ] Create color utilities (`src/lib/color-utils.ts`)
-  - [ ] Define simplified 3-color palette (blue, purple, red)
-  - [ ] Assign cursor color based on user index
-- [ ] Create constants (`src/constants/colors.ts`)
-  - [ ] Shape color palette (blue, purple, red)
-  - [ ] Cursor color palette (blue, purple, red)
-  - [ ] Selection colors
-- [ ] Create Shape rendering component (`src/components/canvas/Shape.tsx`)
-  - [ ] Render rectangle with fill color
-  - [ ] Render selection border when selected
-  - [ ] Render drag handles (optional for MVP)
-- [ ] Create SelectionBox component (`src/components/canvas/SelectionBox.tsx`)
-  - [ ] Render selection outline around shape
-  - [ ] Show corner handles (visual only)
-- [ ] Update Canvas component with shape logic
-  - [ ] Add tool state (select vs rectangle creation)
-  - [ ] Handle click to create rectangle
-  - [ ] Handle click to select shape
-  - [ ] Handle drag to move selected shape
-  - [ ] Local state management for shapes
-- [ ] Create Toolbar component (`src/components/toolbar/Toolbar.tsx`)
-  - [ ] Layout toolbar with Tailwind
-  - [ ] Add tool buttons container
-- [ ] Create ToolButton component (`src/components/toolbar/ToolButton.tsx`)
-  - [ ] Reusable button for tools
-  - [ ] Show active state with Tailwind styles
-  - [ ] Add icons (select pointer, rectangle)
-- [ ] Add select tool to toolbar
-- [ ] Add rectangle tool to toolbar
-- [ ] Update CanvasRenderer to draw shapes
-  - [ ] Loop through shapes and render each
-  - [ ] Apply viewport culling
-  - [ ] Highlight selected shape
+- [x] Create shape utilities (`src/lib/shape-utils.ts`)
+  - [x] Generate unique shape ID
+  - [x] Check if point is inside shape bounds
+  - [x] Calculate shape bounds after transform
+- [x] Create color utilities (`src/lib/color-utils.ts`)
+  - [x] Define simplified 3-color palette (blue, purple, red)
+  - [x] Assign cursor color based on user index
+- [x] Create constants (`src/constants/colors.ts`)
+  - [x] Shape color palette (blue, purple, red)
+  - [x] Cursor color palette (blue, purple, red)
+  - [x] Selection colors
+- [x] Create Shape rendering component (`src/components/canvas/Shape.tsx`)
+  - [x] Render rectangle with fill color
+  - [x] Render selection border when selected
+  - [x] Render drag handles (optional for MVP)
+- [x] Create SelectionBox component (`src/components/canvas/SelectionBox.tsx`)
+  - [x] Render selection outline around shape
+  - [x] Show corner handles (visual only)
+- [x] Update Canvas component with shape logic
+  - [x] Add tool state (select vs rectangle creation)
+  - [x] Handle click to create rectangle
+  - [x] Handle click to select shape
+  - [x] Handle drag to move selected shape
+  - [x] Local state management for shapes
+- [x] Create Toolbar component (`src/components/toolbar/Toolbar.tsx`)
+  - [x] Layout toolbar with Tailwind
+  - [x] Add tool buttons container
+- [x] Create ToolButton component (`src/components/toolbar/ToolButton.tsx`)
+  - [x] Reusable button for tools
+  - [x] Show active state with Tailwind styles
+  - [x] Add icons (select pointer, rectangle)
+- [x] Add select tool to toolbar
+- [x] Add rectangle tool to toolbar
+- [x] Update CanvasRenderer to draw shapes
+  - [x] Loop through shapes and render each
+  - [x] Apply viewport culling
+  - [x] Highlight selected shape
 
 **Files Created:**
-- `src/lib/shape-utils.ts`
-- `src/lib/color-utils.ts`
-- `src/constants/colors.ts`
-- `src/components/canvas/Shape.tsx`
-- `src/components/canvas/SelectionBox.tsx`
-- `src/components/toolbar/Toolbar.tsx`
-- `src/components/toolbar/ToolButton.tsx`
+- ✅ `src/lib/shape-utils.ts`
+- ✅ `src/lib/color-utils.ts`
+- ✅ `src/constants/colors.ts`
+- ✅ `src/components/canvas/Shape.tsx`
+- ✅ `src/components/canvas/SelectionBox.tsx`
+- ✅ `src/components/toolbar/Toolbar.tsx`
+- ✅ `src/components/toolbar/ToolButton.tsx`
 
 **Testing:**
-- [ ] Verify clicking rectangle tool activates creation mode
-- [ ] Verify clicking canvas creates rectangle at click position
-- [ ] Verify rectangle has default dimensions (100x100)
-- [ ] Verify clicking shape selects it
-- [ ] Verify selected shape shows selection border
-- [ ] Verify dragging selected shape moves it
-- [ ] Verify shapes render with correct colors from simplified palette
-- [ ] Verify only one shape can be selected at a time
-- [ ] Test with 100+ shapes to verify performance
+- [x] Verify clicking rectangle tool activates creation mode
+- [x] Verify clicking canvas creates rectangle at click position
+- [x] Verify rectangle has default dimensions (100x100)
+- [x] Verify clicking shape selects it
+- [x] Verify selected shape shows selection border
+- [x] Verify dragging selected shape moves it
+- [x] Verify shapes render with correct colors from simplified palette
+- [x] Verify only one shape can be selected at a time
+- [x] Test with 100+ shapes to verify performance
 
 ---
 
@@ -363,42 +363,42 @@ collabcanvas/
 **Dependencies:** PR #5
 
 #### Subtasks:
-- [ ] Create shapes hook (`src/hooks/useShapes.ts`)
-  - [ ] Subscribe to Convex `getShapes` query
-  - [ ] Wrap Convex mutations (createShape, moveShape, deleteShape)
-  - [ ] Implement optimistic updates for immediate feedback
-  - [ ] Reconcile local optimistic state with server state
-- [ ] Update Canvas component with Convex integration
-  - [ ] Replace local shape state with `useShapes` hook
-  - [ ] Call Convex mutations on shape creation
-  - [ ] Call Convex mutations on shape movement
-  - [ ] Call Convex mutations on shape deletion
-  - [ ] Handle shape updates from other users
-- [ ] Add authentication checks to mutations
-  - [ ] Verify user is authenticated before allowing changes
-  - [ ] Include user ID in shape metadata
-- [ ] Add timestamp to shape operations
-  - [ ] Track `createdAt` and `lastModified`
-  - [ ] Display who created/modified shape (optional)
-- [ ] Handle sync errors gracefully
-  - [ ] Show error toast if mutation fails
-  - [ ] Revert optimistic update on error
-  - [ ] Add retry logic for transient failures
+- [x] Create shapes hook (`src/hooks/useShapes.ts`)
+  - [x] Subscribe to Convex `getShapes` query
+  - [x] Wrap Convex mutations (createShape, moveShape, deleteShape)
+  - [x] Implement optimistic updates for immediate feedback
+  - [x] Reconcile local optimistic state with server state
+- [x] Update Canvas component with Convex integration
+  - [x] Replace local shape state with `useShapes` hook
+  - [x] Call Convex mutations on shape creation
+  - [x] Call Convex mutations on shape movement
+  - [x] Call Convex mutations on shape deletion
+  - [x] Handle shape updates from other users
+- [x] Add authentication checks to mutations
+  - [x] Verify user is authenticated before allowing changes
+  - [x] Include user ID in shape metadata
+- [x] Add timestamp to shape operations
+  - [x] Track `createdAt` and `lastModified`
+  - [x] Display who created/modified shape (optional)
+- [x] Handle sync errors gracefully
+  - [x] Show error toast if mutation fails
+  - [x] Revert optimistic update on error
+  - [x] Add retry logic for transient failures
 
 **Files Created:**
-- `src/hooks/useShapes.ts`
+- ✅ `src/hooks/useShapes.ts`
 
 **Testing:**
-- [ ] Open two browser windows with different users
-- [ ] Create shape in window 1 → verify it appears in window 2
-- [ ] Move shape in window 1 → verify it moves in window 2
-- [ ] Delete shape in window 1 → verify it disappears in window 2
-- [ ] Measure sync latency (<100ms for shapes)
-- [ ] Test with 5+ users simultaneously creating shapes
-- [ ] Verify optimistic updates work (immediate local feedback)
-- [ ] Test race condition: both users move same shape simultaneously
-- [ ] Verify refresh preserves all shapes
-- [ ] Test with network throttling (slow 3G)
+- [x] Open two browser windows with different users
+- [x] Create shape in window 1 → verify it appears in window 2
+- [x] Move shape in window 1 → verify it moves in window 2
+- [x] Delete shape in window 1 → verify it disappears in window 2
+- [x] Measure sync latency (<100ms for shapes)
+- [x] Test with 5+ users simultaneously creating shapes
+- [x] Verify optimistic updates work (immediate local feedback)
+- [x] Test race condition: both users move same shape simultaneously
+- [x] Verify refresh preserves all shapes
+- [x] Test with network throttling (slow 3G)
 
 ---
 
