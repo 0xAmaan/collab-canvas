@@ -232,62 +232,62 @@ collabcanvas/
 **Dependencies:** PR #3
 
 #### Subtasks:
-- [ ] Create TypeScript types
-  - [ ] `src/types/viewport.ts` - Viewport state types
-  - [ ] `src/types/canvas.ts` - Canvas types
-  - [ ] `src/types/shapes.ts` - Shape types
-- [ ] Create viewport utilities (`src/lib/viewport-utils.ts`)
-  - [ ] Coordinate transformation functions
-  - [ ] Viewport bounds calculation
-  - [ ] Zoom level constraints
-- [ ] Create canvas utilities (`src/lib/canvas-utils.ts`)
-  - [ ] Screen to canvas coordinate conversion
-  - [ ] Canvas to screen coordinate conversion
-  - [ ] Viewport culling algorithm
-- [ ] Create viewport hook (`src/hooks/useViewport.ts`)
-  - [ ] State management for offset and scale
-  - [ ] Pan logic (mouse drag)
-  - [ ] Zoom logic (mouse wheel, pinch, UI controls)
-  - [ ] Persist viewport to localStorage
-- [ ] Create main Canvas component (`src/components/canvas/Canvas.tsx`)
-  - [ ] Set up HTML5 canvas element
-  - [ ] Handle mouse events (down, move, up)
-  - [ ] Handle wheel events for zoom
-  - [ ] Apply viewport transformations with Tailwind
-- [ ] Create CanvasRenderer component (`src/components/canvas/CanvasRenderer.tsx`)
-  - [ ] Render loop using requestAnimationFrame
-  - [ ] Clear and redraw canvas each frame
-  - [ ] Apply viewport culling (only render visible shapes)
-- [ ] Create zoom controls UI (`src/components/toolbar/ZoomControls.tsx`)
-  - [ ] Zoom in button
-  - [ ] Zoom out button
-  - [ ] Reset zoom button (100%)
-  - [ ] Display current zoom percentage
-- [ ] Create constants (`src/constants/shapes.ts`)
-  - [ ] Default shape dimensions
-  - [ ] Min/max zoom levels
-  - [ ] Canvas virtual size
+- [x] Create TypeScript types
+  - [x] `src/types/viewport.ts` - Viewport state types
+  - [x] `src/types/canvas.ts` - Canvas types
+  - [x] `src/types/shapes.ts` - Shape types
+- [x] Create viewport utilities (`src/lib/viewport-utils.ts`)
+  - [x] Coordinate transformation functions
+  - [x] Viewport bounds calculation
+  - [x] Zoom level constraints
+- [x] Create canvas utilities (`src/lib/canvas-utils.ts`)
+  - [x] Screen to canvas coordinate conversion
+  - [x] Canvas to screen coordinate conversion
+  - [x] Viewport culling algorithm
+- [x] Create viewport hook (`src/hooks/useViewport.ts`)
+  - [x] State management for offset and scale
+  - [x] Pan logic (mouse drag)
+  - [x] Zoom logic (mouse wheel, pinch, UI controls)
+  - [x] Persist viewport to localStorage
+- [x] Create main Canvas component (`src/components/canvas/Canvas.tsx`)
+  - [x] Set up HTML5 canvas element
+  - [x] Handle mouse events (down, move, up)
+  - [x] Handle wheel events for zoom
+  - [x] Apply viewport transformations with Tailwind
+- [x] Create CanvasRenderer component (`src/components/canvas/CanvasRenderer.tsx`)
+  - [x] Render loop using requestAnimationFrame
+  - [x] Clear and redraw canvas each frame
+  - [x] Apply viewport culling (only render visible shapes)
+- [x] Create zoom controls UI (`src/components/toolbar/ZoomControls.tsx`)
+  - [x] Zoom in button
+  - [x] Zoom out button
+  - [x] Reset zoom button (100%)
+  - [x] Display current zoom percentage
+- [x] Create constants (`src/constants/shapes.ts`)
+  - [x] Default shape dimensions
+  - [x] Min/max zoom levels
+  - [x] Canvas virtual size
 
 **Files Created:**
-- `src/types/viewport.ts`
-- `src/types/canvas.ts`
-- `src/types/shapes.ts`
-- `src/lib/viewport-utils.ts`
-- `src/lib/canvas-utils.ts`
-- `src/hooks/useViewport.ts`
-- `src/components/canvas/Canvas.tsx`
-- `src/components/canvas/CanvasRenderer.tsx`
-- `src/components/toolbar/ZoomControls.tsx`
-- `src/constants/shapes.ts`
+- ✅ `src/types/viewport.ts`
+- ✅ `src/types/canvas.ts`
+- ✅ `src/types/shapes.ts`
+- ✅ `src/lib/viewport-utils.ts`
+- ✅ `src/lib/canvas-utils.ts`
+- ✅ `src/hooks/useViewport.ts`
+- ✅ `src/components/canvas/Canvas.tsx`
+- ✅ `src/components/canvas/CanvasRenderer.tsx`
+- ✅ `src/components/toolbar/ZoomControls.tsx`
+- ✅ `src/constants/shapes.ts`
 
 **Testing:**
-- [ ] Verify canvas renders at correct size
-- [ ] Verify pan works by dragging with mouse
-- [ ] Verify zoom works with mouse wheel
-- [ ] Verify zoom controls work (in/out/reset)
-- [ ] Verify viewport persists on page refresh
-- [ ] Test FPS maintains 60 during pan/zoom operations
-- [ ] Verify coordinate transformations are accurate
+- [x] Verify canvas renders at correct size
+- [x] Verify pan works by dragging with mouse
+- [x] Verify zoom works with mouse wheel
+- [x] Verify zoom controls work (in/out/reset)
+- [x] Verify viewport persists on page refresh
+- [x] Test FPS maintains 60 during pan/zoom operations
+- [x] Verify coordinate transformations are accurate
 
 ---
 
@@ -717,14 +717,14 @@ The PRs are designed to be completed in order. The critical path is:
 ## Priority Features (Must-Have for MVP)
 
 These PRs are absolutely required to pass MVP checkpoint:
-- ✅ PR #1: Project Setup
-- ✅ PR #2: Authentication & Routes
-- ✅ PR #3: Database Schema
-- ✅ PR #4: Canvas Viewport
-- ✅ PR #5: Shape Creation
-- ✅ PR #6: Real-time Sync
-- ✅ PR #7: Multiplayer Cursors
-- ✅ PR #8: Presence Panel
+- ✅ PR #1: Project Setup (Complete)
+- ✅ PR #2: Authentication & Routes (Complete)
+- ✅ PR #3: Database Schema (Complete)
+- ✅ PR #4: Canvas Viewport (Complete)
+- ⏳ PR #5: Shape Creation
+- ⏳ PR #6: Real-time Sync
+- ⏳ PR #7: Multiplayer Cursors
+- ⏳ PR #8: Presence Panel
 
 **Nice-to-have but not blocking MVP:**
 - PR #9: Keyboard Shortcuts (enhances UX but not required for MVP)
@@ -787,7 +787,7 @@ Use this checklist to track overall progress:
 - [x] PR #3: Database Schema ✅ (Complete - all mutations/queries/crons implemented)
 
 ### Canvas Core
-- [ ] PR #4: Canvas Viewport ✅
+- [x] PR #4: Canvas Viewport ✅ (Complete - viewport, pan, zoom, and canvas rendering implemented)
 - [ ] PR #5: Shape Creation ✅
 
 ### Multiplayer (MVP Critical)

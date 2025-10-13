@@ -4,7 +4,7 @@
 export default {
   providers: [
     {
-      domain: process.env.CLERK_JWT_ISSUER_DOMAIN!,
+      domain: "https://fancy-husky-19.clerk.accounts.dev",
       applicationID: "convex",
     },
   ],

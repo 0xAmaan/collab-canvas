@@ -4,13 +4,19 @@ A real-time collaborative canvas with multiplayer features built with Next.js, C
 
 ## Features
 
+### ✅ Implemented (PR #1-4)
+- 🔐 Authentication with Clerk
+- 🗄️ Convex database with shapes and presence schemas
 - 🎨 Canvas with pan/zoom (5000x5000px workspace)
+- ⚡ Built with Fabric.js for high-performance rendering
+- 🔍 Zoom controls (10% - 400%)
+- 💾 Viewport persistence
+
+### 🚧 Coming Soon (PR #5-8)
 - 📦 Rectangle shape creation and manipulation
 - 🔄 Real-time synchronization between users (<100ms)
 - 👥 Multiplayer cursors with name labels
 - 👤 User presence awareness
-- 🔐 Authentication with Clerk
-- ⚡ Built with Fabric.js for high-performance rendering
 
 ## Tech Stack
 
@@ -134,5 +140,36 @@ This will test:
 3. Create/move shapes in one window
 4. Verify they appear in the other window (<100ms latency)
 5. Move your cursor and verify it appears in the other window
+
+## Current Implementation Status
+
+**Completed Pull Requests:**
+- ✅ **PR #1**: Project Setup & Configuration
+- ✅ **PR #2**: Authentication & Route Structure
+- ✅ **PR #3**: Database Schema & Convex Setup
+- ✅ **PR #4**: Canvas Infrastructure - Viewport & Rendering
+
+**Next Up:**
+- 🔜 **PR #5**: Shape Creation & Local Manipulation
+- 🔜 **PR #6**: Real-Time Shape Synchronization
+- 🔜 **PR #7**: Multiplayer Cursors
+- 🔜 **PR #8**: Presence Panel & User List
+
+See [CANVAS_IMPLEMENTATION.md](./CANVAS_IMPLEMENTATION.md) for detailed PR #4 documentation.
+
+## Canvas Features (PR #4)
+
+### Pan
+- Hold `Alt` key and drag
+- Or click empty canvas space and drag
+
+### Zoom
+- Use mouse wheel (10% - 400% range)
+- Click zoom in/out buttons in toolbar
+- Click percentage to reset to 100%
+
+### Persistence
+- Viewport position and zoom level persist across page refreshes
+- Stored in browser localStorage
 
 ## Project Structure
