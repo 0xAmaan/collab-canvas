@@ -90,4 +90,49 @@ CLERK_SECRET_KEY=sk_test_xxxxx
 - `bun run start` - Start production server
 - `bun run lint` - Run ESLint
 
+## Testing
+
+### Automated Database Tests
+
+Run the test script to verify Convex mutations and queries:
+
+```bash
+bun run test:convex
+```
+
+> **Note:** Make sure your `.env.local` file has `NEXT_PUBLIC_CONVEX_URL` set. The test file may show TypeScript linter warnings, but the script will run correctly. These warnings are expected for string-based API calls.
+
+This will test:
+- ✅ Shape queries and mutations
+- ✅ Presence queries and mutations
+- ✅ Authentication requirements
+- ✅ Schema validation
+- ✅ Cron job configuration
+
+### Manual Testing in Convex Dashboard
+
+1. Go to [dashboard.convex.dev](https://dashboard.convex.dev)
+2. Navigate to your project → **Functions** tab
+3. Test individual mutations:
+   - `shapes:createShape` - Create rectangles
+   - `shapes:moveShape` - Move shapes
+   - `shapes:updateShape` - Update properties
+   - `shapes:deleteShape` - Delete shapes
+   - `presence:joinCanvas` - Join canvas
+   - `presence:updatePresence` - Update cursor
+   - `presence:heartbeat` - Heartbeat ping
+   - `presence:leaveCanvas` - Leave canvas
+
+4. Check **Logs** tab to verify:
+   - Cron job runs every 10 seconds
+   - Look for "Cleaned up X stale presence record(s)" messages
+
+### Real-Time Sync Testing
+
+1. Open two browser windows at `http://localhost:3000/dashboard`
+2. Sign in with different accounts in each window
+3. Create/move shapes in one window
+4. Verify they appear in the other window (<100ms latency)
+5. Move your cursor and verify it appears in the other window
+
 ## Project Structure

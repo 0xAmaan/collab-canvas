@@ -185,42 +185,44 @@ collabcanvas/
 **Dependencies:** PR #2
 
 #### Subtasks:
-- [ ] Define database schema in `convex/schema.ts`
-  - [ ] Create `shapes` table with all fields
-  - [ ] Create `presence` table with all fields
-  - [ ] Add indexes for efficient queries
-- [ ] Create shape mutations (`convex/shapes.ts`)
-  - [ ] `createShape` - Create new rectangle
-  - [ ] `updateShape` - Update shape properties
-  - [ ] `moveShape` - Update shape position
-  - [ ] `deleteShape` - Delete shape by ID
-- [ ] Create shape queries (`convex/shapes.ts`)
-  - [ ] `getShapes` - Get all shapes on canvas
-  - [ ] `getShape` - Get single shape by ID
-- [ ] Create presence mutations (`convex/presence.ts`)
-  - [ ] `updatePresence` - Update user cursor position
-  - [ ] `joinCanvas` - Create presence record when user joins
-  - [ ] `leaveCanvas` - Remove presence record when user leaves
-  - [ ] `heartbeat` - Update lastActive timestamp
-- [ ] Create presence queries (`convex/presence.ts`)
-  - [ ] `getActiveUsers` - Get all users with recent lastActive
-  - [ ] `getUserPresence` - Get presence for specific user
-- [ ] Create cron job for presence cleanup (`convex/crons.ts`)
-  - [ ] Remove presence records older than 30 seconds
-  - [ ] Run every 10 seconds
+- [x] Define database schema in `convex/schema.ts`
+  - [x] Create `shapes` table with all fields
+  - [x] Create `presence` table with all fields
+  - [x] Add indexes for efficient queries
+- [x] Create shape mutations (`convex/shapes.ts`)
+  - [x] `createShape` - Create new rectangle
+  - [x] `updateShape` - Update shape properties
+  - [x] `moveShape` - Update shape position
+  - [x] `deleteShape` - Delete shape by ID
+- [x] Create shape queries (`convex/shapes.ts`)
+  - [x] `getShapes` - Get all shapes on canvas
+  - [x] `getShape` - Get single shape by ID
+- [x] Create presence mutations (`convex/presence.ts`)
+  - [x] `updatePresence` - Update user cursor position
+  - [x] `joinCanvas` - Create presence record when user joins
+  - [x] `leaveCanvas` - Remove presence record when user leaves
+  - [x] `heartbeat` - Update lastActive timestamp
+- [x] Create presence queries (`convex/presence.ts`)
+  - [x] `getActiveUsers` - Get all users with recent lastActive
+  - [x] `getUserPresence` - Get presence for specific user
+- [x] Create cron job for presence cleanup (`convex/crons.ts`)
+  - [x] Remove presence records older than 30 seconds
+  - [x] Run every 10 seconds
 
 **Files Created:**
-- `convex/schema.ts`
-- `convex/shapes.ts`
-- `convex/presence.ts`
-- `convex/crons.ts`
+- ✅ `convex/schema.ts` (already existed from PR #2)
+- ✅ `convex/shapes.ts` (171 lines, 4 mutations + 2 queries)
+- ✅ `convex/presence.ts` (208 lines, 4 mutations + 2 queries)
+- ✅ `convex/crons.ts` (65 lines, 1 internal mutation + cron config)
+- ✅ `tests/convex.test.mjs` (executable test script with Bun.env)
 
 **Testing:**
-- [ ] Run `bunx convex dev` and verify schema is generated
-- [ ] Test mutations in Convex dashboard
-- [ ] Test queries return expected data
-- [ ] Verify indexes are created correctly
-- [ ] Test cron job runs and cleans up stale presence
+- [x] Run `bunx convex dev` and verify schema is generated
+- [x] Test mutations in Convex dashboard
+- [x] Test queries return expected data
+- [x] Verify indexes are created correctly
+- [x] Test cron job runs and cleans up stale presence
+- [x] Run `bun run test:convex` for automated testing
 
 ---
 
@@ -782,7 +784,7 @@ Use this checklist to track overall progress:
 ### Setup & Foundation
 - [x] PR #1: Project Setup ✅
 - [x] PR #2: Auth & Routes ✅ (Complete - needs CLERK_JWT_ISSUER_DOMAIN env var)
-- [ ] PR #3: Database Schema ⚠️ (Schema defined, needs mutations/queries)
+- [x] PR #3: Database Schema ✅ (Complete - all mutations/queries/crons implemented)
 
 ### Canvas Core
 - [ ] PR #4: Canvas Viewport ✅
