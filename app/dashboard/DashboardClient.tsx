@@ -1,13 +1,16 @@
 "use client";
 
 /**
- * Client-side dashboard component with Canvas
+ * Client-side dashboard component with Canvas and Toolbar
  */
 
 import { useState, useCallback } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from "@/components/canvas/Canvas";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
+import { Toolbar, type Tool } from "@/components/toolbar/Toolbar";
+import { useUser } from "@clerk/nextjs";
+import { useKeyboard } from "@/hooks/useKeyboard";
 
 interface DashboardClientProps {
   userName: string;
@@ -15,10 +18,31 @@ interface DashboardClientProps {
 
 export function DashboardClient({ userName }: DashboardClientProps) {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
+  const [activeTool, setActiveTool] = useState<Tool>("select");
+  const { user } = useUser();
 
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
   }, []);
+
+  const handleToolChange = useCallback((tool: Tool) => {
+    setActiveTool(tool);
+  }, []);
+
+  // Keyboard shortcuts
+  useKeyboard({
+    onEscape: () => {
+      setActiveTool("select");
+      // Clear any selections
+      if (fabricCanvas) {
+        fabricCanvas.discardActiveObject();
+        fabricCanvas.requestRenderAll();
+      }
+    },
+    onR: () => {
+      setActiveTool("rectangle");
+    },
+  });
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
@@ -27,12 +51,8 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         <div className="flex items-center gap-8">
           <h1 className="text-2xl font-bold text-gray-900">Collab Canvas</h1>
 
-          {/* Toolbar placeholder - tools will be added in PR #5 */}
-          <div className="flex gap-2">
-            <div className="px-4 py-2 bg-gray-100 rounded text-sm text-gray-500">
-              Tools coming in PR #5...
-            </div>
-          </div>
+          {/* Toolbar with shape tools */}
+          <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />
         </div>
 
         {/* Right side - zoom controls and user info */}
@@ -44,7 +64,11 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
       {/* Canvas Area */}
       <div className="flex-1 canvas-container relative">
-        <Canvas onCanvasReady={handleCanvasReady} />
+        <Canvas
+          onCanvasReady={handleCanvasReady}
+          activeTool={activeTool}
+          userId={user?.id}
+        />
       </div>
     </div>
   );

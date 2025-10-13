@@ -6,7 +6,7 @@
 export const DEFAULT_SHAPE = {
   WIDTH: 100,
   HEIGHT: 100,
-  FILL_COLOR: "#3b82f6", // Tailwind blue-500
+  FILL_COLOR: "#3b82f6", // Tailwind blue-500 (default color for all shapes)
 } as const;
 
 // Canvas dimensions
@@ -22,7 +22,7 @@ export const ZOOM = {
   MAX: 4.0, // 400%
   DEFAULT: 1.0, // 100%
   STEP: 0.1, // 10% increment for UI controls
-  WHEEL_SENSITIVITY: 0.999, // Mouse wheel zoom sensitivity
+  WHEEL_SENSITIVITY: 0.002, // Mouse wheel zoom sensitivity (increased from 0.999)
 } as const;
 
 // Viewport persistence key

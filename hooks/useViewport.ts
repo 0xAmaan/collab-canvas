@@ -32,28 +32,6 @@ export function useViewport(canvas: FabricCanvas | null) {
     };
   });
 
-  // Apply initial viewport to canvas when it becomes available (only once)
-  useEffect(() => {
-    if (!canvas) return;
-
-    // Apply the current viewport state to the canvas
-    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-    vpt[0] = viewport.zoom;
-    vpt[3] = viewport.zoom;
-    vpt[4] = viewport.panX;
-    vpt[5] = viewport.panY;
-    setViewportTransform(canvas, vpt);
-
-    // We only want to run this when canvas is first created, not on every viewport change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvas]);
-
-  // Persist viewport to localStorage whenever it changes
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    localStorage.setItem(VIEWPORT_STORAGE_KEY, serializeViewport(viewport));
-  }, [viewport]);
-
   // Update viewport state from canvas transform
   const updateViewportFromCanvas = useCallback(() => {
     if (!canvas) return;
@@ -77,6 +55,40 @@ export function useViewport(canvas: FabricCanvas | null) {
       return prev;
     });
   }, [canvas]);
+
+  // Apply initial viewport to canvas when it becomes available (only once)
+  useEffect(() => {
+    if (!canvas) return;
+
+    // Apply the current viewport state to the canvas
+    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+    vpt[0] = viewport.zoom;
+    vpt[3] = viewport.zoom;
+    vpt[4] = viewport.panX;
+    vpt[5] = viewport.panY;
+    setViewportTransform(canvas, vpt);
+
+    // Listen for mouse:wheel events to update viewport state
+    const handleMouseWheel = () => {
+      // Small delay to ensure Fabric.js has updated the transform
+      setTimeout(() => {
+        updateViewportFromCanvas();
+      }, 0);
+    };
+
+    canvas.on("mouse:wheel", handleMouseWheel);
+
+    return () => {
+      canvas.off("mouse:wheel", handleMouseWheel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [canvas, updateViewportFromCanvas]);
+
+  // Persist viewport to localStorage whenever it changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(VIEWPORT_STORAGE_KEY, serializeViewport(viewport));
+  }, [viewport]);
 
   // Zoom in
   const zoomIn = useCallback(() => {
