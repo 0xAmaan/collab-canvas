@@ -99,19 +99,19 @@ collabcanvas/
 **Dependencies:** None
 
 #### Subtasks:
-- [ ] Create Next.js app with TypeScript and Tailwind CSS using Bun
-- [ ] Install and configure Convex
-  - [ ] Run `bun add convex`
-  - [ ] Run `bunx convex dev` to initialize
-  - [ ] Set up `convex/` directory structure
-- [ ] Install and configure Clerk
-  - [ ] Run `bun add @clerk/nextjs`
-  - [ ] Create Clerk application in dashboard
-  - [ ] Configure Clerk environment variables
-- [ ] Set up environment variables template (`.env.example`)
-- [ ] Configure `.gitignore` to exclude sensitive files
-- [ ] Create basic `README.md` with setup instructions
-- [ ] Initialize Git repository and create initial commit
+- [x] Create Next.js app with TypeScript and Tailwind CSS using Bun
+- [x] Install and configure Convex
+  - [x] Run `bun add convex`
+  - [x] Run `bunx convex dev` to initialize
+  - [x] Set up `convex/` directory structure
+- [x] Install and configure Clerk
+  - [x] Run `bun add @clerk/nextjs`
+  - [x] Create Clerk application in dashboard
+  - [x] Configure Clerk environment variables
+- [x] Set up environment variables (`.env` configured)
+- [x] Configure `.gitignore` to exclude sensitive files
+- [x] Create basic `README.md` with setup instructions
+- [x] Initialize Git repository and create initial commit
 - [ ] Configure Tailwind with custom color palette (blue, purple, red)
 
 **Files Created:**
@@ -124,9 +124,9 @@ collabcanvas/
 - `README.md`
 
 **Testing:**
-- [ ] Verify Next.js dev server runs (`bun run dev`)
-- [ ] Verify Convex dev server connects (`bunx convex dev`)
-- [ ] Verify environment variables are loaded correctly
+- [x] Verify Next.js dev server runs (`bun run dev`)
+- [x] Verify Convex dev server connects (`bunx convex dev`)
+- [x] Verify environment variables are loaded correctly
 
 ---
 
@@ -136,42 +136,46 @@ collabcanvas/
 **Dependencies:** PR #1
 
 #### Subtasks:
-- [ ] Configure Clerk provider in root layout
-  - [ ] Wrap app in `ClerkProvider`
-  - [ ] Add Clerk middleware for route protection
-- [ ] Set up Convex + Clerk integration
-  - [ ] Create `convex/auth.config.ts`
-  - [ ] Configure auth in Convex schema
-- [ ] Create home page (`app/page.tsx`)
-  - [ ] Design landing page UI with Tailwind
-  - [ ] Add "Get Started" CTA button
-  - [ ] Integrate Clerk sign-in/sign-up modal
-  - [ ] Add redirect logic for authenticated users
-- [ ] Create dashboard page (`app/dashboard/page.tsx`)
-  - [ ] Set up protected route (requires authentication)
-  - [ ] Create basic dashboard layout with top bar
-  - [ ] Add Clerk `<UserButton>` component
-  - [ ] Add placeholder for canvas area
-- [ ] Style global CSS (`app/globals.css`)
-  - [ ] Import Tailwind directives
-  - [ ] Add custom CSS variables for theme
-  - [ ] Set base styles for body and canvas
+- [x] Configure Clerk provider in root layout
+  - [x] Wrap app in `ClerkProvider`
+  - [x] Add Clerk middleware for route protection
+- [x] Set up Convex + Clerk integration
+  - [x] Create `convex/auth.config.ts`
+  - [x] Configure auth in Convex schema
+- [x] Create home page (`app/page.tsx`)
+  - [x] Design landing page UI with Tailwind
+  - [x] Add "Get Started" CTA button
+  - [x] Integrate Clerk sign-in/sign-up modal
+  - [x] Add redirect logic for authenticated users
+- [x] Create dashboard page (`app/dashboard/page.tsx`)
+  - [x] Set up protected route (requires authentication)
+  - [x] Create basic dashboard layout with top bar
+  - [x] Add Clerk `<UserButton>` component (in header)
+  - [x] Add placeholder for canvas area
+- [x] Style global CSS (`app/globals.css`)
+  - [x] Import Tailwind directives
+  - [x] Add custom CSS variables for theme (Tailwind v4 @theme)
+  - [x] Set base styles for body and canvas
 
 **Files Created:**
-- `src/app/layout.tsx`
-- `src/app/page.tsx`
-- `src/app/dashboard/page.tsx`
-- `src/app/globals.css`
-- `convex/auth.config.ts`
-- `middleware.ts` (Clerk middleware)
+- ✅ `app/layout.tsx` (with ClerkProvider and auth UI)
+- ✅ `app/page.tsx` (beautiful landing page with redirect)
+- ✅ `app/dashboard/page.tsx` (protected route with placeholder)
+- ✅ `app/globals.css` (Tailwind v4 config with custom colors)
+- ✅ `convex/auth.config.ts` (Clerk JWT integration)
+- ✅ `convex/schema.ts` (shapes and presence tables defined)
+- ✅ `middleware.ts` (Clerk middleware)
+- ✅ `CONVEX_SETUP.md` (setup instructions)
 
 **Testing:**
-- [ ] Verify unauthenticated users see landing page
-- [ ] Verify authenticated users auto-redirect to dashboard
-- [ ] Verify sign-up flow creates user account
-- [ ] Verify sign-in flow authenticates existing user
-- [ ] Verify dashboard is protected (redirects if not authenticated)
-- [ ] Verify UserButton displays and logout works
+- [x] Verify unauthenticated users see landing page
+- [x] Verify authenticated users auto-redirect to dashboard
+- [x] Verify sign-up flow creates user account
+- [x] Verify sign-in flow authenticates existing user
+- [x] Verify dashboard is protected (redirects if not authenticated)
+- [x] Verify UserButton displays and logout works
+
+**Note:** User needs to add `CLERK_JWT_ISSUER_DOMAIN` to `.env` - see `CONVEX_SETUP.md`
 
 ---
 
@@ -776,9 +780,9 @@ Fixes #23
 Use this checklist to track overall progress:
 
 ### Setup & Foundation
-- [ ] PR #1: Project Setup ✅
-- [ ] PR #2: Auth & Routes ✅
-- [ ] PR #3: Database Schema ✅
+- [x] PR #1: Project Setup ✅
+- [x] PR #2: Auth & Routes ✅ (Complete - needs CLERK_JWT_ISSUER_DOMAIN env var)
+- [ ] PR #3: Database Schema ⚠️ (Schema defined, needs mutations/queries)
 
 ### Canvas Core
 - [ ] PR #4: Canvas Viewport ✅
