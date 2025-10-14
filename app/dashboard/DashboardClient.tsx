@@ -9,8 +9,12 @@ import type { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from "@/components/canvas/Canvas";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import { Toolbar, type Tool } from "@/components/toolbar/Toolbar";
+import { PresencePanel } from "@/components/presence/PresencePanel";
+import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { useUser } from "@clerk/nextjs";
 import { useKeyboard } from "@/hooks/useKeyboard";
+import { usePresence } from "@/hooks/usePresence";
+import { getUserColor } from "@/lib/color-utils";
 
 interface DashboardClientProps {
   userName: string;
@@ -20,7 +24,21 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
+  const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const { user } = useUser();
+
+  // User info and color
+  const userId = user?.id || "anonymous";
+  const userColor = getUserColor(userId);
+  const isAuthenticated = !!user?.id && user.id !== "anonymous";
+
+  // Presence for showing active users
+  const { allUsers } = usePresence({
+    userId,
+    userName,
+    userColor,
+    enabled: isAuthenticated,
+  });
 
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
@@ -32,7 +50,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
   // Keyboard shortcuts
   useKeyboard({
-    onEscape: () => {
+    onSelectTool: () => {
       setActiveTool("select");
       // Clear any selections
       if (fabricCanvas) {
@@ -40,14 +58,14 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         fabricCanvas.requestRenderAll();
       }
     },
-    onR: () => {
+    onRectangleTool: () => {
       setActiveTool("rectangle");
     },
-    onDelete: () => {
+    onDeleteShape: () => {
       deleteHandler?.();
     },
-    onBackspace: () => {
-      deleteHandler?.();
+    onShowHelp: () => {
+      setShowKeyboardHelp((prev) => !prev);
     },
   });
 
@@ -62,8 +80,13 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />
         </div>
 
-        {/* Right side - zoom controls and user info */}
+        {/* Right side - presence panel, zoom controls and user info */}
         <div className="flex items-center gap-4">
+          <PresencePanel
+            activeUsers={allUsers}
+            currentUserId={userId}
+            maxVisible={8}
+          />
           <ZoomControls canvas={fabricCanvas} />
           <span className="text-sm text-gray-600">Welcome, {userName}!</span>
         </div>
@@ -74,11 +97,17 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         <Canvas
           onCanvasReady={handleCanvasReady}
           activeTool={activeTool}
-          userId={user?.id}
+          userId={userId}
           userName={userName}
           onDeleteSelected={(handler) => setDeleteHandler(() => handler)}
         />
       </div>
+
+      {/* Keyboard Shortcuts Help Modal */}
+      <KeyboardShortcutsHelp
+        isOpen={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
+      />
     </div>
   );
 }

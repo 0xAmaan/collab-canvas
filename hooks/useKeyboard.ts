@@ -3,12 +3,17 @@
  */
 
 import { useEffect } from "react";
+import {
+  KeyboardAction,
+  getShortcutByKey,
+  KEYBOARD_SHORTCUTS,
+} from "@/constants/keyboard";
 
 interface KeyboardShortcuts {
-  onEscape?: () => void;
-  onR?: () => void;
-  onDelete?: () => void;
-  onBackspace?: () => void;
+  onSelectTool?: () => void;
+  onRectangleTool?: () => void;
+  onDeleteShape?: () => void;
+  onShowHelp?: () => void;
 }
 
 /**
@@ -33,22 +38,46 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
       // Allow browser shortcuts like Cmd+R, Ctrl+R, etc.
       const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
 
-      // Handle shortcuts (only if no modifier keys are pressed)
+      // Get the pressed key
       const key = e.key.toLowerCase();
 
-      if (key === "escape" && shortcuts.onEscape) {
-        e.preventDefault();
-        shortcuts.onEscape();
-      } else if (key === "r" && shortcuts.onR && !hasModifier) {
-        // Only trigger 'R' shortcut if no modifier keys are pressed
-        e.preventDefault();
-        shortcuts.onR();
-      } else if (key === "delete" && shortcuts.onDelete) {
-        e.preventDefault();
-        shortcuts.onDelete();
-      } else if (key === "backspace" && shortcuts.onBackspace) {
-        e.preventDefault();
-        shortcuts.onBackspace();
+      // Find matching shortcut
+      const shortcut = getShortcutByKey(key);
+
+      if (!shortcut) {
+        return;
+      }
+
+      // Handle each action
+      switch (shortcut.action) {
+        case KeyboardAction.SELECT_TOOL:
+          if (shortcuts.onSelectTool) {
+            e.preventDefault();
+            shortcuts.onSelectTool();
+          }
+          break;
+
+        case KeyboardAction.RECTANGLE_TOOL:
+          // Only trigger 'R' shortcut if no modifier keys are pressed
+          if (shortcuts.onRectangleTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onRectangleTool();
+          }
+          break;
+
+        case KeyboardAction.DELETE_SHAPE:
+          if (shortcuts.onDeleteShape) {
+            e.preventDefault();
+            shortcuts.onDeleteShape();
+          }
+          break;
+
+        case KeyboardAction.SHOW_HELP:
+          if (shortcuts.onShowHelp) {
+            e.preventDefault();
+            shortcuts.onShowHelp();
+          }
+          break;
       }
     };
 

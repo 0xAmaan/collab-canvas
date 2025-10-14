@@ -127,12 +127,16 @@ export function usePresence({
     };
   }, [enabled, leaveCanvas]);
 
-  // Filter out current user from active users
+  // Filter out current user from active users (for cursors)
   const otherUsers: Presence[] =
     activeUsers?.filter((user) => user.userId !== userId) || [];
 
+  // All users including current user (for presence panel)
+  const allUsers: Presence[] = activeUsers || [];
+
   return {
     otherUsers,
+    allUsers,
     updateCursorPosition: throttledUpdatePresence,
     isReady: hasJoinedRef.current,
   };

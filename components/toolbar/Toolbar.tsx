@@ -5,6 +5,7 @@
  */
 
 import { ToolButton } from "./ToolButton";
+import { KeyboardAction, getShortcutLabel } from "@/constants/keyboard";
 
 export type Tool = "select" | "rectangle";
 
@@ -14,6 +15,9 @@ interface ToolbarProps {
 }
 
 export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
+  const selectShortcut = getShortcutLabel(KeyboardAction.SELECT_TOOL);
+  const rectangleShortcut = getShortcutLabel(KeyboardAction.RECTANGLE_TOOL);
+
   return (
     <div className="flex items-center gap-2 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
       {/* Select Tool */}
@@ -32,8 +36,8 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
             <path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z" />
           </svg>
         }
-        tooltip="Select (Esc)"
-        shortcut="Esc"
+        tooltip={`Select (${selectShortcut})`}
+        shortcut={selectShortcut}
         active={activeTool === "select"}
         onClick={() => onToolChange("select")}
       />
@@ -57,8 +61,8 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
             <rect x="3" y="3" width="18" height="18" rx="2" />
           </svg>
         }
-        tooltip="Rectangle (R)"
-        shortcut="R"
+        tooltip={`Rectangle (${rectangleShortcut})`}
+        shortcut={rectangleShortcut}
         active={activeTool === "rectangle"}
         onClick={() => onToolChange("rectangle")}
       />

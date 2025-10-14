@@ -408,40 +408,40 @@ collabcanvas/
 **Dependencies:** PR #6
 
 #### Subtasks:
-- [ ] Create presence types (`src/types/presence.ts`)
-  - [ ] Define Presence interface
-  - [ ] Define cursor position type
-- [ ] Create presence hook (`src/hooks/usePresence.ts`)
-  - [ ] Subscribe to Convex `getActiveUsers` query
-  - [ ] Wrap presence mutations (updatePresence, joinCanvas, leaveCanvas)
-  - [ ] Implement cursor position throttling (50ms)
-- [ ] Create throttle hook (`src/hooks/useThrottle.ts`)
-  - [ ] Custom throttle implementation (no external dependencies)
-  - [ ] Configurable throttle delay
-- [ ] Create MultiplayerCursor component (`src/components/canvas/MultiplayerCursor.tsx`)
-  - [ ] Render cursor SVG at user position
-  - [ ] Display user name label next to cursor
-  - [ ] Apply user's assigned color from simplified palette
-  - [ ] Transform cursor position based on viewport
-  - [ ] Smooth cursor movement with CSS transitions
-- [ ] Update Canvas component with cursor tracking
-  - [ ] Track local cursor position on mousemove
-  - [ ] Call throttled `updatePresence` mutation
-  - [ ] Call `joinCanvas` on mount
-  - [ ] Call `leaveCanvas` on unmount
-  - [ ] Render MultiplayerCursor for each active user
-- [ ] Add heartbeat mechanism
-  - [ ] Update `lastActive` every 5 seconds
-  - [ ] Use setInterval in useEffect
-- [ ] Handle cleanup on page unload
-  - [ ] Call `leaveCanvas` in beforeunload event
-  - [ ] Best-effort cleanup (may not always fire)
+- [x] Create presence types (`src/types/presence.ts`)
+  - [x] Define Presence interface
+  - [x] Define cursor position type
+- [x] Create presence hook (`src/hooks/usePresence.ts`)
+  - [x] Subscribe to Convex `getActiveUsers` query
+  - [x] Wrap presence mutations (updatePresence, joinCanvas, leaveCanvas)
+  - [x] Implement cursor position throttling (50ms)
+- [x] Create throttle hook (`src/hooks/useThrottle.ts`)
+  - [x] Custom throttle implementation (no external dependencies)
+  - [x] Configurable throttle delay
+- [x] Create MultiplayerCursor component (`src/components/canvas/MultiplayerCursor.tsx`)
+  - [x] Render cursor SVG at user position
+  - [x] Display user name label next to cursor
+  - [x] Apply user's assigned color from simplified palette
+  - [x] Transform cursor position based on viewport
+  - [x] Smooth cursor movement with CSS transitions
+- [x] Update Canvas component with cursor tracking
+  - [x] Track local cursor position on mousemove
+  - [x] Call throttled `updatePresence` mutation
+  - [x] Call `joinCanvas` on mount
+  - [x] Call `leaveCanvas` on unmount
+  - [x] Render MultiplayerCursor for each active user
+- [x] Add heartbeat mechanism
+  - [x] Update `lastActive` every 5 seconds
+  - [x] Use setInterval in useEffect
+- [x] Handle cleanup on page unload
+  - [x] Call `leaveCanvas` in beforeunload event
+  - [x] Best-effort cleanup (may not always fire)
 
 **Files Created:**
-- `src/types/presence.ts`
-- `src/hooks/usePresence.ts`
-- `src/hooks/useThrottle.ts`
-- `src/components/canvas/MultiplayerCursor.tsx`
+- ✅ `types/presence.ts`
+- ✅ `hooks/usePresence.ts`
+- ✅ `hooks/useThrottle.ts`
+- ✅ `components/canvas/MultiplayerCursor.tsx`
 
 **Testing:**
 - [ ] Open two browser windows with different users
@@ -463,42 +463,46 @@ collabcanvas/
 **Dependencies:** PR #7
 
 #### Subtasks:
-- [ ] Create UserAvatar component (`src/components/presence/UserAvatar.tsx`)
-  - [ ] Display Clerk user avatar image
-  - [ ] Fallback to initials if no avatar
-  - [ ] Show online status indicator (green dot)
-  - [ ] Apply user's cursor color as accent from simplified palette
-- [ ] Create PresencePanel component (`src/components/presence/PresencePanel.tsx`)
-  - [ ] Sidebar layout with Tailwind
-  - [ ] List all active users from `usePresence` hook
-  - [ ] Render UserAvatar for each user
-  - [ ] Display user count ("3 users online")
-  - [ ] Make collapsible (optional)
-- [ ] Create shared UI components (`src/components/ui/`)
-  - [ ] Button component with Tailwind variants
-  - [ ] Avatar component (reusable)
-  - [ ] Badge component for online status
-- [ ] Integrate PresencePanel into dashboard layout
-  - [ ] Position as left sidebar
-  - [ ] Fixed position or absolute
-  - [ ] Responsive: hide on mobile, show on desktop
+- [x] Create UserAvatar component (`src/components/presence/UserAvatar.tsx`)
+  - [x] Display Clerk user avatar image
+  - [x] Fallback to initials if no avatar
+  - [x] Show online status indicator (green dot)
+  - [x] Apply user's cursor color as accent from simplified palette
+- [x] Create PresencePanel component (`src/components/presence/PresencePanel.tsx`)
+  - [x] Google Docs-style layout in top-right corner
+  - [x] List all active users from `usePresence` hook
+  - [x] Render UserAvatar for each user
+  - [x] Display "+N more" indicator for overflow users
+  - [x] Show total user count on hover
+- [x] Create shared UI components (`src/components/ui/`)
+  - [x] Avatar component (reusable)
+  - [x] Badge component for online status
+- [x] Integrate PresencePanel into dashboard layout
+  - [x] Position in top-right corner of header
+  - [x] Before zoom controls
+  - [x] Update usePresence hook to return allUsers
 
 **Files Created:**
-- `src/components/presence/UserAvatar.tsx`
-- `src/components/presence/PresencePanel.tsx`
-- `src/components/ui/Button.tsx`
-- `src/components/ui/Avatar.tsx`
-- `src/components/ui/Badge.tsx`
+- ✅ `components/presence/UserAvatar.tsx`
+- ✅ `components/presence/PresencePanel.tsx`
+- ✅ `components/presence/index.ts`
+- ✅ `components/ui/Avatar.tsx`
+- ✅ `components/ui/Badge.tsx`
+- ✅ `components/ui/index.ts`
+
+**Files Modified:**
+- ✅ `hooks/usePresence.ts` (added allUsers to return value)
+- ✅ `app/dashboard/DashboardClient.tsx` (integrated PresencePanel)
 
 **Testing:**
-- [ ] Verify presence panel shows current user
+- [ ] Verify presence panel shows current user with subtle border
 - [ ] Open second browser window → verify both users appear
 - [ ] Verify user count updates in real-time
-- [ ] Verify avatars display correctly
+- [ ] Verify avatars display correctly with initials
 - [ ] Verify online status indicator is visible
 - [ ] Verify cursor colors from simplified palette match between panel and canvas
 - [ ] Close window → verify user disappears from panel
-- [ ] Test with 10+ users to verify UI scales
+- [ ] Test with 10+ users to verify overflow indicator works
 
 ---
 
@@ -508,38 +512,52 @@ collabcanvas/
 **Dependencies:** PR #8
 
 #### Subtasks:
-- [ ] Create keyboard constants (`src/constants/keyboard.ts`)
-  - [ ] Map keys to tool names
-  - [ ] Define shortcut descriptions
-- [ ] Create keyboard hook (`src/hooks/useKeyboard.ts`)
-  - [ ] Listen for keydown events globally
-  - [ ] Check if input element is focused (skip if true)
-  - [ ] Call appropriate handler based on key
-  - [ ] Clean up event listeners on unmount
-- [ ] Integrate keyboard shortcuts in Canvas component
-  - [ ] 'R' key toggles rectangle tool
-  - [ ] 'Escape' key activates select tool
-  - [ ] 'Delete'/'Backspace' deletes selected shape
-- [ ] Add visual feedback for active tool
-  - [ ] Highlight active tool button in toolbar
-  - [ ] Show cursor style based on active tool
-  - [ ] Display shortcut hint in toolbar
-- [ ] Create keyboard shortcuts help (optional)
-  - [ ] Press '?' to show shortcuts modal
-  - [ ] List all available shortcuts
+- [x] Create keyboard constants (`constants/keyboard.ts`)
+  - [x] Map keys to tool names
+  - [x] Define shortcut descriptions
+  - [x] Add action enums for type safety
+  - [x] Add helper functions for lookups
+- [x] Refactor keyboard hook (`hooks/useKeyboard.ts`)
+  - [x] Use constants instead of hardcoded keys
+  - [x] Listen for keydown events globally
+  - [x] Check if input element is focused (skip if true)
+  - [x] Call appropriate handler based on key
+  - [x] Clean up event listeners on unmount
+  - [x] Add '?' key support for help modal
+- [x] Integrate keyboard shortcuts in Dashboard component
+  - [x] 'R' key toggles rectangle tool
+  - [x] 'Escape' key activates select tool
+  - [x] 'Delete'/'Backspace' deletes selected shape
+- [x] Add visual feedback for active tool
+  - [x] Highlight active tool button in toolbar
+  - [x] Show cursor style based on active tool
+  - [x] Display shortcut hint in toolbar (uses constants)
+- [x] Create keyboard shortcuts help modal
+  - [x] Press '?' to show shortcuts modal
+  - [x] List all available shortcuts
+  - [x] Position in bottom-right corner
+  - [x] Click outside or press '?' to close
+  - [x] Beautiful styling with animations
 
 **Files Created:**
-- `src/constants/keyboard.ts`
-- `src/hooks/useKeyboard.ts`
+- ✅ `constants/keyboard.ts` (centralized shortcuts config)
+- ✅ `components/ui/KeyboardShortcutsHelp.tsx` (help modal)
+
+**Files Modified:**
+- ✅ `hooks/useKeyboard.ts` (refactored to use constants)
+- ✅ `app/dashboard/DashboardClient.tsx` (integrated help modal)
+- ✅ `components/toolbar/Toolbar.tsx` (uses constants for labels)
+- ✅ `components/ui/index.ts` (exports new component)
 
 **Testing:**
-- [ ] Verify 'R' key activates rectangle tool
-- [ ] Verify 'R' key works when no input is focused
-- [ ] Verify 'R' key does NOT trigger when typing in input field
-- [ ] Verify 'Escape' exits creation mode
-- [ ] Verify 'Delete' deletes selected shape
-- [ ] Verify toolbar shows visual feedback for active tool
-- [ ] Verify cursor changes based on active tool
+- [x] Verify 'R' key activates rectangle tool
+- [x] Verify 'R' key works when no input is focused
+- [x] Verify 'R' key does NOT trigger when typing in input field
+- [x] Verify 'Escape' exits creation mode
+- [x] Verify 'Delete' deletes selected shape
+- [x] Verify toolbar shows visual feedback for active tool
+- [x] Verify cursor changes based on active tool
+- [ ] Manual testing: Press '?' to see help modal (ready for user testing)
 
 ---
 
@@ -792,13 +810,13 @@ Use this checklist to track overall progress:
 
 ### Multiplayer (MVP Critical)
 - [x] PR #6: Real-time Sync ✅ (Complete - Convex integration, optimistic updates, real-time collaboration)
-- [ ] PR #7: Multiplayer Cursors ✅
-- [ ] PR #8: Presence Panel ✅
+- [x] PR #7: Multiplayer Cursors ✅ (Complete - real-time cursor tracking with throttling)
+- [x] PR #8: Presence Panel ✅ (Complete - Google Docs-style presence panel in top-right corner)
 
 ### Enhancement & Deploy
-- [ ] PR #9: Keyboard Shortcuts ✅
-- [ ] PR #10: UI Polish ✅
-- [ ] PR #11: Deployment ✅
+- [x] PR #9: Keyboard Shortcuts ✅ (Complete - centralized constants, refactored code, help modal in bottom-right)
+- [ ] PR #10: UI Polish
+- [ ] PR #11: Deployment
 
 ### MVP Checkpoint
 - [ ] All 8 MVP requirements met
