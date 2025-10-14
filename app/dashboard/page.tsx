@@ -11,7 +11,8 @@ export default async function DashboardPage() {
   }
 
   const user = await currentUser();
-  const userName = user?.firstName || user?.username || "User";
+  // Username is required via Clerk configuration
+  const userName = user?.username || "User";
 
   return <DashboardClient userName={userName} />;
 }

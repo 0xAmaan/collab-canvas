@@ -57,7 +57,7 @@ export function ToolButton({
 
       {/* Keyboard shortcut hint - Excalidraw style subscript */}
       {shortcut && (
-        <span className="absolute bottom-0.5 right-0.5 text-[9px] text-black font-medium z-10">
+        <span className="absolute bottom-0.5 right-0.5 text-[9px] text-white/70 font-medium z-10">
           {shortcut}
         </span>
       )}

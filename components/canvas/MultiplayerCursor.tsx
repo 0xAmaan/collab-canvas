@@ -1,71 +1,59 @@
 /**
  * MultiplayerCursor component
  * Renders a remote user's cursor with their name and color
- * Memoized to prevent unnecessary re-renders
+ * Positioned in canvas coordinates - parent container applies viewport transform
  */
 
-import { memo, useMemo } from "react";
-import type { Canvas as FabricCanvas } from "fabric";
+import { memo } from "react";
 import type { Presence } from "@/types/presence";
 
 interface MultiplayerCursorProps {
   user: Presence;
-  canvas: FabricCanvas | null;
+  zoom: number;
 }
 
-function MultiplayerCursorComponent({ user, canvas }: MultiplayerCursorProps) {
-  // Memoize position calculations
-  const { screenX, screenY, isVisible } = useMemo(() => {
-    if (!canvas) return { screenX: 0, screenY: 0, isVisible: false };
-
-    // Transform cursor position from canvas coordinates to screen coordinates
-    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-    const x = user.cursorX * vpt[0] + vpt[4];
-    const y = user.cursorY * vpt[3] + vpt[5];
-
-    // Check if cursor is within visible viewport
-    const canvasWidth = canvas.getWidth();
-    const canvasHeight = canvas.getHeight();
-    const visible =
-      x >= -50 && x <= canvasWidth + 50 && y >= -50 && y <= canvasHeight + 50;
-
-    return { screenX: x, screenY: y, isVisible: visible };
-  }, [canvas, user.cursorX, user.cursorY]);
-
-  if (!isVisible) return null;
+function MultiplayerCursorComponent({ user, zoom }: MultiplayerCursorProps) {
+  // Scale cursor inversely to zoom to maintain constant screen size
+  const inverseScale = 1 / zoom;
 
   return (
     <div
-      className="absolute pointer-events-none transition-all duration-100 ease-out z-50"
+      className="absolute pointer-events-none"
       style={{
-        left: `${screenX}px`,
-        top: `${screenY}px`,
-        transform: "translate(-2px, -2px)",
+        left: `${user.cursorX}px`,
+        top: `${user.cursorY}px`,
+        transform: `scale(${inverseScale})`,
+        transformOrigin: "0 0",
       }}
     >
-      {/* Cursor SVG */}
+      {/* Cursor icon - using the select tool icon from toolbar */}
       <svg
-        width="24"
-        height="24"
+        width="20"
+        height="20"
         viewBox="0 0 24 24"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
-        className="drop-shadow-md"
+        style={{
+          filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.3))",
+        }}
       >
         <path
-          d="M5.5 3.21V20.8L12.5 13.8L15.5 20.8L17.5 19.8L14.5 12.8L21.5 11.8L5.5 3.21Z"
+          d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"
           fill={user.color}
           stroke="white"
-          strokeWidth="1.5"
+          strokeWidth="2"
+          strokeLinecap="round"
           strokeLinejoin="round"
         />
       </svg>
 
-      {/* User name label */}
+      {/* User name label - compact and connected */}
       <div
-        className="absolute top-5 left-5 px-2 py-1 rounded text-white text-xs font-medium whitespace-nowrap shadow-lg"
+        className="absolute top-4 left-4 px-2 py-0.5 rounded text-white text-[11px] font-semibold whitespace-nowrap"
         style={{
           backgroundColor: user.color,
+          boxShadow:
+            "0 2px 4px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.2)",
         }}
       >
         {user.userName}
@@ -78,13 +66,13 @@ function MultiplayerCursorComponent({ user, canvas }: MultiplayerCursorProps) {
 export const MultiplayerCursor = memo(
   MultiplayerCursorComponent,
   (prevProps, nextProps) => {
-    // Only re-render if user position/color changes or canvas viewport changes
+    // Only re-render if user position/color/name or zoom changes
     return (
       prevProps.user.cursorX === nextProps.user.cursorX &&
       prevProps.user.cursorY === nextProps.user.cursorY &&
       prevProps.user.color === nextProps.user.color &&
       prevProps.user.userName === nextProps.user.userName &&
-      prevProps.canvas === nextProps.canvas
+      prevProps.zoom === nextProps.zoom
     );
   },
 );

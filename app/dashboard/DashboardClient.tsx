@@ -4,13 +4,14 @@
  * Client-side dashboard component with Canvas and Toolbar
  */
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from "@/components/canvas/Canvas";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import { Toolbar, type Tool } from "@/components/toolbar/Toolbar";
 import { PresencePanel } from "@/components/presence/PresencePanel";
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
+import { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
@@ -25,7 +26,9 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const [zoom, setZoom] = useState<number>(1);
   const userButtonRef = useRef<HTMLDivElement>(null);
+  const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
   // User info and color
@@ -33,18 +36,82 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const userColor = getUserColor(userId);
   const isAuthenticated = !!user?.id && user.id !== "anonymous";
 
-  // Presence for showing active users
-  const { allUsers } = usePresence({
+  // Presence for showing active users and cursor tracking
+  const { allUsers, otherUsers, updateCursorPosition, isReady } = usePresence({
     userId,
     userName,
     userColor,
     enabled: isAuthenticated,
   });
 
+  // Wrap updateCursorPosition to only call when ready and authenticated
+  const safeUpdateCursorPosition = useCallback(
+    (x: number, y: number) => {
+      if (!isAuthenticated) {
+        console.log(
+          "[DashboardClient] Cursor update blocked - not authenticated. userId:",
+          userId,
+        );
+        return;
+      }
+      if (!isReady) {
+        console.log(
+          "[DashboardClient] Cursor update blocked - not ready. userId:",
+          userId,
+          "isReady:",
+          isReady,
+        );
+        return;
+      }
+      console.log(
+        "[DashboardClient] Passing cursor update through. userId:",
+        userId,
+        "isReady:",
+        isReady,
+      );
+      updateCursorPosition(x, y);
+    },
+    [isAuthenticated, isReady, updateCursorPosition, userId],
+  );
+
   // Memoized callback for canvas ready - prevents unnecessary re-renders
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
   }, []);
+
+  // Sync viewport transform from canvas to cursor container using direct DOM manipulation
+  useEffect(() => {
+    if (!fabricCanvas || !cursorContainerRef.current) return;
+
+    const container = cursorContainerRef.current;
+    let currentZoom = 1;
+
+    const updateViewportTransform = () => {
+      const vpt = fabricCanvas.viewportTransform;
+      if (vpt) {
+        // Apply transform directly to DOM (no React re-render)
+        const transform = `matrix(${vpt[0]}, ${vpt[1]}, ${vpt[2]}, ${vpt[3]}, ${vpt[4]}, ${vpt[5]})`;
+        container.style.transform = transform;
+
+        // Update zoom for cursors only when it changes
+        const newZoom = vpt[0];
+        if (newZoom !== currentZoom) {
+          currentZoom = newZoom;
+          setZoom(newZoom);
+        }
+      }
+    };
+
+    // Update immediately
+    updateViewportTransform();
+
+    // Update on every canvas render (zoom/pan)
+    fabricCanvas.on("after:render", updateViewportTransform);
+
+    return () => {
+      fabricCanvas.off("after:render", updateViewportTransform);
+    };
+  }, [fabricCanvas]);
 
   // Memoized callback for tool changes
   const handleToolChange = useCallback((tool: Tool) => {
@@ -109,17 +176,21 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
       {/* Unified Floating Controls - Top Right */}
       <div className="absolute top-6 right-6 z-20 flex items-center gap-0 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl">
-        {/* Presence Section */}
-        <div className="px-3 py-2">
-          <PresencePanel
-            activeUsers={allUsers}
-            currentUserId={userId}
-            maxVisible={8}
-          />
-        </div>
+        {/* Presence Section - only show if there are active users */}
+        {allUsers.length > 0 && (
+          <>
+            <div className="px-3 py-2">
+              <PresencePanel
+                activeUsers={allUsers}
+                currentUserId={userId}
+                maxVisible={5}
+              />
+            </div>
 
-        {/* Divider */}
-        <div className="w-px h-8 bg-white/10" />
+            {/* Divider */}
+            <div className="w-px h-8 bg-white/10" />
+          </>
+        )}
 
         {/* Zoom Section */}
         <div className="px-2 py-2">
@@ -144,7 +215,11 @@ export function DashboardClient({ userName }: DashboardClientProps) {
             }
           }}
         >
-          <div ref={userButtonRef} data-clerk-user-button>
+          <div
+            ref={userButtonRef}
+            data-clerk-user-button
+            className="flex items-center"
+          >
             <UserButton
               afterSignOutUrl="/"
               appearance={{
@@ -154,7 +229,9 @@ export function DashboardClient({ userName }: DashboardClientProps) {
               }}
             />
           </div>
-          <span className="text-sm text-white/70 font-medium">{userName}</span>
+          <span className="text-sm text-white/70 font-medium leading-none">
+            Account
+          </span>
         </div>
       </div>
 
@@ -166,7 +243,21 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           userId={userId}
           userName={userName}
           onDeleteSelected={registerDeleteHandler}
+          updateCursorPosition={safeUpdateCursorPosition}
         />
+
+        {/* Multiplayer cursors container - synced with canvas viewport transform */}
+        <div
+          ref={cursorContainerRef}
+          className="absolute top-0 left-0 w-0 h-0 pointer-events-none z-50"
+          style={{
+            transformOrigin: "0 0",
+          }}
+        >
+          {otherUsers.map((user) => (
+            <MultiplayerCursor key={user.userId} user={user} zoom={zoom} />
+          ))}
+        </div>
       </div>
 
       {/* Keyboard Shortcuts Help Modal */}

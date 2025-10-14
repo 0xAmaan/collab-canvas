@@ -53,6 +53,10 @@ export function updateFabricRect(fabricObj: FabricObject, shape: Shape): void {
     angle: shape.angle ?? 0,
     fill: shape.fillColor,
   });
+
+  // Recalculate control coordinates after position/size changes
+  // This ensures selection handles stay properly positioned
+  fabricObj.setCoords();
 }
 
 /**

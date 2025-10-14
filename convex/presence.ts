@@ -84,7 +84,13 @@ export const updatePresence = mutation({
       .first();
 
     if (!presence) {
-      throw new Error("Presence record not found. Call joinCanvas first.");
+      // Return null instead of throwing to prevent console spam during race conditions
+      // This happens when tab is hidden for too long and presence gets cleaned up
+      // The visibility change handler will rejoin when tab becomes visible again
+      console.warn(
+        `[updatePresence] Presence record not found for user ${userId}. User may need to rejoin.`,
+      );
+      return null;
     }
 
     // Update cursor position and activity timestamp

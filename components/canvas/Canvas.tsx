@@ -18,9 +18,6 @@ import {
 import { configureSelectionStyle } from "./SelectionBox";
 import { SELECTION_COLORS } from "@/constants/colors";
 import { useShapes } from "@/hooks/useShapes";
-import { usePresence } from "@/hooks/usePresence";
-import { getUserColor } from "@/lib/color-utils";
-import { MultiplayerCursor } from "./MultiplayerCursor";
 import type { Shape } from "@/types/shapes";
 import type { Tool } from "../toolbar/Toolbar";
 
@@ -30,6 +27,7 @@ interface CanvasProps {
   userId?: string;
   userName?: string;
   onDeleteSelected?: (handler: () => void) => void;
+  updateCursorPosition: (x: number, y: number) => void;
 }
 
 export function Canvas({
@@ -38,6 +36,7 @@ export function Canvas({
   userId = "anonymous",
   userName = "Anonymous",
   onDeleteSelected,
+  updateCursorPosition,
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -54,17 +53,6 @@ export function Canvas({
     deleteShape: deleteShapeInConvex,
   } = useShapes();
 
-  // Real-time presence and cursor tracking
-  // Only enable presence when we have a valid userId (not anonymous)
-  const isAuthenticated = userId !== "anonymous" && !!userId;
-  const userColor = getUserColor(userId);
-  const { otherUsers, updateCursorPosition } = usePresence({
-    userId,
-    userName,
-    userColor,
-    enabled: isAuthenticated,
-  });
-
   // Track panning state
   const isPanningRef = useRef(false);
   const lastPosXRef = useRef(0);
@@ -72,6 +60,9 @@ export function Canvas({
 
   // Track if we're dragging a shape
   const isDraggingShapeRef = useRef(false);
+
+  // Track last move update time for throttling real-time movement
+  const lastMoveUpdateRef = useRef<number>(0);
 
   // Track rectangle creation state
   const isCreatingRectRef = useRef(false);
@@ -170,7 +161,7 @@ export function Canvas({
 
     fabricCanvasRef.current = fabricCanvas;
 
-    // Setup mouse wheel handling
+    // Setup mouse wheel handling for pan/zoom
     fabricCanvas.on("mouse:wheel", (opt) => {
       const e = opt.e as WheelEvent;
       e.preventDefault();
@@ -270,7 +261,10 @@ export function Canvas({
       const pointer = fabricCanvas.getPointer(e);
 
       // Update cursor position for multiplayer (throttled to 50ms)
-      updateCursorPosition(pointer.x, pointer.y);
+      // Don't send cursor updates if window is hidden (tab is in background)
+      if (!document.hidden) {
+        updateCursorPosition(pointer.x, pointer.y);
+      }
 
       // Handle rectangle creation dragging
       if (
@@ -371,7 +365,34 @@ export function Canvas({
       isDraggingShapeRef.current = false;
     });
 
-    // Handle object modifications (movement, resize, etc.) - sync to Convex
+    // Handle object moving (real-time sync during drag) - throttled to 100ms
+    fabricCanvas.on("object:moving", async (opt) => {
+      if (!opt.target) return;
+
+      const data = opt.target.get("data") as { shapeId?: string } | undefined;
+      const shapeId = data?.shapeId;
+
+      // Skip if no shapeId or it's a temporary shape still being created
+      if (!shapeId || shapeId.startsWith("temp_")) return;
+
+      // Throttle to 100ms (10 updates per second)
+      const now = Date.now();
+      if (now - lastMoveUpdateRef.current < 100) return;
+      lastMoveUpdateRef.current = now;
+
+      try {
+        // Only sync position during drag - not size/rotation
+        await moveShapeInConvex(
+          shapeId,
+          opt.target.left || 0,
+          opt.target.top || 0,
+        );
+      } catch (error) {
+        console.error("Failed to sync shape movement:", error);
+      }
+    });
+
+    // Handle object modifications (resize, rotation, etc.) - sync to Convex
     fabricCanvas.on("object:modified", async (opt) => {
       if (!opt.target) return;
 
@@ -511,8 +532,11 @@ export function Canvas({
       const fabricObj = fabricObjectMap.get(shape._id);
 
       if (fabricObj) {
-        // Skip if user is actively dragging this object
-        if (fabricCanvas.getActiveObject() === fabricObj) {
+        // Skip updates if user is actively interacting with this object
+        // This prevents jittery behavior and control glitching when editing
+        const activeObject = fabricCanvas.getActiveObject();
+        if (activeObject === fabricObj) {
+          // Don't apply remote updates to the object you're currently manipulating
           return;
         }
         // Update existing shape
@@ -540,7 +564,13 @@ export function Canvas({
   }, [shapes]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-slate-900">
+    <div
+      className="relative w-full h-full overflow-hidden bg-slate-900"
+      onWheel={(e) => {
+        // Prevent browser navigation gestures (back/forward swipe)
+        e.preventDefault();
+      }}
+    >
       {/* Subtle dot pattern background */}
       <div
         className="absolute inset-0 opacity-[0.03]"
@@ -553,15 +583,7 @@ export function Canvas({
 
       <canvas ref={canvasRef} className="relative z-10" />
 
-      {/* Multiplayer cursors */}
-      {isMounted &&
-        otherUsers.map((user) => (
-          <MultiplayerCursor
-            key={user.userId}
-            user={user}
-            canvas={fabricCanvasRef.current}
-          />
-        ))}
+      {/* Multiplayer cursors - rendered by parent component */}
 
       {/* Canvas info overlay (for development) - only render on client */}
       {isMounted && (
@@ -584,12 +606,6 @@ export function Canvas({
             <div className="flex justify-between gap-4">
               <span>Active Tool:</span>
               <span className="text-white/90 capitalize">{activeTool}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Users Online:</span>
-              <span className="text-white/90 font-mono">
-                {otherUsers.length + 1}
-              </span>
             </div>
           </div>
           <div className="mt-3 pt-2 border-t border-white/10 text-white/50 text-[10px]">
