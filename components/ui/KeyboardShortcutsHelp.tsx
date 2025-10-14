@@ -101,11 +101,14 @@ export function KeyboardShortcutsHelp({
         {/* Footer */}
         <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
           <p className="text-xs text-gray-500 text-center">
-            Press <kbd className="px-1.5 py-0.5 text-xs bg-white border border-gray-300 rounded">?</kbd> to toggle this help
+            Press{" "}
+            <kbd className="px-1.5 py-0.5 text-xs bg-white border border-gray-300 rounded">
+              ?
+            </kbd>{" "}
+            to toggle this help
           </p>
         </div>
       </div>
     </div>
   );
 }
-

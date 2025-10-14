@@ -61,7 +61,7 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
  */
 export function getShortcutByKey(key: string): KeyboardShortcut | undefined {
   return KEYBOARD_SHORTCUTS.find(
-    (shortcut) => shortcut.key === key.toLowerCase()
+    (shortcut) => shortcut.key === key.toLowerCase(),
   );
 }
 
@@ -69,7 +69,7 @@ export function getShortcutByKey(key: string): KeyboardShortcut | undefined {
  * Get shortcut by action
  */
 export function getShortcutByAction(
-  action: KeyboardAction
+  action: KeyboardAction,
 ): KeyboardShortcut | undefined {
   return KEYBOARD_SHORTCUTS.find((shortcut) => shortcut.action === action);
 }
@@ -96,4 +96,3 @@ export function getUniqueShortcuts(): KeyboardShortcut[] {
     return true;
   });
 }
-
