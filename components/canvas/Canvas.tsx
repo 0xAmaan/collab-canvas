@@ -41,6 +41,7 @@ export function Canvas({
 }: CanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
+  const activeToolRef = useRef<Tool>(activeTool);
   const [dimensions, setDimensions] = useState({ width: 800, height: 600 });
   const [isMounted, setIsMounted] = useState(false);
 
@@ -49,6 +50,7 @@ export function Canvas({
     shapes,
     createShape: createShapeInConvex,
     moveShape: moveShapeInConvex,
+    updateShape: updateShapeInConvex,
     deleteShape: deleteShapeInConvex,
   } = useShapes();
 
@@ -194,6 +196,13 @@ export function Canvas({
         if (vpt) {
           vpt[4] -= e.deltaX;
           vpt[5] -= e.deltaY;
+
+          // Update control coordinates for selected objects
+          const activeObject = fabricCanvas.getActiveObject();
+          if (activeObject) {
+            activeObject.setCoords();
+          }
+
           fabricCanvas.requestRenderAll();
         }
       }
@@ -205,7 +214,7 @@ export function Canvas({
       const pointer = fabricCanvas.getPointer(e);
 
       // Rectangle creation mode - start drawing
-      if (activeTool === "rectangle" && !opt.target) {
+      if (activeToolRef.current === "rectangle" && !opt.target) {
         isCreatingRectRef.current = true;
         creatingStartPointRef.current = { x: pointer.x, y: pointer.y };
 
@@ -220,6 +229,15 @@ export function Canvas({
           stroke: SELECTION_COLORS.BORDER,
           selectable: false,
           evented: false,
+          // Add corner styling even during creation
+          hasControls: true,
+          cornerColor: SELECTION_COLORS.HANDLE,
+          cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
+          cornerSize: 10,
+          transparentCorners: false,
+          cornerStyle: "circle" as const,
+          borderColor: SELECTION_COLORS.BORDER,
+          borderScaleFactor: 2,
         });
 
         creatingRectRef.current = rect;
@@ -229,7 +247,7 @@ export function Canvas({
       }
 
       // Select mode with panning
-      if (activeTool === "select") {
+      if (activeToolRef.current === "select") {
         // If clicking on an object, we're dragging a shape
         if (opt.target) {
           isDraggingShapeRef.current = true;
@@ -298,6 +316,13 @@ export function Canvas({
       if (vpt) {
         vpt[4] += e.clientX - lastPosXRef.current;
         vpt[5] += e.clientY - lastPosYRef.current;
+
+        // Update control coordinates for selected objects during pan
+        const activeObject = fabricCanvas.getActiveObject();
+        if (activeObject) {
+          activeObject.setCoords();
+        }
+
         fabricCanvas.requestRenderAll();
         lastPosXRef.current = e.clientX;
         lastPosYRef.current = e.clientY;
@@ -307,8 +332,10 @@ export function Canvas({
     fabricCanvas.on("mouse:up", () => {
       // Handle rectangle creation completion
       if (isCreatingRectRef.current && creatingRectRef.current) {
+        const createdRect = creatingRectRef.current;
+
         // Remove stroke and make it selectable
-        creatingRectRef.current.set({
+        createdRect.set({
           stroke: undefined,
           strokeWidth: 0,
           selectable: true,
@@ -316,12 +343,15 @@ export function Canvas({
         });
 
         // Finalize the rectangle
-        finalizeRectangle(creatingRectRef.current);
+        finalizeRectangle(createdRect);
 
         // Reset creation state
         isCreatingRectRef.current = false;
         creatingRectRef.current = null;
         creatingStartPointRef.current = null;
+
+        // Select the newly created rectangle
+        fabricCanvas.setActiveObject(createdRect);
 
         fabricCanvas.renderAll();
         return;
@@ -334,14 +364,14 @@ export function Canvas({
           fabricCanvas.setViewportTransform(vpt);
         }
         isPanningRef.current = false;
-        fabricCanvas.selection = activeTool === "select"; // Re-enable selection if in select mode
+        fabricCanvas.selection = activeToolRef.current === "select"; // Re-enable selection if in select mode
         fabricCanvas.setCursor("default");
       }
 
       isDraggingShapeRef.current = false;
     });
 
-    // Handle object movement (sync to Convex)
+    // Handle object modifications (movement, resize, etc.) - sync to Convex
     fabricCanvas.on("object:modified", async (opt) => {
       if (!opt.target) return;
 
@@ -349,17 +379,36 @@ export function Canvas({
       const data = opt.target.get("data") as { shapeId?: string } | undefined;
       const shapeId = data?.shapeId;
 
-      if (
-        shapeId &&
-        opt.target.left !== undefined &&
-        opt.target.top !== undefined
-      ) {
-        try {
-          // Sync to Convex
-          await moveShapeInConvex(shapeId, opt.target.left, opt.target.top);
-        } catch (error) {
-          console.error("Failed to sync shape movement:", error);
+      if (!shapeId) return;
+
+      try {
+        // Check if size changed (scaling/resizing)
+        const scaleX = opt.target.scaleX ?? 1;
+        const scaleY = opt.target.scaleY ?? 1;
+
+        // If object was scaled, apply the scale to width/height and reset scale
+        if (scaleX !== 1 || scaleY !== 1) {
+          const newWidth = (opt.target.width ?? 0) * scaleX;
+          const newHeight = (opt.target.height ?? 0) * scaleY;
+
+          opt.target.set({
+            width: newWidth,
+            height: newHeight,
+            scaleX: 1,
+            scaleY: 1,
+          });
         }
+
+        // Sync all properties to Convex (including rotation)
+        await updateShapeInConvex(shapeId, {
+          x: opt.target.left,
+          y: opt.target.top,
+          width: opt.target.width,
+          height: opt.target.height,
+          angle: opt.target.angle,
+        });
+      } catch (error) {
+        console.error("Failed to sync shape changes:", error);
       }
     });
 
@@ -384,9 +433,9 @@ export function Canvas({
   }, [
     dimensions.width,
     dimensions.height,
-    activeTool,
     finalizeRectangle,
     userId,
+    updateCursorPosition,
   ]);
 
   // Pass delete handler to parent component
@@ -399,6 +448,9 @@ export function Canvas({
   // Update canvas selection mode when tool changes
   useEffect(() => {
     if (fabricCanvasRef.current) {
+      // Update the ref so event handlers have the latest value
+      activeToolRef.current = activeTool;
+
       const isSelectMode = activeTool === "select";
       fabricCanvasRef.current.selection = isSelectMode;
 
@@ -412,9 +464,17 @@ export function Canvas({
       }
 
       // Make objects selectable only in select mode
+      // Exception: keep the currently active/selected object selectable
+      const activeObject = fabricCanvasRef.current.getActiveObject();
       fabricCanvasRef.current.getObjects().forEach((obj) => {
-        obj.selectable = isSelectMode;
-        obj.evented = isSelectMode;
+        // If this is the currently selected object, keep it selectable
+        if (obj === activeObject) {
+          obj.selectable = true;
+          obj.evented = true;
+        } else {
+          obj.selectable = isSelectMode;
+          obj.evented = isSelectMode;
+        }
       });
 
       // Important: Request render to show the objects
@@ -439,6 +499,12 @@ export function Canvas({
 
     // Track shapes from database
     const dbShapeIds = new Set(shapes.map((s) => s._id));
+
+    // Performance optimization: Batch rendering by disabling auto-render
+    const shouldBatchRender = shapes.length > 5; // Only batch if multiple shapes
+    if (shouldBatchRender) {
+      fabricCanvas.renderOnAddRemove = false;
+    }
 
     // Update or add shapes
     shapes.forEach((shape) => {
@@ -466,6 +532,10 @@ export function Canvas({
       }
     });
 
+    // Re-enable auto-render and render once
+    if (shouldBatchRender) {
+      fabricCanvas.renderOnAddRemove = true;
+    }
     fabricCanvas.requestRenderAll();
   }, [shapes]);
 

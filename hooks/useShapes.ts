@@ -25,6 +25,7 @@ export function useShapes() {
   // Convex mutations
   const createShapeMutation = useMutation(api.shapes.createShape);
   const moveShapeMutation = useMutation(api.shapes.moveShape);
+  const updateShapeMutation = useMutation(api.shapes.updateShape);
   const deleteShapeMutation = useMutation(api.shapes.deleteShape);
 
   // Convert Convex shapes to our Shape type
@@ -36,6 +37,7 @@ export function useShapes() {
       y: s.y,
       width: s.width,
       height: s.height,
+      angle: s.angle ?? 0,
       fillColor: s.fill,
       createdBy: s.createdBy,
       createdAt: s.createdAt,
@@ -108,6 +110,33 @@ export function useShapes() {
   );
 
   /**
+   * Update a shape (position, size, etc.) with optimistic update
+   */
+  const updateShape = useCallback(
+    async (
+      shapeId: string,
+      updates: {
+        x?: number;
+        y?: number;
+        width?: number;
+        height?: number;
+        angle?: number;
+      },
+    ) => {
+      try {
+        await updateShapeMutation({
+          shapeId: shapeId as Id<"shapes">,
+          ...updates,
+        });
+      } catch (error) {
+        console.error("Failed to update shape:", error);
+        throw error;
+      }
+    },
+    [updateShapeMutation],
+  );
+
+  /**
    * Delete a shape with optimistic update
    */
   const deleteShape = useCallback(
@@ -128,6 +157,7 @@ export function useShapes() {
     shapes,
     createShape,
     moveShape,
+    updateShape,
     deleteShape,
     isLoading: convexShapes === undefined,
   };

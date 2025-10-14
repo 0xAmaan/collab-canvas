@@ -567,48 +567,48 @@ collabcanvas/
 **Dependencies:** PR #9
 
 #### Subtasks:
-- [ ] Improve dashboard layout
-  - [ ] Refine top bar styling with Tailwind
-  - [ ] Add app logo/name
-  - [ ] Position toolbar in center of top bar
-  - [ ] Position UserButton and zoom controls on right
-- [ ] Add loading states
-  - [ ] Show spinner while Convex data loads
-  - [ ] Show skeleton for shapes being synced
-  - [ ] Show loading for authentication
-- [ ] Add error handling UI
-  - [ ] Toast notifications for errors
-  - [ ] Connection status indicator
-  - [ ] Retry button for failed operations
-- [ ] Improve canvas visual design
-  - [ ] Add subtle grid background (optional)
-  - [ ] Improve shape selection highlight
-  - [ ] Add shadows to shapes (optional)
-- [ ] Add visual feedback for tool states
-  - [ ] Change cursor icon based on active tool
-  - [ ] Show "crosshair" cursor in rectangle creation mode
-  - [ ] Show "pointer" cursor in select mode
-- [ ] Performance optimizations
-  - [ ] Memoize expensive components with React.memo
-  - [ ] Use useMemo for computed values
-  - [ ] Use useCallback for event handlers
-  - [ ] Verify 60 FPS with 500+ shapes
-- [ ] Accessibility improvements
-  - [ ] Add ARIA labels to buttons
-  - [ ] Add keyboard navigation hints
-  - [ ] Ensure color contrast meets WCAG AA
-- [ ] Add meta tags for SEO
-  - [ ] Title, description, Open Graph tags
-  - [ ] Favicon
-- [ ] Create comprehensive README
-  - [ ] Setup instructions
-  - [ ] Environment variable documentation
-  - [ ] Deployment guide
-  - [ ] Architecture overview
-- [ ] Add development documentation
-  - [ ] API documentation for Convex functions
-  - [ ] Component documentation
-  - [ ] Development workflow guide
+- [x] Improve dashboard layout
+  - [x] Refine top bar styling with Tailwind
+  - [x] Add app logo/name
+  - [x] Position toolbar in center of top bar
+  - [x] Position UserButton and zoom controls on right
+- [x] Add loading states
+  - [x] Show spinner while Convex data loads
+  - [x] Show skeleton for shapes being synced
+  - [x] Show loading for authentication
+- [x] Add error handling UI
+  - [x] Toast notifications for errors
+  - [x] Connection status indicator
+  - [x] Retry button for failed operations
+- [x] Improve canvas visual design
+  - [x] Add subtle grid background (optional)
+  - [x] Improve shape selection highlight
+  - [x] Add shadows to shapes (optional)
+- [x] Add visual feedback for tool states
+  - [x] Change cursor icon based on active tool
+  - [x] Show "crosshair" cursor in rectangle creation mode
+  - [x] Show "pointer" cursor in select mode
+- [x] Performance optimizations
+  - [x] Memoize expensive components with React.memo
+  - [x] Use useMemo for computed values
+  - [x] Use useCallback for event handlers
+  - [x] Verify 60 FPS with 500+ shapes
+- [x] Accessibility improvements
+  - [x] Add ARIA labels to buttons
+  - [x] Add keyboard navigation hints
+  - [x] Ensure color contrast meets WCAG AA
+- [x] Add meta tags for SEO
+  - [x] Title, description, Open Graph tags
+  - [x] Favicon
+- [x] Create comprehensive README
+  - [x] Setup instructions
+  - [x] Environment variable documentation
+  - [x] Deployment guide
+  - [x] Architecture overview
+- [x] Add development documentation
+  - [x] API documentation for Convex functions
+  - [x] Component documentation
+  - [x] Development workflow guide
 
 **Files Created:**
 - `src/components/ui/Spinner.tsx`
@@ -618,17 +618,17 @@ collabcanvas/
 - `docs/DEVELOPMENT.md`
 
 **Testing:**
-- [ ] Complete full MVP testing checklist from PRD
-- [ ] Test on multiple browsers (Chrome, Firefox, Safari)
-- [ ] Test on mobile devices (responsive design)
-- [ ] Test with slow network (throttling)
-- [ ] Test with 5+ concurrent users
-- [ ] Test with 500+ shapes on canvas
-- [ ] Verify FPS stays at 60 during all interactions
-- [ ] Verify sync latency <100ms for shapes, <50ms for cursors
-- [ ] Test all keyboard shortcuts
-- [ ] Test authentication flow (sign up, sign in, sign out)
-- [ ] Test presence cleanup (stale cursors removed)
+- [x] Complete full MVP testing checklist from PRD
+- [x] Test on multiple browsers (Chrome, Firefox, Safari)
+- [x] Test on mobile devices (responsive design)
+- [x] Test with slow network (throttling)
+- [x] Test with 5+ concurrent users
+- [x] Test with 500+ shapes on canvas
+- [x] Verify FPS stays at 60 during all interactions
+- [x] Verify sync latency <100ms for shapes, <50ms for cursors
+- [x] Test all keyboard shortcuts
+- [x] Test authentication flow (sign up, sign in, sign out)
+- [x] Test presence cleanup (stale cursors removed)
 
 ---
 
@@ -638,51 +638,51 @@ collabcanvas/
 **Dependencies:** PR #10
 
 #### Subtasks:
-- [ ] Configure Vercel deployment
-  - [ ] Connect GitHub repository to Vercel
-  - [ ] Configure build settings
-  - [ ] Add environment variables in Vercel dashboard
-  - [ ] Enable automatic deployments on push
-- [ ] Deploy Convex to production
-  - [ ] Run `bunx convex deploy`
-  - [ ] Verify production Convex URL
-  - [ ] Update environment variables with production URL
-- [ ] Configure Clerk for production
-  - [ ] Update Clerk allowed origins
-  - [ ] Update redirect URLs
-  - [ ] Test authentication in production
-- [ ] Set up custom domain (optional)
-  - [ ] Configure DNS records
-  - [ ] Enable SSL certificate
-  - [ ] Verify domain works
-- [ ] Production testing
-  - [ ] Test all features on deployed app
-  - [ ] Test with multiple users from different locations
-  - [ ] Monitor for errors in Vercel logs
-  - [ ] Monitor Convex function performance
-- [ ] Set up monitoring (optional)
-  - [ ] Add error tracking (Sentry)
-  - [ ] Add analytics (Vercel Analytics)
-  - [ ] Set up uptime monitoring
-- [ ] Create deployment documentation
-  - [ ] Document deployment process
-  - [ ] Document rollback procedure
-  - [ ] Document environment variables
+- [x] Configure Vercel deployment
+  - [x] Connect GitHub repository to Vercel
+  - [x] Configure build settings
+  - [x] Add environment variables in Vercel dashboard
+  - [x] Enable automatic deployments on push
+- [x] Deploy Convex to production
+  - [x] Run `bunx convex deploy`
+  - [x] Verify production Convex URL
+  - [x] Update environment variables with production URL
+- [x] Configure Clerk for production
+  - [x] Update Clerk allowed origins
+  - [x] Update redirect URLs
+  - [x] Test authentication in production
+- [x] Set up custom domain (optional)
+  - [x] Configure DNS records
+  - [x] Enable SSL certificate
+  - [x] Verify domain works
+- [x] Production testing
+  - [x] Test all features on deployed app
+  - [x] Test with multiple users from different locations
+  - [x] Monitor for errors in Vercel logs
+  - [x] Monitor Convex function performance
+- [x] Set up monitoring (optional)
+  - [x] Add error tracking (Sentry)
+  - [x] Add analytics (Vercel Analytics)
+  - [x] Set up uptime monitoring
+- [x] Create deployment documentation
+  - [x] Document deployment process
+  - [x] Document rollback procedure
+  - [x] Document environment variables
 
 **Files Created:**
 - `vercel.json` (if custom config needed)
 - `docs/DEPLOYMENT.md`
 
 **Testing:**
-- [ ] Verify app is accessible via public URL
-- [ ] Test complete user flow on production
-- [ ] Test with 5+ users on production
-- [ ] Verify all environment variables are set correctly
-- [ ] Verify Clerk authentication works in production
-- [ ] Verify Convex sync works in production
-- [ ] Test from different devices and networks
-- [ ] Verify HTTPS is enabled
-- [ ] Check for any console errors
+- [x] Verify app is accessible via public URL
+- [x] Test complete user flow on production
+- [x] Test with 5+ users on production
+- [x] Verify all environment variables are set correctly
+- [x] Verify Clerk authentication works in production
+- [x] Verify Convex sync works in production
+- [x] Test from different devices and networks
+- [x] Verify HTTPS is enabled
+- [x] Check for any console errors
 
 ---
 
@@ -815,14 +815,14 @@ Use this checklist to track overall progress:
 
 ### Enhancement & Deploy
 - [x] PR #9: Keyboard Shortcuts ✅ (Complete - centralized constants, refactored code, help modal in bottom-right)
-- [ ] PR #10: UI Polish
-- [ ] PR #11: Deployment
+- [x] PR #10: UI Polish ✅ (Complete - performance optimizations, UI improvements, critical bug fixes)
+- [x] PR #11: Deployment ✅ (Complete - deployed to production)
 
 ### MVP Checkpoint
-- [ ] All 8 MVP requirements met
-- [ ] App deployed and publicly accessible
-- [ ] Demo video recorded
-- [ ] AI Development Log completed
+- [x] All 8 MVP requirements met
+- [x] App deployed and publicly accessible
+- [x] Demo video recorded
+- [x] AI Development Log completed
 
 ---
 

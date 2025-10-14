@@ -10,6 +10,7 @@ export default defineSchema({
     width: v.number(), // Shape width
     height: v.number(), // Shape height
     fill: v.string(), // Fill color (hex)
+    angle: v.optional(v.number()), // Rotation angle in degrees (0-360)
     createdBy: v.string(), // User ID (from Clerk)
     createdAt: v.number(), // Timestamp
     lastModified: v.number(), // Last modified timestamp

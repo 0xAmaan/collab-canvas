@@ -16,16 +16,26 @@ export function createFabricRect(shape: Shape): Rect {
     top: shape.y,
     width: shape.width,
     height: shape.height,
+    angle: shape.angle ?? 0, // Rotation angle
     fill: shape.fillColor,
     strokeWidth: 0,
     // Store shape ID in the object for reference
     data: { shapeId: shape._id },
     selectable: true,
-    hasControls: false, // Disable corner controls for MVP
+    hasControls: true, // Enable corner controls for resizing
     hasBorders: true,
     borderColor: SELECTION_COLORS.BORDER,
+    cornerColor: SELECTION_COLORS.HANDLE,
+    cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
+    cornerSize: 10,
+    transparentCorners: false,
+    cornerStyle: "circle" as const,
     borderScaleFactor: 2,
     padding: 0,
+    // Performance optimizations: Enable object caching
+    objectCaching: true,
+    statefullCache: true,
+    noScaleCache: false,
   });
 
   return rect;
@@ -40,6 +50,7 @@ export function updateFabricRect(fabricObj: FabricObject, shape: Shape): void {
     top: shape.y,
     width: shape.width,
     height: shape.height,
+    angle: shape.angle ?? 0,
     fill: shape.fillColor,
   });
 }

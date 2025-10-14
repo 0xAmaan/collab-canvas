@@ -3,7 +3,7 @@
  * Handles joining/leaving canvas and cursor position updates
  */
 
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useCallback, useRef, useMemo } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useThrottle } from "./useThrottle";
@@ -127,12 +127,15 @@ export function usePresence({
     };
   }, [enabled, leaveCanvas]);
 
+  // Performance optimization: Memoize user list filtering
   // Filter out current user from active users (for cursors)
-  const otherUsers: Presence[] =
-    activeUsers?.filter((user) => user.userId !== userId) || [];
+  const otherUsers: Presence[] = useMemo(
+    () => activeUsers?.filter((user) => user.userId !== userId) || [],
+    [activeUsers, userId],
+  );
 
   // All users including current user (for presence panel)
-  const allUsers: Presence[] = activeUsers || [];
+  const allUsers: Presence[] = useMemo(() => activeUsers || [], [activeUsers]);
 
   return {
     otherUsers,

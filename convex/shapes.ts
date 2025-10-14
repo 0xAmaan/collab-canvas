@@ -56,6 +56,7 @@ export const updateShape = mutation({
     y: v.optional(v.number()),
     width: v.optional(v.number()),
     height: v.optional(v.number()),
+    angle: v.optional(v.number()),
     fill: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
@@ -74,6 +75,7 @@ export const updateShape = mutation({
     if (args.y !== undefined) updates.y = args.y;
     if (args.width !== undefined) updates.width = args.width;
     if (args.height !== undefined) updates.height = args.height;
+    if (args.angle !== undefined) updates.angle = args.angle;
     if (args.fill !== undefined) updates.fill = args.fill;
 
     // Update the shape

@@ -4,7 +4,7 @@
  * Client-side dashboard component with Canvas and Toolbar
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from "@/components/canvas/Canvas";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
@@ -25,6 +25,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
+  const userButtonRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
   // User info and color
@@ -129,15 +130,30 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         <div className="w-px h-8 bg-white/10" />
 
         {/* User + Clerk Section */}
-        <div className="flex items-center gap-2 px-3 py-2 cursor-pointer">
-          <UserButton
-            afterSignOutUrl="/"
-            appearance={{
-              elements: {
-                avatarBox: "ring-2 ring-green-500",
-              },
-            }}
-          />
+        <div
+          className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
+          onClick={(e) => {
+            // Only trigger UserButton if we didn't click directly on it
+            // (the UserButton has its own click handler)
+            if (
+              e.target === e.currentTarget ||
+              !(e.target as HTMLElement).closest("[data-clerk-user-button]")
+            ) {
+              const button = userButtonRef.current?.querySelector("button");
+              button?.click();
+            }
+          }}
+        >
+          <div ref={userButtonRef} data-clerk-user-button>
+            <UserButton
+              afterSignOutUrl="/"
+              appearance={{
+                elements: {
+                  avatarBox: "ring-2 ring-green-500",
+                },
+              }}
+            />
+          </div>
           <span className="text-sm text-white/70 font-medium">{userName}</span>
         </div>
       </div>

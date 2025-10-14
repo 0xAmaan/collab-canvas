@@ -2,8 +2,10 @@
 
 /**
  * Toolbar component - contains tool buttons for shape creation and selection
+ * Memoized to prevent re-renders when unrelated dashboard state changes
  */
 
+import { memo } from "react";
 import { ToolButton } from "./ToolButton";
 import { KeyboardAction, getShortcutLabel } from "@/constants/keyboard";
 
@@ -14,7 +16,7 @@ interface ToolbarProps {
   onToolChange: (tool: Tool) => void;
 }
 
-export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
+function ToolbarComponent({ activeTool, onToolChange }: ToolbarProps) {
   const selectShortcut = getShortcutLabel(KeyboardAction.SELECT_TOOL);
   const rectangleShortcut = getShortcutLabel(KeyboardAction.RECTANGLE_TOOL);
 
@@ -66,11 +68,15 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
         active={activeTool === "rectangle"}
         onClick={() => onToolChange("rectangle")}
       />
-
-      {/* Tool indicator text */}
-      <div className="ml-2 px-3 py-1.5 text-sm text-white/60 border-l border-white/10 pl-4 font-medium">
-        {activeTool === "select" ? "Select" : "Rectangle"}
-      </div>
     </div>
   );
 }
+
+// Memoize component to prevent re-renders when unrelated state changes
+export const Toolbar = memo(ToolbarComponent, (prevProps, nextProps) => {
+  // Only re-render if activeTool or onToolChange reference changes
+  return (
+    prevProps.activeTool === nextProps.activeTool &&
+    prevProps.onToolChange === nextProps.onToolChange
+  );
+});

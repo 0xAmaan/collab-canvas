@@ -3,9 +3,10 @@
 /**
  * Zoom control UI component
  * Provides buttons for zoom in, zoom out, and reset
+ * Memoized to prevent re-renders when unrelated dashboard state changes
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, memo } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import { useViewport } from "@/hooks/useViewport";
 
@@ -13,7 +14,7 @@ interface ZoomControlsProps {
   canvas: FabricCanvas | null;
 }
 
-export function ZoomControls({ canvas }: ZoomControlsProps) {
+function ZoomControlsComponent({ canvas }: ZoomControlsProps) {
   const [isMounted, setIsMounted] = useState(false);
   const {
     viewport,
@@ -135,3 +136,12 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
     </div>
   );
 }
+
+// Memoize component to prevent re-renders when canvas reference hasn't changed
+export const ZoomControls = memo(
+  ZoomControlsComponent,
+  (prevProps, nextProps) => {
+    // Only re-render if canvas reference changes
+    return prevProps.canvas === nextProps.canvas;
+  },
+);

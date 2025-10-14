@@ -9,6 +9,7 @@ export interface ShapeBase {
   y: number;
   width: number;
   height: number;
+  angle?: number; // Rotation angle in degrees (0-360)
   fillColor: string;
   createdBy: string;
   createdAt: number;
