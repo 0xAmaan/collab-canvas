@@ -24,8 +24,10 @@ export function Avatar({
 }: AvatarProps) {
   return (
     <div
-      className={`relative inline-flex items-center justify-center rounded-full overflow-hidden ${
-        isCurrentUser ? "ring-2 ring-gray-700 ring-offset-2" : ""
+      className={`relative inline-flex items-center justify-center rounded-full overflow-hidden border-2 transition-all ${
+        isCurrentUser
+          ? "ring-2 ring-blue-500/50 border-blue-400 shadow-lg shadow-blue-500/30"
+          : "border-white/20 shadow-md"
       }`}
       style={{
         width: size,
@@ -44,7 +46,7 @@ export function Avatar({
         />
       ) : (
         <span
-          className="text-white font-semibold select-none"
+          className="text-white font-bold select-none"
           style={{ fontSize: size * 0.45 }}
         >
           {fallback.toUpperCase()}

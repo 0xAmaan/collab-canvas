@@ -1,8 +1,10 @@
 /**
  * MultiplayerCursor component
  * Renders a remote user's cursor with their name and color
+ * Memoized to prevent unnecessary re-renders
  */
 
+import { memo, useMemo } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import type { Presence } from "@/types/presence";
 
@@ -11,22 +13,24 @@ interface MultiplayerCursorProps {
   canvas: FabricCanvas | null;
 }
 
-export function MultiplayerCursor({ user, canvas }: MultiplayerCursorProps) {
-  if (!canvas) return null;
+function MultiplayerCursorComponent({ user, canvas }: MultiplayerCursorProps) {
+  // Memoize position calculations
+  const { screenX, screenY, isVisible } = useMemo(() => {
+    if (!canvas) return { screenX: 0, screenY: 0, isVisible: false };
 
-  // Transform cursor position from canvas coordinates to screen coordinates
-  const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
-  const screenX = user.cursorX * vpt[0] + vpt[4];
-  const screenY = user.cursorY * vpt[3] + vpt[5];
+    // Transform cursor position from canvas coordinates to screen coordinates
+    const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+    const x = user.cursorX * vpt[0] + vpt[4];
+    const y = user.cursorY * vpt[3] + vpt[5];
 
-  // Check if cursor is within visible viewport
-  const canvasWidth = canvas.getWidth();
-  const canvasHeight = canvas.getHeight();
-  const isVisible =
-    screenX >= -50 &&
-    screenX <= canvasWidth + 50 &&
-    screenY >= -50 &&
-    screenY <= canvasHeight + 50;
+    // Check if cursor is within visible viewport
+    const canvasWidth = canvas.getWidth();
+    const canvasHeight = canvas.getHeight();
+    const visible =
+      x >= -50 && x <= canvasWidth + 50 && y >= -50 && y <= canvasHeight + 50;
+
+    return { screenX: x, screenY: y, isVisible: visible };
+  }, [canvas, user.cursorX, user.cursorY]);
 
   if (!isVisible) return null;
 
@@ -69,3 +73,18 @@ export function MultiplayerCursor({ user, canvas }: MultiplayerCursorProps) {
     </div>
   );
 }
+
+// Memoize the component to prevent re-renders when other cursors update
+export const MultiplayerCursor = memo(
+  MultiplayerCursorComponent,
+  (prevProps, nextProps) => {
+    // Only re-render if user position/color changes or canvas viewport changes
+    return (
+      prevProps.user.cursorX === nextProps.user.cursorX &&
+      prevProps.user.cursorY === nextProps.user.cursorY &&
+      prevProps.user.color === nextProps.user.color &&
+      prevProps.user.userName === nextProps.user.userName &&
+      prevProps.canvas === nextProps.canvas
+    );
+  },
+);

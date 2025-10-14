@@ -19,7 +19,7 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
   const rectangleShortcut = getShortcutLabel(KeyboardAction.RECTANGLE_TOOL);
 
   return (
-    <div className="flex items-center gap-2 p-2 bg-white rounded-lg shadow-lg border border-gray-200">
+    <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl">
       {/* Select Tool */}
       <ToolButton
         icon={
@@ -43,7 +43,7 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
       />
 
       {/* Separator */}
-      <div className="w-px h-8 bg-gray-300" />
+      <div className="w-px h-6 bg-white/10" />
 
       {/* Rectangle Tool */}
       <ToolButton
@@ -68,7 +68,7 @@ export function Toolbar({ activeTool, onToolChange }: ToolbarProps) {
       />
 
       {/* Tool indicator text */}
-      <div className="ml-2 px-3 py-1 text-sm text-gray-600 border-l border-gray-300 pl-4">
+      <div className="ml-2 px-3 py-1.5 text-sm text-white/60 border-l border-white/10 pl-4 font-medium">
         {activeTool === "select" ? "Select" : "Rectangle"}
       </div>
     </div>

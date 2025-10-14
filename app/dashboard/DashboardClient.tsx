@@ -11,7 +11,7 @@ import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import { Toolbar, type Tool } from "@/components/toolbar/Toolbar";
 import { PresencePanel } from "@/components/presence/PresencePanel";
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
-import { useUser } from "@clerk/nextjs";
+import { useUser, UserButton } from "@clerk/nextjs";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
 import { getUserColor } from "@/lib/color-utils";
@@ -40,66 +40,116 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     enabled: isAuthenticated,
   });
 
+  // Memoized callback for canvas ready - prevents unnecessary re-renders
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
   }, []);
 
+  // Memoized callback for tool changes
   const handleToolChange = useCallback((tool: Tool) => {
     setActiveTool(tool);
   }, []);
 
-  // Keyboard shortcuts
+  // Memoized callback for delete handler registration
+  const handleDeleteSelected = useCallback(() => {
+    deleteHandler?.();
+  }, [deleteHandler]);
+
+  // Memoized callback to avoid recreating this on every render
+  const registerDeleteHandler = useCallback((handler: () => void) => {
+    setDeleteHandler(() => handler);
+  }, []);
+
+  // Memoized keyboard shortcut handlers to prevent unnecessary re-creations
+  const handleSelectTool = useCallback(() => {
+    setActiveTool("select");
+    // Clear any selections
+    if (fabricCanvas) {
+      fabricCanvas.discardActiveObject();
+      fabricCanvas.requestRenderAll();
+    }
+  }, [fabricCanvas]);
+
+  const handleRectangleTool = useCallback(() => {
+    setActiveTool("rectangle");
+  }, []);
+
+  const handleToggleHelp = useCallback(() => {
+    setShowKeyboardHelp((prev) => !prev);
+  }, []);
+
+  // Keyboard shortcuts with memoized handlers
   useKeyboard({
-    onSelectTool: () => {
-      setActiveTool("select");
-      // Clear any selections
-      if (fabricCanvas) {
-        fabricCanvas.discardActiveObject();
-        fabricCanvas.requestRenderAll();
-      }
-    },
-    onRectangleTool: () => {
-      setActiveTool("rectangle");
-    },
-    onDeleteShape: () => {
-      deleteHandler?.();
-    },
-    onShowHelp: () => {
-      setShowKeyboardHelp((prev) => !prev);
-    },
+    onSelectTool: handleSelectTool,
+    onRectangleTool: handleRectangleTool,
+    onDeleteShape: handleDeleteSelected,
+    onShowHelp: handleToggleHelp,
   });
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50">
-      {/* Top Navigation Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <h1 className="text-2xl font-bold text-gray-900">Collab Canvas</h1>
+    <div className="h-screen relative overflow-hidden bg-slate-950">
+      {/* Subtle gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900"></div>
 
-          {/* Toolbar with shape tools */}
-          <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />
-        </div>
+      {/* Subtle grid pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
+          backgroundSize: "40px 40px",
+        }}
+      ></div>
 
-        {/* Right side - presence panel, zoom controls and user info */}
-        <div className="flex items-center gap-4">
+      {/* Floating Toolbar - Top Center */}
+      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
+        <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />
+      </div>
+
+      {/* Unified Floating Controls - Top Right */}
+      <div className="absolute top-6 right-6 z-20 flex items-center gap-0 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl">
+        {/* Presence Section */}
+        <div className="px-3 py-2">
           <PresencePanel
             activeUsers={allUsers}
             currentUserId={userId}
             maxVisible={8}
           />
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-8 bg-white/10" />
+
+        {/* Zoom Section */}
+        <div className="px-2 py-2">
           <ZoomControls canvas={fabricCanvas} />
-          <span className="text-sm text-gray-600">Welcome, {userName}!</span>
+        </div>
+
+        {/* Divider */}
+        <div className="w-px h-8 bg-white/10" />
+
+        {/* User + Clerk Section */}
+        <div className="flex items-center gap-2 px-3 py-2 cursor-pointer">
+          <UserButton
+            afterSignOutUrl="/"
+            appearance={{
+              elements: {
+                avatarBox: "ring-2 ring-green-500",
+              },
+            }}
+          />
+          <span className="text-sm text-white/70 font-medium">{userName}</span>
         </div>
       </div>
 
-      {/* Canvas Area */}
-      <div className="flex-1 canvas-container relative">
+      {/* Canvas Area - Full Screen */}
+      <div className="relative h-full w-full canvas-container">
         <Canvas
           onCanvasReady={handleCanvasReady}
           activeTool={activeTool}
           userId={userId}
           userName={userName}
-          onDeleteSelected={(handler) => setDeleteHandler(() => handler)}
+          onDeleteSelected={registerDeleteHandler}
         />
       </div>
 

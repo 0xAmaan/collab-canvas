@@ -470,8 +470,18 @@ export function Canvas({
   }, [shapes]);
 
   return (
-    <div className="relative w-full h-full overflow-hidden">
-      <canvas ref={canvasRef} />
+    <div className="relative w-full h-full overflow-hidden bg-slate-900">
+      {/* Subtle dot pattern background */}
+      <div
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage:
+            "radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
+          backgroundSize: "30px 30px",
+        }}
+      ></div>
+
+      <canvas ref={canvasRef} className="relative z-10" />
 
       {/* Multiplayer cursors */}
       {isMounted &&
@@ -485,17 +495,37 @@ export function Canvas({
 
       {/* Canvas info overlay (for development) - only render on client */}
       {isMounted && (
-        <div className="absolute bottom-4 left-4 bg-black bg-opacity-50 text-white text-xs px-3 py-2 rounded pointer-events-none">
-          <div>
-            Canvas: {dimensions.width}x{dimensions.height}
+        <div className="absolute bottom-6 left-6 bg-slate-900/80 backdrop-blur-xl border border-white/10 text-white text-xs px-4 py-3 rounded-xl pointer-events-none shadow-2xl">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+            <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
+            <span className="text-white/70 font-semibold">Canvas Stats</span>
           </div>
-          <div>Shapes: {shapes.length}</div>
-          <div>Tool: {activeTool}</div>
-          <div>Users Online: {otherUsers.length + 1}</div>
-          <div className="mt-1 text-gray-300">
+          <div className="space-y-1 text-white/60">
+            <div className="flex justify-between gap-4">
+              <span>Dimensions:</span>
+              <span className="text-white/90 font-mono">
+                {dimensions.width}×{dimensions.height}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Shapes:</span>
+              <span className="text-white/90 font-mono">{shapes.length}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Active Tool:</span>
+              <span className="text-white/90 capitalize">{activeTool}</span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Users Online:</span>
+              <span className="text-white/90 font-mono">
+                {otherUsers.length + 1}
+              </span>
+            </div>
+          </div>
+          <div className="mt-3 pt-2 border-t border-white/10 text-white/50 text-[10px]">
             {activeTool === "rectangle"
-              ? "Click & drag to create rectangle"
-              : "2-finger scroll to pan • Pinch to zoom"}
+              ? "🖱️ Click & drag to create rectangle"
+              : "✌️ Pinch to zoom • Pan with scroll"}
           </div>
         </div>
       )}

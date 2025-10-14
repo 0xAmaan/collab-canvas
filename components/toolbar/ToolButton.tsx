@@ -31,14 +31,15 @@ export function ToolButton({
       className={`
         relative flex items-center justify-center
         w-10 h-10 rounded-lg
-        transition-all duration-150
+        transition-all duration-200
+        cursor-pointer
         ${
           active
-            ? "bg-blue-500 text-white shadow-md"
-            : "bg-white text-gray-700 hover:bg-gray-100 hover:shadow-sm"
+            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+            : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
         }
-        border ${active ? "border-blue-600" : "border-gray-300"}
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+        border ${active ? "border-blue-400/50" : "border-white/10 hover:border-white/20"}
+        focus:outline-none focus:ring-2 focus:ring-blue-500/50
         disabled:opacity-50 disabled:cursor-not-allowed
         ${className}
       `}
@@ -47,11 +48,16 @@ export function ToolButton({
       aria-pressed={active}
       {...props}
     >
-      <span className="text-lg">{icon}</span>
+      <span className="text-lg relative z-10">{icon}</span>
 
-      {/* Keyboard shortcut hint */}
+      {/* Active glow effect */}
+      {active && (
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur opacity-50"></div>
+      )}
+
+      {/* Keyboard shortcut hint - Excalidraw style subscript */}
       {shortcut && (
-        <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-xs text-gray-500 font-mono">
+        <span className="absolute bottom-0.5 right-0.5 text-[9px] text-black font-medium z-10">
           {shortcut}
         </span>
       )}

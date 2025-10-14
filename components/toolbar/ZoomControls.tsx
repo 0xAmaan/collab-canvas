@@ -32,10 +32,10 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
   // Don't render zoom percentage until mounted to avoid hydration mismatch
   if (!isMounted) {
     return (
-      <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+      <div className="flex items-center gap-1.5">
         <button
           disabled
-          className="w-8 h-8 flex items-center justify-center rounded disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 disabled:cursor-not-allowed text-white/70"
           title="Zoom Out (10%)"
         >
           <svg
@@ -52,12 +52,12 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
             />
           </svg>
         </button>
-        <div className="min-w-[60px] px-2 py-1 text-sm font-medium text-gray-700">
+        <div className="min-w-[60px] px-2 py-1 text-sm font-medium text-white/70 text-center">
           100%
         </div>
         <button
           disabled
-          className="w-8 h-8 flex items-center justify-center rounded disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 disabled:cursor-not-allowed text-white/70"
           title="Zoom In (10%)"
         >
           <svg
@@ -79,12 +79,12 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
   }
 
   return (
-    <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2 shadow-sm">
+    <div className="flex items-center gap-1.5">
       {/* Zoom Out Button */}
       <button
         onClick={zoomOut}
         disabled={!canZoomOut || !canvas}
-        className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white/70 hover:text-white cursor-pointer"
         title="Zoom Out (10%)"
       >
         <svg
@@ -105,7 +105,7 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
       {/* Zoom Percentage Display */}
       <button
         onClick={resetZoom}
-        className="min-w-[60px] px-2 py-1 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded transition-colors"
+        className="min-w-[60px] px-2 py-1 text-sm font-medium text-white/70 hover:text-white hover:bg-white/10 rounded-lg transition-colors text-center cursor-pointer"
         title="Reset to 100%"
       >
         {zoomPercentage}
@@ -115,7 +115,7 @@ export function ZoomControls({ canvas }: ZoomControlsProps) {
       <button
         onClick={zoomIn}
         disabled={!canZoomIn || !canvas}
-        className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white/70 hover:text-white cursor-pointer"
         title="Zoom In (10%)"
       >
         <svg
