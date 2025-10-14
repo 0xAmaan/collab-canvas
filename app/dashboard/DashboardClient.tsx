@@ -19,6 +19,7 @@ interface DashboardClientProps {
 export function DashboardClient({ userName }: DashboardClientProps) {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
+  const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
   const { user } = useUser();
 
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
@@ -41,6 +42,12 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     },
     onR: () => {
       setActiveTool("rectangle");
+    },
+    onDelete: () => {
+      deleteHandler?.();
+    },
+    onBackspace: () => {
+      deleteHandler?.();
     },
   });
 
@@ -68,6 +75,8 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           onCanvasReady={handleCanvasReady}
           activeTool={activeTool}
           userId={user?.id}
+          userName={userName}
+          onDeleteSelected={(handler) => setDeleteHandler(() => handler)}
         />
       </div>
     </div>
