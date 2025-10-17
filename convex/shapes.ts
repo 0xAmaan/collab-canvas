@@ -11,15 +11,33 @@ import { v } from "convex/values";
 // ============================================================================
 
 /**
- * Create a new rectangle shape on the canvas
- * Called when user clicks canvas in rectangle creation mode
+ * Create a new shape on the canvas
+ * Supports: rectangle, circle, ellipse, line, text
  */
 export const createShape = mutation({
   args: {
-    x: v.number(),
-    y: v.number(),
-    width: v.number(),
-    height: v.number(),
+    type: v.union(
+      v.literal("rectangle"),
+      v.literal("circle"),
+      v.literal("ellipse"),
+      v.literal("line"),
+      v.literal("text"),
+    ),
+    // Common fields
+    x: v.optional(v.number()),
+    y: v.optional(v.number()),
+    width: v.optional(v.number()),
+    height: v.optional(v.number()),
+    // Line fields
+    x1: v.optional(v.number()),
+    y1: v.optional(v.number()),
+    x2: v.optional(v.number()),
+    y2: v.optional(v.number()),
+    // Text fields
+    text: v.optional(v.string()),
+    fontSize: v.optional(v.number()),
+    fontFamily: v.optional(v.string()),
+    // Styling
     fill: v.string(),
   },
   handler: async (ctx, args) => {
@@ -31,10 +49,18 @@ export const createShape = mutation({
 
     // Insert new shape into database
     const shapeId = await ctx.db.insert("shapes", {
+      type: args.type,
       x: args.x,
       y: args.y,
       width: args.width,
       height: args.height,
+      x1: args.x1,
+      y1: args.y1,
+      x2: args.x2,
+      y2: args.y2,
+      text: args.text,
+      fontSize: args.fontSize,
+      fontFamily: args.fontFamily,
       fill: args.fill,
       createdBy: user.subject, // Clerk user ID
       createdAt: Date.now(),
@@ -58,6 +84,13 @@ export const updateShape = mutation({
     height: v.optional(v.number()),
     angle: v.optional(v.number()),
     fill: v.optional(v.string()),
+    // Line fields
+    x1: v.optional(v.number()),
+    y1: v.optional(v.number()),
+    x2: v.optional(v.number()),
+    y2: v.optional(v.number()),
+    // Text fields
+    text: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Verify user is authenticated
@@ -77,6 +110,11 @@ export const updateShape = mutation({
     if (args.height !== undefined) updates.height = args.height;
     if (args.angle !== undefined) updates.angle = args.angle;
     if (args.fill !== undefined) updates.fill = args.fill;
+    if (args.x1 !== undefined) updates.x1 = args.x1;
+    if (args.y1 !== undefined) updates.y1 = args.y1;
+    if (args.x2 !== undefined) updates.x2 = args.x2;
+    if (args.y2 !== undefined) updates.y2 = args.y2;
+    if (args.text !== undefined) updates.text = args.text;
 
     // Update the shape
     await ctx.db.patch(args.shapeId, updates);

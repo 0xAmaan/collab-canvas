@@ -72,7 +72,24 @@ export function useViewport(canvas: FabricCanvas | null) {
     const handleMouseWheel = () => {
       // Small delay to ensure Fabric.js has updated the transform
       setTimeout(() => {
-        updateViewportFromCanvas();
+        const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+        const newViewport = {
+          zoom: getZoom(canvas),
+          panX: vpt[4],
+          panY: vpt[5],
+        };
+
+        // Only update if values actually changed to prevent infinite loops
+        setViewport((prev) => {
+          if (
+            prev.zoom !== newViewport.zoom ||
+            prev.panX !== newViewport.panX ||
+            prev.panY !== newViewport.panY
+          ) {
+            return newViewport;
+          }
+          return prev;
+        });
       }, 0);
     };
 
@@ -82,7 +99,7 @@ export function useViewport(canvas: FabricCanvas | null) {
       canvas.off("mouse:wheel", handleMouseWheel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [canvas, updateViewportFromCanvas]);
+  }, [canvas]);
 
   // Persist viewport to localStorage whenever it changes
   useEffect(() => {

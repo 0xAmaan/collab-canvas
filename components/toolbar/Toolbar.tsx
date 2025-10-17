@@ -10,7 +10,13 @@ import { ToolButton } from "./ToolButton";
 import { ColorPicker } from "./ColorPicker";
 import { KeyboardAction, getShortcutLabel } from "@/constants/keyboard";
 
-export type Tool = "select" | "rectangle";
+export type Tool =
+  | "select"
+  | "rectangle"
+  | "circle"
+  | "ellipse"
+  | "line"
+  | "text";
 
 interface ToolbarProps {
   activeTool: Tool;
@@ -27,6 +33,10 @@ function ToolbarComponent({
 }: ToolbarProps) {
   const selectShortcut = getShortcutLabel(KeyboardAction.SELECT_TOOL);
   const rectangleShortcut = getShortcutLabel(KeyboardAction.RECTANGLE_TOOL);
+  const circleShortcut = "C";
+  const ellipseShortcut = "E";
+  const lineShortcut = "L";
+  const textShortcut = "T";
 
   return (
     <div className="flex items-center gap-2 px-3 py-2 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl">
@@ -75,6 +85,96 @@ function ToolbarComponent({
         shortcut={rectangleShortcut}
         active={activeTool === "rectangle"}
         onClick={() => onToolChange("rectangle")}
+      />
+
+      {/* Circle Tool */}
+      <ToolButton
+        icon={
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="12" cy="12" r="9" />
+          </svg>
+        }
+        tooltip={`Circle (${circleShortcut})`}
+        shortcut={circleShortcut}
+        active={activeTool === "circle"}
+        onClick={() => onToolChange("circle")}
+      />
+
+      {/* Ellipse Tool */}
+      <ToolButton
+        icon={
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <ellipse cx="12" cy="12" rx="9" ry="6" />
+          </svg>
+        }
+        tooltip={`Ellipse (${ellipseShortcut})`}
+        shortcut={ellipseShortcut}
+        active={activeTool === "ellipse"}
+        onClick={() => onToolChange("ellipse")}
+      />
+
+      {/* Line Tool */}
+      <ToolButton
+        icon={
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="5" y1="19" x2="19" y2="5" />
+          </svg>
+        }
+        tooltip={`Line (${lineShortcut})`}
+        shortcut={lineShortcut}
+        active={activeTool === "line"}
+        onClick={() => onToolChange("line")}
+      />
+
+      {/* Text Tool */}
+      <ToolButton
+        icon={
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="4 7 4 4 20 4 20 7" />
+            <line x1="9" y1="20" x2="15" y2="20" />
+            <line x1="12" y1="4" x2="12" y2="20" />
+          </svg>
+        }
+        tooltip={`Text (${textShortcut})`}
+        shortcut={textShortcut}
+        active={activeTool === "text"}
+        onClick={() => onToolChange("text")}
       />
 
       {/* Color Picker - only show when shape is selected */}

@@ -9,14 +9,17 @@
     "test:convex": "bun tests/convex.test.mjs"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.52",
     "@clerk/clerk-react": "^5.51.0",
     "@clerk/nextjs": "^6.33.3",
     "@types/fabric": "^5.3.10",
+    "ai": "^5.0.76",
     "convex": "^1.27.5",
     "fabric": "^6.7.1",
     "next": "15.5.5",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "zod": "^4.1.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.14",

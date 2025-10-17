@@ -3,59 +3,167 @@
  * This is not a React component but a module for shape operations with Fabric.js
  */
 
-import { Rect, FabricObject } from "fabric";
+import { Rect, Circle, Ellipse, Line, IText, FabricObject } from "fabric";
 import type { Shape } from "@/types/shapes";
 import { SELECTION_COLORS } from "@/constants/colors";
+import { DEFAULT_TEXT } from "@/constants/shapes";
+
+// Common styling configuration for all shapes
+const commonShapeConfig = {
+  selectable: true,
+  hasControls: true,
+  hasBorders: true,
+  borderColor: SELECTION_COLORS.BORDER,
+  cornerColor: SELECTION_COLORS.HANDLE,
+  cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
+  cornerSize: 10,
+  transparentCorners: false,
+  cornerStyle: "circle" as const,
+  borderScaleFactor: 2,
+  padding: 0,
+  objectCaching: true,
+  statefullCache: true,
+  noScaleCache: false,
+};
 
 /**
- * Create a Fabric.js Rect object from a Shape definition
+ * Create a Fabric.js object from a Shape definition
+ * Supports: rectangle, circle, ellipse, line, text
  */
-export function createFabricRect(shape: Shape): Rect {
-  const rect = new Rect({
-    left: shape.x,
-    top: shape.y,
-    width: shape.width,
-    height: shape.height,
-    angle: shape.angle ?? 0, // Rotation angle
+export function createFabricShape(shape: Shape): FabricObject {
+  const baseConfig = {
+    ...commonShapeConfig,
+    angle: shape.angle ?? 0,
     fill: shape.fillColor,
-    strokeWidth: 0,
-    // Store shape ID in the object for reference
     data: { shapeId: shape._id },
-    selectable: true,
-    hasControls: true, // Enable corner controls for resizing
-    hasBorders: true,
-    borderColor: SELECTION_COLORS.BORDER,
-    cornerColor: SELECTION_COLORS.HANDLE,
-    cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
-    cornerSize: 10,
-    transparentCorners: false,
-    cornerStyle: "circle" as const,
-    borderScaleFactor: 2,
-    padding: 0,
-    // Performance optimizations: Enable object caching
-    objectCaching: true,
-    statefullCache: true,
-    noScaleCache: false,
-  });
+  };
 
-  return rect;
+  switch (shape.type) {
+    case "rectangle":
+      return new Rect({
+        ...baseConfig,
+        left: shape.x,
+        top: shape.y,
+        width: shape.width,
+        height: shape.height,
+        strokeWidth: 0,
+      });
+
+    case "circle":
+      return new Circle({
+        ...baseConfig,
+        left: shape.x,
+        top: shape.y,
+        radius: shape.width / 2, // Use width as diameter
+        strokeWidth: 0,
+      });
+
+    case "ellipse":
+      return new Ellipse({
+        ...baseConfig,
+        left: shape.x,
+        top: shape.y,
+        rx: shape.width / 2, // Horizontal radius
+        ry: shape.height / 2, // Vertical radius
+        strokeWidth: 0,
+      });
+
+    case "line":
+      return new Line(
+        [shape.x1, shape.y1, shape.x2, shape.y2],
+        {
+          ...baseConfig,
+          fill: undefined,
+          stroke: shape.fillColor, // Lines use stroke, not fill
+          strokeWidth: 2,
+        }
+      );
+
+    case "text":
+      return new IText(shape.text || DEFAULT_TEXT.TEXT, {
+        ...baseConfig,
+        left: shape.x,
+        top: shape.y,
+        fontSize: shape.fontSize || DEFAULT_TEXT.FONT_SIZE,
+        fontFamily: shape.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
+        fill: shape.fillColor,
+        editable: true,
+        selectable: true,
+        strokeWidth: 0,
+      });
+
+    default:
+      // Fallback to rectangle
+      return new Rect({
+        ...baseConfig,
+        left: (shape as any).x ?? 0,
+        top: (shape as any).y ?? 0,
+        width: (shape as any).width ?? 100,
+        height: (shape as any).height ?? 100,
+        strokeWidth: 0,
+      });
+  }
 }
 
 /**
  * Update a Fabric.js object with new shape data
  */
-export function updateFabricRect(fabricObj: FabricObject, shape: Shape): void {
-  fabricObj.set({
-    left: shape.x,
-    top: shape.y,
-    width: shape.width,
-    height: shape.height,
+export function updateFabricShape(fabricObj: FabricObject, shape: Shape): void {
+  const updates: any = {
     angle: shape.angle ?? 0,
     fill: shape.fillColor,
-  });
+  };
 
-  // Recalculate control coordinates after position/size changes
-  // This ensures selection handles stay properly positioned
+  switch (shape.type) {
+    case "rectangle":
+      updates.left = shape.x;
+      updates.top = shape.y;
+      updates.width = shape.width;
+      updates.height = shape.height;
+      break;
+
+    case "circle":
+      updates.left = shape.x;
+      updates.top = shape.y;
+      updates.radius = shape.width / 2;
+      break;
+
+    case "ellipse":
+      updates.left = shape.x;
+      updates.top = shape.y;
+      updates.rx = shape.width / 2;
+      updates.ry = shape.height / 2;
+      break;
+
+    case "line":
+      const line = fabricObj as Line;
+      line.set({
+        x1: shape.x1,
+        y1: shape.y1,
+        x2: shape.x2,
+        y2: shape.y2,
+        stroke: shape.fillColor, // Lines use stroke
+      });
+      break;
+
+    case "text":
+      const text = fabricObj as IText;
+      text.set({
+        left: shape.x,
+        top: shape.y,
+        text: shape.text || DEFAULT_TEXT.TEXT,
+        fontSize: shape.fontSize || DEFAULT_TEXT.FONT_SIZE,
+        fontFamily: shape.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
+        fill: shape.fillColor,
+      });
+      break;
+  }
+
+  fabricObj.set(updates);
   fabricObj.setCoords();
 }
+
+// Legacy exports for backward compatibility
+export const createFabricRect = createFabricShape;
+export const updateFabricRect = updateFabricShape;
 

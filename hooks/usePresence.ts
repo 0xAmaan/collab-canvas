@@ -84,7 +84,7 @@ export function usePresence({
           );
           return;
         }
-        console.log("[usePresence] Sending cursor update for user:", userId);
+        // console.log("[usePresence] Sending cursor update for user:", userId);
         // Store last cursor position for potential rejoin
         lastCursorPositionRef.current = { x: cursorX, y: cursorY };
         updatePresence({ cursorX, cursorY }).catch((error) => {

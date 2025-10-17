@@ -12,8 +12,17 @@ import {
 interface KeyboardShortcuts {
   onSelectTool?: () => void;
   onRectangleTool?: () => void;
+  onCircleTool?: () => void;
+  onEllipseTool?: () => void;
+  onLineTool?: () => void;
+  onTextTool?: () => void;
   onDeleteShape?: () => void;
   onShowHelp?: () => void;
+  onUndo?: () => void;
+  onRedo?: () => void;
+  onDuplicate?: () => void;
+  onCopy?: () => void;
+  onPaste?: () => void;
 }
 
 /**
@@ -34,14 +43,52 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
         return;
       }
 
-      // Check if any modifier keys are pressed (Cmd, Ctrl, Alt, Shift)
-      // Allow browser shortcuts like Cmd+R, Ctrl+R, etc.
-      const hasModifier = e.metaKey || e.ctrlKey || e.altKey;
+      // Check if any modifier keys are pressed
+      const metaKey = e.metaKey || e.ctrlKey; // Cmd on Mac, Ctrl on Windows
+      const hasModifier = metaKey || e.altKey;
 
       // Get the pressed key
       const key = e.key.toLowerCase();
 
-      // Find matching shortcut
+      // Handle undo/redo with special key combination detection
+      if (key === "z" && metaKey) {
+        e.preventDefault();
+        if (e.shiftKey && shortcuts.onRedo) {
+          shortcuts.onRedo();
+        } else if (!e.shiftKey && shortcuts.onUndo) {
+          shortcuts.onUndo();
+        }
+        return;
+      }
+
+      // Handle duplicate with Cmd+D
+      if (key === "d" && metaKey) {
+        e.preventDefault();
+        if (shortcuts.onDuplicate) {
+          shortcuts.onDuplicate();
+        }
+        return;
+      }
+
+      // Handle copy with Cmd+C
+      if (key === "c" && metaKey) {
+        e.preventDefault();
+        if (shortcuts.onCopy) {
+          shortcuts.onCopy();
+        }
+        return;
+      }
+
+      // Handle paste with Cmd+V
+      if (key === "v" && metaKey) {
+        e.preventDefault();
+        if (shortcuts.onPaste) {
+          shortcuts.onPaste();
+        }
+        return;
+      }
+
+      // Find matching shortcut for other keys
       const shortcut = getShortcutByKey(key);
 
       if (!shortcut) {
@@ -62,6 +109,34 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
           if (shortcuts.onRectangleTool && !hasModifier) {
             e.preventDefault();
             shortcuts.onRectangleTool();
+          }
+          break;
+
+        case KeyboardAction.CIRCLE_TOOL:
+          if (shortcuts.onCircleTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onCircleTool();
+          }
+          break;
+
+        case KeyboardAction.ELLIPSE_TOOL:
+          if (shortcuts.onEllipseTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onEllipseTool();
+          }
+          break;
+
+        case KeyboardAction.LINE_TOOL:
+          if (shortcuts.onLineTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onLineTool();
+          }
+          break;
+
+        case KeyboardAction.TEXT_TOOL:
+          if (shortcuts.onTextTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onTextTool();
           }
           break;
 

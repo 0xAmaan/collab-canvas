@@ -9,9 +9,9 @@ import { api } from "@/convex/_generated/api";
 import type { Id } from "@/convex/_generated/dataModel";
 import type { Shape } from "@/types/shapes";
 
-interface OptimisticShape extends Shape {
+type OptimisticShape = Shape & {
   _isOptimistic?: boolean;
-}
+};
 
 export function useShapes() {
   // Subscribe to all shapes from Convex (real-time)
@@ -30,20 +30,76 @@ export function useShapes() {
 
   // Convert Convex shapes to our Shape type
   const shapes: Shape[] = [
-    ...convexShapes.map((s) => ({
-      _id: s._id,
-      type: "rectangle" as const,
-      x: s.x,
-      y: s.y,
-      width: s.width,
-      height: s.height,
-      angle: s.angle ?? 0,
-      fillColor: s.fill,
-      createdBy: s.createdBy,
-      createdAt: s.createdAt,
-      lastModified: s.lastModified,
-      lastModifiedBy: s.createdBy,
-    })),
+    ...convexShapes.map((s): Shape => {
+      const baseShape = {
+        _id: s._id,
+        fillColor: s.fill,
+        angle: s.angle ?? 0,
+        createdBy: s.createdBy,
+        createdAt: s.createdAt,
+        lastModified: s.lastModified,
+        lastModifiedBy: s.createdBy,
+      };
+
+      switch (s.type) {
+        case "rectangle":
+          return {
+            ...baseShape,
+            type: "rectangle",
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
+        case "circle":
+          return {
+            ...baseShape,
+            type: "circle",
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
+        case "ellipse":
+          return {
+            ...baseShape,
+            type: "ellipse",
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
+        case "line":
+          return {
+            ...baseShape,
+            type: "line",
+            x1: s.x1 ?? 0,
+            y1: s.y1 ?? 0,
+            x2: s.x2 ?? 0,
+            y2: s.y2 ?? 0,
+          };
+        case "text":
+          return {
+            ...baseShape,
+            type: "text",
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            text: s.text ?? "",
+            fontSize: s.fontSize ?? 16,
+            fontFamily: s.fontFamily ?? "Inter",
+          };
+        default:
+          // Fallback to rectangle if type is unknown
+          return {
+            ...baseShape,
+            type: "rectangle",
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
+      }
+    }),
     // Add optimistic shapes that haven't synced yet
     ...optimisticShapes.filter((opt) => opt._isOptimistic),
   ];
@@ -57,23 +113,55 @@ export function useShapes() {
       const tempId = `temp_${Date.now()}_${Math.random()}`;
 
       // Add optimistic shape immediately
-      const optimisticShape: OptimisticShape = {
+      const optimisticShape = {
         ...shape,
         _id: tempId,
         _isOptimistic: true,
-      };
+      } as OptimisticShape;
 
       setOptimisticShapes((prev) => [...prev, optimisticShape]);
 
       try {
-        // Call Convex mutation
-        const realId = await createShapeMutation({
-          x: shape.x,
-          y: shape.y,
-          width: shape.width,
-          height: shape.height,
+        console.log("[useShapes] Creating shape with data:", shape);
+
+        // Build mutation args based on shape type
+        const mutationArgs: any = {
+          type: shape.type,
           fill: shape.fillColor,
-        });
+        };
+
+        // Add type-specific fields
+        switch (shape.type) {
+          case "rectangle":
+          case "circle":
+          case "ellipse":
+            mutationArgs.x = (shape as any).x;
+            mutationArgs.y = (shape as any).y;
+            mutationArgs.width = (shape as any).width;
+            mutationArgs.height = (shape as any).height;
+            break;
+          case "line":
+            mutationArgs.x1 = (shape as any).x1;
+            mutationArgs.y1 = (shape as any).y1;
+            mutationArgs.x2 = (shape as any).x2;
+            mutationArgs.y2 = (shape as any).y2;
+            break;
+          case "text":
+            mutationArgs.x = (shape as any).x;
+            mutationArgs.y = (shape as any).y;
+            mutationArgs.text = (shape as any).text;
+            mutationArgs.fontSize = (shape as any).fontSize;
+            mutationArgs.fontFamily = (shape as any).fontFamily;
+            break;
+        }
+
+        console.log(
+          "[useShapes] Mutation args to send to Convex:",
+          mutationArgs,
+        );
+
+        // Call Convex mutation
+        const realId = await createShapeMutation(mutationArgs);
 
         // Remove optimistic shape once real one arrives
         setOptimisticShapes((prev) => prev.filter((s) => s._id !== tempId));
@@ -122,6 +210,9 @@ export function useShapes() {
         height?: number;
         angle?: number;
         fill?: string;
+        text?: string;
+        fontSize?: number;
+        fontFamily?: string;
       },
     ) => {
       try {

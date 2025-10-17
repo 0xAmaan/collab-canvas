@@ -9,6 +9,14 @@ export const DEFAULT_SHAPE = {
   FILL_COLOR: "#3b82f6", // Tailwind blue-500 (default color for all shapes)
 } as const;
 
+// Default text properties
+export const DEFAULT_TEXT = {
+  TEXT: "Type here...",
+  FONT_SIZE: 24,
+  FONT_FAMILY: "Inter, Arial, sans-serif",
+  FILL_COLOR: "#ffffff", // White text for dark background
+} as const;
+
 // Canvas dimensions
 export const CANVAS = {
   VIRTUAL_WIDTH: 5000,

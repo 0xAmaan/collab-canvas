@@ -75,6 +75,37 @@ A real-time collaborative canvas with multiplayer features built with Next.js, C
 
 7. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+## AI Canvas Agent Setup
+
+The AI Canvas Agent allows you to create and manipulate shapes using natural language commands.
+
+1. **Get an OpenAI API key**:
+   - Go to [platform.openai.com](https://platform.openai.com)
+   - Create an API key
+
+2. **Add to environment variables**:
+   ```bash
+   # Add to .env.local
+   OPENAI_API_KEY=sk-xxxxx
+   ```
+
+3. **Restart the development server** for changes to take effect.
+
+### Test Commands
+
+Try these natural language commands in the AI input at the bottom of the canvas:
+
+1. "Create a red circle at position 500, 500"
+2. "Add a blue rectangle at 700, 500"
+3. "Create text that says Hello World at 600, 400"
+4. "Change the color of the red circle to green"
+5. "Arrange all shapes in a horizontal row"
+
+The AI agent uses GPT-4o-mini for fast responses and supports:
+- Creating rectangles, circles, and text
+- Updating shape properties (color, position, size)
+- Arranging shapes in layouts (horizontal row, vertical column)
+
 ## Environment Variables
 
 Create a `.env.local` file with the following variables:
@@ -86,6 +117,9 @@ NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
 # Clerk
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
 CLERK_SECRET_KEY=sk_test_xxxxx
+
+# OpenAI (for AI Canvas Agent)
+OPENAI_API_KEY=sk-xxxxx
 ```
 
 ## Development

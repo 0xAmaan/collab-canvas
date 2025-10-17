@@ -17,7 +17,18 @@ import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
 import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 import { useShapes } from "@/hooks/useShapes";
+import { useHistory } from "@/hooks/useHistory";
+import { useClipboard } from "@/hooks/useClipboard";
 import { getUserColor } from "@/lib/color-utils";
+import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import { AIInput } from "@/components/ai/AIInput";
+import { AIFeedback } from "@/components/ai/AIFeedback";
+import { executeAICommands } from "@/lib/ai/client-executor";
+import type {
+  AIStatus,
+  AICommandRequest,
+  AICommandResponse,
+} from "@/lib/ai/types";
 
 interface DashboardClientProps {
   userName: string;
@@ -27,13 +38,26 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
+  const [duplicateHandler, setDuplicateHandler] = useState<(() => void) | null>(
+    null,
+  );
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
-  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const userButtonRef = useRef<HTMLDivElement>(null);
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+
+  // AI command state
+  const [aiStatus, setAIStatus] = useState<AIStatus>("idle");
+  const [aiMessage, setAIMessage] = useState<string>("");
+
+  // History for undo/redo
+  const history = useHistory();
+
+  // Clipboard for copy/paste
+  const clipboard = useClipboard();
 
   // Connection status
   const { status, color } = useConnectionStatus();
@@ -44,7 +68,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   }, []);
 
   // Shapes management
-  const { shapes, updateShape } = useShapes();
+  const { shapes, updateShape, createShape, deleteShape } = useShapes();
 
   // User info and color
   const userId = user?.id || "anonymous";
@@ -78,12 +102,12 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         );
         return;
       }
-      console.log(
-        "[DashboardClient] Passing cursor update through. userId:",
-        userId,
-        "isReady:",
-        isReady,
-      );
+      // console.log(
+      //   "[DashboardClient] Passing cursor update through. userId:",
+      //   userId,
+      //   "isReady:",
+      //   isReady,
+      // );
       updateCursorPosition(x, y);
     },
     [isAuthenticated, isReady, updateCursorPosition, userId],
@@ -93,29 +117,31 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
 
-    // Track selection changes
+    // Track selection changes - support multi-select
     canvas.on("selection:created", (e) => {
-      const activeObject = e.selected?.[0];
-      if (activeObject) {
-        const data = activeObject.get("data") as { shapeId?: string } | undefined;
-        if (data?.shapeId) {
-          setSelectedShapeId(data.shapeId);
-        }
-      }
+      const selectedObjects = e.selected || [];
+      const shapeIds = selectedObjects
+        .map((obj) => {
+          const data = obj.get("data") as { shapeId?: string } | undefined;
+          return data?.shapeId;
+        })
+        .filter((id): id is string => !!id);
+      setSelectedShapeIds(shapeIds);
     });
 
     canvas.on("selection:updated", (e) => {
-      const activeObject = e.selected?.[0];
-      if (activeObject) {
-        const data = activeObject.get("data") as { shapeId?: string } | undefined;
-        if (data?.shapeId) {
-          setSelectedShapeId(data.shapeId);
-        }
-      }
+      const selectedObjects = e.selected || [];
+      const shapeIds = selectedObjects
+        .map((obj) => {
+          const data = obj.get("data") as { shapeId?: string } | undefined;
+          return data?.shapeId;
+        })
+        .filter((id): id is string => !!id);
+      setSelectedShapeIds(shapeIds);
     });
 
     canvas.on("selection:cleared", () => {
-      setSelectedShapeId(null);
+      setSelectedShapeIds([]);
     });
   }, []);
 
@@ -168,6 +194,16 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     setDeleteHandler(() => handler);
   }, []);
 
+  // Memoized callback for duplicate handler registration
+  const registerDuplicateHandler = useCallback((handler: () => void) => {
+    setDuplicateHandler(() => handler);
+  }, []);
+
+  // Memoized callback for duplicate action
+  const handleDuplicate = useCallback(() => {
+    duplicateHandler?.();
+  }, [duplicateHandler]);
+
   // Memoized keyboard shortcut handlers to prevent unnecessary re-creations
   const handleSelectTool = useCallback(() => {
     setActiveTool("select");
@@ -182,24 +218,190 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     setActiveTool("rectangle");
   }, []);
 
+  const handleCircleTool = useCallback(() => {
+    setActiveTool("circle");
+  }, []);
+
+  const handleEllipseTool = useCallback(() => {
+    setActiveTool("ellipse");
+  }, []);
+
+  const handleLineTool = useCallback(() => {
+    setActiveTool("line");
+  }, []);
+
+  const handleTextTool = useCallback(() => {
+    setActiveTool("text");
+  }, []);
+
+  // Handle copy selected shape(s) - supports multi-select
+  const handleCopy = useCallback(() => {
+    if (!fabricCanvas) return;
+
+    const activeObject = fabricCanvas.getActiveObject();
+    if (!activeObject) return;
+
+    const shapesToCopy: typeof shapes = [];
+
+    // Check if it's a multi-select (ActiveSelection)
+    if (activeObject.type === "activeSelection") {
+      const objects = (activeObject as any)._objects || [];
+      for (const obj of objects) {
+        const data = obj.get("data") as { shapeId?: string } | undefined;
+        if (data?.shapeId) {
+          const shape = shapes.find((s) => s._id === data.shapeId);
+          if (shape) shapesToCopy.push(shape);
+        }
+      }
+    } else {
+      // Single shape selection
+      const data = activeObject.get("data") as { shapeId?: string } | undefined;
+      if (data?.shapeId) {
+        const shape = shapes.find((s) => s._id === data.shapeId);
+        if (shape) shapesToCopy.push(shape);
+      }
+    }
+
+    if (shapesToCopy.length > 0) {
+      clipboard.copy(shapesToCopy);
+    }
+  }, [fabricCanvas, shapes, clipboard]);
+
+  // Handle paste
+  const handlePaste = useCallback(async () => {
+    const shapesToPaste = clipboard.getClipboard();
+    if (shapesToPaste.length === 0) return;
+
+    // Paste each shape with an offset (+10, +10)
+    for (const shape of shapesToPaste) {
+      let pastedShape: any;
+
+      // Handle line shapes differently (they have x1, y1, x2, y2 instead of x, y)
+      if (shape.type === "line") {
+        pastedShape = {
+          ...shape,
+          x1: shape.x1 + 10,
+          y1: shape.y1 + 10,
+          x2: shape.x2 + 10,
+          y2: shape.y2 + 10,
+          createdBy: userId,
+          createdAt: Date.now(),
+          lastModified: Date.now(),
+          lastModifiedBy: userId,
+        };
+      } else {
+        pastedShape = {
+          ...shape,
+          x: ("x" in shape ? shape.x : 0) + 10,
+          y: ("y" in shape ? shape.y : 0) + 10,
+          createdBy: userId,
+          createdAt: Date.now(),
+          lastModified: Date.now(),
+          lastModifiedBy: userId,
+        };
+      }
+
+      // Remove the _id so a new one is generated
+      const { _id, ...shapeWithoutId } = pastedShape;
+
+      // Use command pattern for undo/redo support
+      const command = new CreateShapeCommand(
+        shapeWithoutId as any,
+        createShape,
+        deleteShape,
+      );
+      await history.execute(command);
+    }
+  }, [clipboard, userId, createShape, deleteShape, history]);
+
   const handleToggleHelp = useCallback(() => {
     setShowKeyboardHelp((prev) => !prev);
   }, []);
 
-  // Handle color change for selected shape
-  const handleColorChange = useCallback(
-    async (color: string) => {
-      if (!selectedShapeId) return;
+  // Handle AI command
+  const handleAICommand = useCallback(
+    async (command: string) => {
+      setAIStatus("thinking");
+      setAIMessage("");
 
       try {
-        // Update shape color in Convex
-        await updateShape(selectedShapeId, { fill: color });
+        // Call AI API endpoint
+        const request: AICommandRequest = {
+          command,
+          shapes,
+        };
 
-        // Also update the Fabric.js object immediately for instant feedback
+        const response = await fetch("/api/ai/canvas", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(request),
+        });
+
+        const data: AICommandResponse = await response.json();
+
+        if (!data.success) {
+          setAIStatus("error");
+          setAIMessage(data.message);
+          setTimeout(() => setAIStatus("idle"), 3000);
+          return;
+        }
+
+        // Execute commands client-side
+        const result = await executeAICommands(data.commands, {
+          shapes,
+          createShape,
+          updateShape,
+        });
+
+        if (result.success) {
+          setAIStatus("success");
+          setAIMessage(data.message || result.message);
+        } else {
+          setAIStatus("error");
+          setAIMessage(result.message);
+        }
+      } catch (error: any) {
+        console.error("AI command error:", error);
+        setAIStatus("error");
+        setAIMessage("Failed to execute command");
+      }
+
+      // Reset after 3 seconds
+      setTimeout(() => {
+        setAIStatus("idle");
+        setAIMessage("");
+      }, 3000);
+    },
+    [shapes, createShape, updateShape],
+  );
+
+  // Handle color change for selected shape(s) - supports multi-select
+  const handleColorChange = useCallback(
+    async (color: string) => {
+      if (selectedShapeIds.length === 0) return;
+
+      try {
+        // Update all selected shapes in Convex
+        for (const shapeId of selectedShapeIds) {
+          await updateShape(shapeId, { fill: color });
+        }
+
+        // Also update the Fabric.js objects immediately for instant feedback
         if (fabricCanvas) {
           const activeObject = fabricCanvas.getActiveObject();
           if (activeObject) {
-            activeObject.set("fill", color);
+            // Check if it's a multi-select (ActiveSelection)
+            if (activeObject.type === "activeSelection") {
+              const objects = (activeObject as any)._objects || [];
+              for (const obj of objects) {
+                obj.set("fill", color);
+              }
+            } else {
+              // Single shape
+              activeObject.set("fill", color);
+            }
             fabricCanvas.requestRenderAll();
           }
         }
@@ -207,20 +409,30 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         console.error("Failed to update shape color:", error);
       }
     },
-    [selectedShapeId, updateShape, fabricCanvas],
+    [selectedShapeIds, updateShape, fabricCanvas],
   );
 
-  // Get selected shape for color picker
-  const selectedShape = selectedShapeId
-    ? shapes.find((s) => s._id === selectedShapeId)
-    : null;
+  // Get selected shape for color picker (use first shape if multi-select)
+  const selectedShape =
+    selectedShapeIds.length > 0
+      ? shapes.find((s) => s._id === selectedShapeIds[0])
+      : null;
 
   // Keyboard shortcuts with memoized handlers
   useKeyboard({
     onSelectTool: handleSelectTool,
     onRectangleTool: handleRectangleTool,
+    onCircleTool: handleCircleTool,
+    onEllipseTool: handleEllipseTool,
+    onLineTool: handleLineTool,
+    onTextTool: handleTextTool,
     onDeleteShape: handleDeleteSelected,
     onShowHelp: handleToggleHelp,
+    onUndo: history.undo,
+    onRedo: history.redo,
+    onDuplicate: handleDuplicate,
+    onCopy: handleCopy,
+    onPaste: handlePaste,
   });
 
   return (
@@ -333,7 +545,9 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           userId={userId}
           userName={userName}
           onDeleteSelected={registerDeleteHandler}
+          onDuplicateSelected={registerDuplicateHandler}
           updateCursorPosition={safeUpdateCursorPosition}
+          history={history}
         />
 
         {/* Multiplayer cursors container - synced with canvas viewport transform */}
@@ -349,6 +563,12 @@ export function DashboardClient({ userName }: DashboardClientProps) {
           ))}
         </div>
       </div>
+
+      {/* AI Input */}
+      <AIInput onSubmit={handleAICommand} isLoading={aiStatus === "thinking"} />
+
+      {/* AI Feedback */}
+      <AIFeedback status={aiStatus} message={aiMessage} />
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsHelp
