@@ -14,7 +14,7 @@ export const DEFAULT_TEXT = {
   TEXT: "Type here...",
   FONT_SIZE: 24,
   FONT_FAMILY: "Inter, Arial, sans-serif",
-  FILL_COLOR: "#ffffff", // White text for dark background
+  FILL_COLOR: "#000000", // Black text for light background
 } as const;
 
 // Canvas dimensions

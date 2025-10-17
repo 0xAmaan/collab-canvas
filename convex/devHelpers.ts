@@ -12,11 +12,11 @@ import { mutation } from "./_generated/server";
 export const deleteAllShapes = mutation({
   handler: async (ctx) => {
     const shapes = await ctx.db.query("shapes").collect();
-    
+
     for (const shape of shapes) {
       await ctx.db.delete(shape._id);
     }
-    
+
     return { deleted: shapes.length };
   },
 });
@@ -28,12 +28,11 @@ export const deleteAllShapes = mutation({
 export const deleteAllPresence = mutation({
   handler: async (ctx) => {
     const presence = await ctx.db.query("presence").collect();
-    
+
     for (const p of presence) {
       await ctx.db.delete(p._id);
     }
-    
+
     return { deleted: presence.length };
   },
 });
-
