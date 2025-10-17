@@ -84,12 +84,8 @@ export const updatePresence = mutation({
       .first();
 
     if (!presence) {
-      // Return null instead of throwing to prevent console spam during race conditions
-      // This happens when tab is hidden for too long and presence gets cleaned up
-      // The visibility change handler will rejoin when tab becomes visible again
-      console.warn(
-        `[updatePresence] Presence record not found for user ${userId}. User may need to rejoin.`,
-      );
+      // Silently return - this is normal during tab switches when presence was cleaned up
+      // The visibility change handler will automatically rejoin when tab becomes visible
       return null;
     }
 

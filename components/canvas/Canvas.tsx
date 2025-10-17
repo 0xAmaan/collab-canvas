@@ -10,11 +10,7 @@ import { Canvas as FabricCanvas, FabricObject, Rect } from "fabric";
 import { CANVAS, ZOOM, DEFAULT_SHAPE } from "@/constants/shapes";
 import { calculateZoomFromWheel } from "@/lib/viewport-utils";
 import { zoomToPoint } from "@/lib/canvas-utils";
-import {
-  createFabricRect,
-  getShapeFromFabricObject,
-  updateFabricRect,
-} from "./Shape";
+import { createFabricRect, updateFabricRect } from "./Shape";
 import { configureSelectionStyle } from "./SelectionBox";
 import { SELECTION_COLORS } from "@/constants/colors";
 import { useShapes } from "@/hooks/useShapes";

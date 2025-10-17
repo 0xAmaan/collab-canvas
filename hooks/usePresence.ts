@@ -43,24 +43,24 @@ export function usePresence({
   const updatePresence = useMutation(api.presence.updatePresence);
   const heartbeat = useMutation(api.presence.heartbeat);
 
+  // Helper to check if window is active (visible and focused)
+  const isWindowActive = useCallback(() => {
+    if (typeof document === "undefined") return true;
+    return (
+      !document.hidden &&
+      isWindowVisibleRef.current &&
+      isWindowFocusedRef.current
+    );
+  }, []);
+
   // Throttled cursor update (50ms)
   const throttledUpdatePresence = useThrottle(
     useCallback(
       (cursorX: number, cursorY: number) => {
-        // Guard: Don't update if window is hidden/not visible OR not focused
-        if (typeof document !== "undefined" && document.hidden) {
-          console.log("[usePresence] Cursor update blocked - window is hidden");
-          return;
-        }
-        if (!isWindowVisibleRef.current) {
+        // Guard: Don't update if window is not active
+        if (!isWindowActive()) {
           console.log(
-            "[usePresence] Cursor update blocked - window not visible",
-          );
-          return;
-        }
-        if (!isWindowFocusedRef.current) {
-          console.log(
-            "[usePresence] Cursor update blocked - window not focused",
+            "[usePresence] Cursor update blocked - window not active",
           );
           return;
         }
@@ -168,23 +168,9 @@ export function usePresence({
     console.log("[usePresence] Starting heartbeat interval for user:", userId);
 
     const checkAndRejoin = async () => {
-      // Skip heartbeat if window is hidden OR not focused
-      // document.hidden = tab visibility (within same browser window)
-      // document.hasFocus() = window focus (entire browser window)
-      const isHidden =
-        typeof document !== "undefined" &&
-        (document.hidden || !document.hasFocus());
-      const isNotFocused = !isWindowFocusedRef.current;
-
-      if (isHidden || isNotFocused) {
-        console.log(
-          "[usePresence] Heartbeat skipped - window is hidden or not focused. document.hidden:",
-          document.hidden,
-          "document.hasFocus():",
-          document.hasFocus(),
-          "isWindowFocusedRef:",
-          isWindowFocusedRef.current,
-        );
+      // Skip heartbeat if window is not active
+      if (!isWindowActive()) {
+        console.log("[usePresence] Heartbeat skipped - window not active");
         return;
       }
 
