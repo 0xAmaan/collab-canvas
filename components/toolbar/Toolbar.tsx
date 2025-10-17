@@ -7,6 +7,7 @@
 
 import { memo } from "react";
 import { ToolButton } from "./ToolButton";
+import { ColorPicker } from "./ColorPicker";
 import { KeyboardAction, getShortcutLabel } from "@/constants/keyboard";
 
 export type Tool = "select" | "rectangle";
@@ -14,9 +15,16 @@ export type Tool = "select" | "rectangle";
 interface ToolbarProps {
   activeTool: Tool;
   onToolChange: (tool: Tool) => void;
+  selectedShapeColor?: string; // Color of selected shape (if any)
+  onColorChange?: (color: string) => void; // Called when color changes
 }
 
-function ToolbarComponent({ activeTool, onToolChange }: ToolbarProps) {
+function ToolbarComponent({
+  activeTool,
+  onToolChange,
+  selectedShapeColor,
+  onColorChange,
+}: ToolbarProps) {
   const selectShortcut = getShortcutLabel(KeyboardAction.SELECT_TOOL);
   const rectangleShortcut = getShortcutLabel(KeyboardAction.RECTANGLE_TOOL);
 
@@ -68,15 +76,28 @@ function ToolbarComponent({ activeTool, onToolChange }: ToolbarProps) {
         active={activeTool === "rectangle"}
         onClick={() => onToolChange("rectangle")}
       />
+
+      {/* Color Picker - only show when shape is selected */}
+      {selectedShapeColor && onColorChange && (
+        <>
+          {/* Separator */}
+          <div className="w-px h-6 bg-white/10" />
+
+          {/* Color Picker */}
+          <ColorPicker value={selectedShapeColor} onChange={onColorChange} />
+        </>
+      )}
     </div>
   );
 }
 
 // Memoize component to prevent re-renders when unrelated state changes
 export const Toolbar = memo(ToolbarComponent, (prevProps, nextProps) => {
-  // Only re-render if activeTool or onToolChange reference changes
+  // Only re-render if relevant props change
   return (
     prevProps.activeTool === nextProps.activeTool &&
-    prevProps.onToolChange === nextProps.onToolChange
+    prevProps.onToolChange === nextProps.onToolChange &&
+    prevProps.selectedShapeColor === nextProps.selectedShapeColor &&
+    prevProps.onColorChange === nextProps.onColorChange
   );
 });

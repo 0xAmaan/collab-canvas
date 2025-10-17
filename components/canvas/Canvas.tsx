@@ -97,7 +97,7 @@ export function Canvas({
         if (fabricCanvasRef.current) {
           fabricCanvasRef.current.remove(rect);
         }
-        return;
+        return null;
       }
 
       try {
@@ -117,12 +117,22 @@ export function Canvas({
 
         // Store the real shape ID in the rect's data
         rect.set("data", { shapeId: shapeId });
+
+        // Trigger selection event now that we have the shapeId
+        if (fabricCanvasRef.current) {
+          fabricCanvasRef.current.fire("selection:updated", {
+            selected: [rect],
+          });
+        }
+
+        return shapeId;
       } catch (error) {
         console.error("Failed to create shape:", error);
         // Remove the rectangle from canvas on error
         if (fabricCanvasRef.current) {
           fabricCanvasRef.current.remove(rect);
         }
+        return null;
       }
     },
     [userId, createShapeInConvex],
@@ -324,6 +334,23 @@ export function Canvas({
       if (isCreatingRectRef.current && creatingRectRef.current) {
         const createdRect = creatingRectRef.current;
 
+        // Check if the rectangle has meaningful size (at least 5x5 pixels)
+        const rectWidth = createdRect.width || 0;
+        const rectHeight = createdRect.height || 0;
+
+        if (rectWidth < 5 || rectHeight < 5) {
+          // Too small - this was likely an accidental click, remove it
+          fabricCanvas.remove(createdRect);
+
+          // Reset creation state
+          isCreatingRectRef.current = false;
+          creatingRectRef.current = null;
+          creatingStartPointRef.current = null;
+
+          fabricCanvas.renderAll();
+          return;
+        }
+
         // Remove stroke and make it selectable
         createdRect.set({
           stroke: undefined,
@@ -332,18 +359,21 @@ export function Canvas({
           evented: true,
         });
 
-        // Finalize the rectangle
-        finalizeRectangle(createdRect);
+        // Enable selection mode on the canvas
+        fabricCanvas.selection = true;
+
+        // Select the newly created rectangle immediately (visual feedback)
+        fabricCanvas.setActiveObject(createdRect);
+        fabricCanvas.renderAll();
 
         // Reset creation state
         isCreatingRectRef.current = false;
         creatingRectRef.current = null;
         creatingStartPointRef.current = null;
 
-        // Select the newly created rectangle
-        fabricCanvas.setActiveObject(createdRect);
+        // Finalize the rectangle (async - will trigger selection:updated when done)
+        finalizeRectangle(createdRect);
 
-        fabricCanvas.renderAll();
         return;
       }
 
@@ -480,18 +510,11 @@ export function Canvas({
         fabricCanvasRef.current.hoverCursor = "move";
       }
 
-      // Make objects selectable only in select mode
-      // Exception: keep the currently active/selected object selectable
-      const activeObject = fabricCanvasRef.current.getActiveObject();
+      // Make objects selectable in select mode OR rectangle mode (for color picker)
+      // In rectangle mode: shapes are selectable but canvas selection box is disabled
       fabricCanvasRef.current.getObjects().forEach((obj) => {
-        // If this is the currently selected object, keep it selectable
-        if (obj === activeObject) {
-          obj.selectable = true;
-          obj.evented = true;
-        } else {
-          obj.selectable = isSelectMode;
-          obj.evented = isSelectMode;
-        }
+        obj.selectable = true; // Always selectable for color picker access
+        obj.evented = true;
       });
 
       // Important: Request render to show the objects

@@ -15,6 +15,8 @@ import { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
+import { useShapes } from "@/hooks/useShapes";
 import { getUserColor } from "@/lib/color-utils";
 
 interface DashboardClientProps {
@@ -27,9 +29,22 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
   const [showKeyboardHelp, setShowKeyboardHelp] = useState(false);
   const [zoom, setZoom] = useState<number>(1);
+  const [selectedShapeId, setSelectedShapeId] = useState<string | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
   const userButtonRef = useRef<HTMLDivElement>(null);
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+
+  // Connection status
+  const { status, color } = useConnectionStatus();
+
+  // Set mounted state to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Shapes management
+  const { shapes, updateShape } = useShapes();
 
   // User info and color
   const userId = user?.id || "anonymous";
@@ -77,6 +92,31 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   // Memoized callback for canvas ready - prevents unnecessary re-renders
   const handleCanvasReady = useCallback((canvas: FabricCanvas) => {
     setFabricCanvas(canvas);
+
+    // Track selection changes
+    canvas.on("selection:created", (e) => {
+      const activeObject = e.selected?.[0];
+      if (activeObject) {
+        const data = activeObject.get("data") as { shapeId?: string } | undefined;
+        if (data?.shapeId) {
+          setSelectedShapeId(data.shapeId);
+        }
+      }
+    });
+
+    canvas.on("selection:updated", (e) => {
+      const activeObject = e.selected?.[0];
+      if (activeObject) {
+        const data = activeObject.get("data") as { shapeId?: string } | undefined;
+        if (data?.shapeId) {
+          setSelectedShapeId(data.shapeId);
+        }
+      }
+    });
+
+    canvas.on("selection:cleared", () => {
+      setSelectedShapeId(null);
+    });
   }, []);
 
   // Sync viewport transform from canvas to cursor container using direct DOM manipulation
@@ -146,6 +186,35 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     setShowKeyboardHelp((prev) => !prev);
   }, []);
 
+  // Handle color change for selected shape
+  const handleColorChange = useCallback(
+    async (color: string) => {
+      if (!selectedShapeId) return;
+
+      try {
+        // Update shape color in Convex
+        await updateShape(selectedShapeId, { fill: color });
+
+        // Also update the Fabric.js object immediately for instant feedback
+        if (fabricCanvas) {
+          const activeObject = fabricCanvas.getActiveObject();
+          if (activeObject) {
+            activeObject.set("fill", color);
+            fabricCanvas.requestRenderAll();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to update shape color:", error);
+      }
+    },
+    [selectedShapeId, updateShape, fabricCanvas],
+  );
+
+  // Get selected shape for color picker
+  const selectedShape = selectedShapeId
+    ? shapes.find((s) => s._id === selectedShapeId)
+    : null;
+
   // Keyboard shortcuts with memoized handlers
   useKeyboard({
     onSelectTool: handleSelectTool,
@@ -171,7 +240,12 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
       {/* Floating Toolbar - Top Center */}
       <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-        <Toolbar activeTool={activeTool} onToolChange={handleToolChange} />
+        <Toolbar
+          activeTool={activeTool}
+          onToolChange={handleToolChange}
+          selectedShapeColor={selectedShape?.fillColor}
+          onColorChange={handleColorChange}
+        />
       </div>
 
       {/* Unified Floating Controls - Top Right */}
@@ -199,6 +273,22 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
         {/* Divider */}
         <div className="w-px h-8 bg-white/10" />
+
+        {/* Connection Status Section - only render on client to avoid hydration issues */}
+        {isMounted && (
+          <>
+            <div className="flex items-center gap-2 px-3 py-2">
+              <div
+                className={`w-2 h-2 rounded-full ${color}`}
+                title={`Connection: ${status}`}
+              />
+              <span className="text-xs text-white/50 capitalize">{status}</span>
+            </div>
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-white/10" />
+          </>
+        )}
 
         {/* User + Clerk Section */}
         <div

@@ -121,6 +121,7 @@ export function useShapes() {
         width?: number;
         height?: number;
         angle?: number;
+        fill?: string;
       },
     ) => {
       try {
