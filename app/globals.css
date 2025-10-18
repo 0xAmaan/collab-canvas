@@ -25,6 +25,9 @@
   --color-canvas-red-light: #f87171;
   --color-canvas-red-dark: #dc2626;
 
+  --color-sidebar: #1e1e1e;
+  --color-panel: #2c2c2c;
+
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
@@ -122,10 +125,8 @@ canvas {
 }
 
 .bg-grid-pattern {
-  background-image: linear-gradient(
-      rgba(255, 255, 255, 0.05) 1px,
-      transparent 1px
-    ),
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
   background-size: 50px 50px;
 }

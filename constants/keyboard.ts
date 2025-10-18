@@ -17,6 +17,7 @@ export enum KeyboardAction {
   DUPLICATE_SHAPE = "DUPLICATE_SHAPE",
   COPY_SHAPE = "COPY_SHAPE",
   PASTE_SHAPE = "PASTE_SHAPE",
+  TOGGLE_AI_SIDEBAR = "TOGGLE_AI_SIDEBAR",
 }
 
 export interface KeyboardShortcut {
@@ -85,8 +86,8 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     requiresSelection: true,
   },
   {
-    key: "?",
-    displayKey: "?",
+    key: "/",
+    displayKey: "⌘/",
     action: KeyboardAction.SHOW_HELP,
     description: "Show keyboard shortcuts help",
     requiresSelection: false,
@@ -124,6 +125,13 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     displayKey: "⌘V",
     action: KeyboardAction.PASTE_SHAPE,
     description: "Paste copied shape",
+    requiresSelection: false,
+  },
+  {
+    key: "\\",
+    displayKey: "⌘\\",
+    action: KeyboardAction.TOGGLE_AI_SIDEBAR,
+    description: "Toggle AI chat sidebar",
     requiresSelection: false,
   },
 ];

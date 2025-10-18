@@ -7,11 +7,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import { Canvas } from "@/components/canvas/Canvas";
+import { BottomToolbar, type Tool } from "@/components/toolbar/BottomToolbar";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
-import { Toolbar, type Tool } from "@/components/toolbar/Toolbar";
-import { PresencePanel } from "@/components/presence/PresencePanel";
 import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";
+import { PropertiesSidebar } from "@/components/properties/PropertiesSidebar";
+import { PresencePanel } from "@/components/presence/PresencePanel";
 import { useUser, UserButton } from "@clerk/nextjs";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
@@ -23,6 +24,8 @@ import { getUserColor } from "@/lib/color-utils";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
 import { AIInput } from "@/components/ai/AIInput";
 import { AIFeedback } from "@/components/ai/AIFeedback";
+import { AIChatSidebar, type ChatMessageType } from "@/components/ai";
+import { PanelLeft } from "lucide-react";
 import { executeAICommands } from "@/lib/ai/client-executor";
 import type {
   AIStatus,
@@ -45,13 +48,16 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const [zoom, setZoom] = useState<number>(1);
   const [selectedShapeIds, setSelectedShapeIds] = useState<string[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const userButtonRef = useRef<HTMLDivElement>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
   // AI command state
   const [aiStatus, setAIStatus] = useState<AIStatus>("idle");
   const [aiMessage, setAIMessage] = useState<string>("");
+
+  // Chat sidebar state
+  const [chatMessages, setChatMessages] = useState<ChatMessageType[]>([]);
 
   // History for undo/redo
   const history = useHistory();
@@ -318,9 +324,35 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     setShowKeyboardHelp((prev) => !prev);
   }, []);
 
+  const handleToggleSidebar = useCallback(() => {
+    setIsSidebarOpen((prev) => !prev);
+  }, []);
+
   // Handle AI command
   const handleAICommand = useCallback(
     async (command: string) => {
+      // Add user message to chat
+      const userMessageId = `user-${Date.now()}`;
+      const userMessage: ChatMessageType = {
+        id: userMessageId,
+        type: "user",
+        content: command,
+        timestamp: Date.now(),
+        status: "success",
+      };
+      setChatMessages((prev) => [...prev, userMessage]);
+
+      // Add AI thinking message
+      const aiMessageId = `ai-${Date.now()}`;
+      const thinkingMessage: ChatMessageType = {
+        id: aiMessageId,
+        type: "ai",
+        content: "Thinking...",
+        timestamp: Date.now(),
+        status: "sending",
+      };
+      setChatMessages((prev) => [...prev, thinkingMessage]);
+
       setAIStatus("thinking");
       setAIMessage("");
 
@@ -342,6 +374,14 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         const data: AICommandResponse = await response.json();
 
         if (!data.success) {
+          // Update AI message with error
+          setChatMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId
+                ? { ...msg, content: data.message, status: "error" as const }
+                : msg,
+            ),
+          );
           setAIStatus("error");
           setAIMessage(data.message);
           setTimeout(() => setAIStatus("idle"), 3000);
@@ -356,14 +396,46 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         });
 
         if (result.success) {
+          // Update AI message with success
+          setChatMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId
+                ? {
+                    ...msg,
+                    content: data.message || result.message,
+                    status: "success" as const,
+                  }
+                : msg,
+            ),
+          );
           setAIStatus("success");
           setAIMessage(data.message || result.message);
         } else {
+          // Update AI message with error
+          setChatMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === aiMessageId
+                ? { ...msg, content: result.message, status: "error" as const }
+                : msg,
+            ),
+          );
           setAIStatus("error");
           setAIMessage(result.message);
         }
       } catch (error: any) {
         console.error("AI command error:", error);
+        // Update AI message with error
+        setChatMessages((prev) =>
+          prev.map((msg) =>
+            msg.id === aiMessageId
+              ? {
+                  ...msg,
+                  content: "Failed to execute command",
+                  status: "error" as const,
+                }
+              : msg,
+          ),
+        );
         setAIStatus("error");
         setAIMessage("Failed to execute command");
       }
@@ -433,16 +505,17 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     onDuplicate: handleDuplicate,
     onCopy: handleCopy,
     onPaste: handlePaste,
+    onToggleSidebar: handleToggleSidebar,
   });
 
   return (
-    <div className="h-screen relative overflow-hidden bg-slate-950">
+    <div className="h-screen flex overflow-hidden bg-slate-950">
       {/* Subtle gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900"></div>
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 pointer-events-none"></div>
 
       {/* Subtle grid pattern */}
       <div
-        className="absolute inset-0 opacity-[0.02]"
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
           backgroundImage: `linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
             linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)`,
@@ -450,125 +523,82 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         }}
       ></div>
 
-      {/* Floating Toolbar - Top Center */}
-      <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20">
-        <Toolbar
-          activeTool={activeTool}
-          onToolChange={handleToolChange}
-          selectedShapeColor={selectedShape?.fillColor}
-          onColorChange={handleColorChange}
-        />
-      </div>
+      {/* Left Sidebar - AI Chat Panel */}
+      <AIChatSidebar
+        isOpen={isSidebarOpen}
+        onToggle={handleToggleSidebar}
+        messages={chatMessages}
+        onSubmit={handleAICommand}
+        isLoading={aiStatus === "thinking"}
+      />
 
-      {/* Unified Floating Controls - Top Right */}
-      <div className="absolute top-6 right-6 z-20 flex items-center gap-0 bg-slate-800/50 backdrop-blur-xl rounded-xl border border-white/10 shadow-xl">
-        {/* Presence Section - only show if there are active users */}
-        {allUsers.length > 0 && (
-          <>
-            <div className="px-3 py-2">
-              <PresencePanel
-                activeUsers={allUsers}
-                currentUserId={userId}
-                maxVisible={5}
-              />
-            </div>
+      {/* Sidebar Toggle Button - show when closed */}
+      {!isSidebarOpen && (
+        <button
+          onClick={handleToggleSidebar}
+          className="fixed left-4 top-6 z-30 p-2 bg-[#2C2C2C] hover:bg-[#3A3A3A] rounded-lg text-white shadow-xl transition-colors cursor-pointer border border-white/10"
+          title="Open AI Chat (⌘+\)"
+        >
+          <PanelLeft className="w-5 h-5" />
+        </button>
+      )}
 
-            {/* Divider */}
-            <div className="w-px h-8 bg-white/10" />
-          </>
-        )}
-
-        {/* Zoom Section */}
-        <div className="px-2 py-2">
-          <ZoomControls canvas={fabricCanvas} />
+      {/* Main Canvas Area */}
+      <div className="flex-1 relative">
+        {/* Floating Toolbar - Bottom Center */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
+          <BottomToolbar
+            activeTool={activeTool}
+            onToolChange={handleToolChange}
+            selectedShapeColor={selectedShape?.fillColor}
+            onColorChange={handleColorChange}
+          />
         </div>
 
-        {/* Divider */}
-        <div className="w-px h-8 bg-white/10" />
+        {/* Canvas Container */}
+        <div className="relative h-full w-full canvas-container">
+          <Canvas
+            onCanvasReady={handleCanvasReady}
+            activeTool={activeTool}
+            userId={userId}
+            userName={userName}
+            onDeleteSelected={registerDeleteHandler}
+            onDuplicateSelected={registerDuplicateHandler}
+            updateCursorPosition={safeUpdateCursorPosition}
+            history={history}
+          />
 
-        {/* Connection Status Section - only render on client to avoid hydration issues */}
-        {isMounted && (
-          <>
-            <div className="flex items-center gap-2 px-3 py-2">
-              <div
-                className={`w-2 h-2 rounded-full ${color}`}
-                title={`Connection: ${status}`}
-              />
-              <span className="text-xs text-white/50 capitalize">{status}</span>
-            </div>
-
-            {/* Divider */}
-            <div className="w-px h-8 bg-white/10" />
-          </>
-        )}
-
-        {/* User + Clerk Section */}
-        <div
-          className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
-          onClick={(e) => {
-            // Only trigger UserButton if we didn't click directly on it
-            // (the UserButton has its own click handler)
-            if (
-              e.target === e.currentTarget ||
-              !(e.target as HTMLElement).closest("[data-clerk-user-button]")
-            ) {
-              const button = userButtonRef.current?.querySelector("button");
-              button?.click();
-            }
-          }}
-        >
+          {/* Multiplayer cursors container - synced with canvas viewport transform */}
           <div
-            ref={userButtonRef}
-            data-clerk-user-button
-            className="flex items-center"
+            ref={cursorContainerRef}
+            className="absolute top-0 left-0 w-0 h-0 pointer-events-none z-50"
+            style={{
+              transformOrigin: "0 0",
+            }}
           >
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{
-                elements: {
-                  avatarBox: "ring-2 ring-green-500",
-                },
-              }}
-            />
+            {otherUsers.map((user) => (
+              <MultiplayerCursor key={user.userId} user={user} zoom={zoom} />
+            ))}
           </div>
-          <span className="text-sm text-white/70 font-medium leading-none">
-            Account
-          </span>
         </div>
+
+        {/* AI Feedback Toast - temporary status notifications */}
+        <AIFeedback status={aiStatus} message={aiMessage} />
       </div>
 
-      {/* Canvas Area - Full Screen */}
-      <div className="relative h-full w-full canvas-container">
-        <Canvas
-          onCanvasReady={handleCanvasReady}
-          activeTool={activeTool}
-          userId={userId}
-          userName={userName}
-          onDeleteSelected={registerDeleteHandler}
-          onDuplicateSelected={registerDuplicateHandler}
-          updateCursorPosition={safeUpdateCursorPosition}
-          history={history}
-        />
-
-        {/* Multiplayer cursors container - synced with canvas viewport transform */}
-        <div
-          ref={cursorContainerRef}
-          className="absolute top-0 left-0 w-0 h-0 pointer-events-none z-50"
-          style={{
-            transformOrigin: "0 0",
-          }}
-        >
-          {otherUsers.map((user) => (
-            <MultiplayerCursor key={user.userId} user={user} zoom={zoom} />
-          ))}
-        </div>
-      </div>
-
-      {/* AI Input */}
-      <AIInput onSubmit={handleAICommand} isLoading={aiStatus === "thinking"} />
-
-      {/* AI Feedback */}
-      <AIFeedback status={aiStatus} message={aiMessage} />
+      {/* Right Sidebar - Properties Panel */}
+      <PropertiesSidebar
+        canvas={fabricCanvas}
+        allUsers={allUsers}
+        currentUserId={userId}
+        status={status}
+        statusColor={color}
+        isMounted={isMounted}
+        shapes={shapes}
+        selectedShapeIds={selectedShapeIds}
+        onUpdateShape={updateShape}
+        onShowHelp={handleToggleHelp}
+      />
 
       {/* Keyboard Shortcuts Help Modal */}
       <KeyboardShortcutsHelp

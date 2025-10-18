@@ -23,7 +23,7 @@ import { configureSelectionStyle } from "./SelectionBox";
 import { SELECTION_COLORS } from "@/constants/colors";
 import { useShapes } from "@/hooks/useShapes";
 import type { Shape } from "@/types/shapes";
-import type { Tool } from "../toolbar/Toolbar";
+import type { Tool } from "../toolbar/BottomToolbar";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
 import { UpdateShapeCommand } from "@/lib/commands/UpdateShapeCommand";
 import { DeleteShapeCommand } from "@/lib/commands/DeleteShapeCommand";

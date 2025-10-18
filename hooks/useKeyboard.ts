@@ -23,6 +23,7 @@ interface KeyboardShortcuts {
   onDuplicate?: () => void;
   onCopy?: () => void;
   onPaste?: () => void;
+  onToggleSidebar?: () => void;
 }
 
 /**
@@ -32,7 +33,23 @@ interface KeyboardShortcuts {
 export function useKeyboard(shortcuts: KeyboardShortcuts) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ignore if user is typing in an input field
+      // Check if any modifier keys are pressed
+      const metaKey = e.metaKey || e.ctrlKey; // Cmd on Mac, Ctrl on Windows
+      const hasModifier = metaKey || e.altKey;
+
+      // Get the pressed key
+      const key = e.key.toLowerCase();
+
+      // Handle toggle sidebar with Cmd+\ - ALWAYS allow this, even in input fields
+      if (key === "\\" && metaKey) {
+        e.preventDefault();
+        if (shortcuts.onToggleSidebar) {
+          shortcuts.onToggleSidebar();
+        }
+        return;
+      }
+
+      // Ignore other shortcuts if user is typing in an input field
       const target = e.target as HTMLElement;
       const isInputField =
         target.tagName === "INPUT" ||
@@ -42,13 +59,6 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
       if (isInputField) {
         return;
       }
-
-      // Check if any modifier keys are pressed
-      const metaKey = e.metaKey || e.ctrlKey; // Cmd on Mac, Ctrl on Windows
-      const hasModifier = metaKey || e.altKey;
-
-      // Get the pressed key
-      const key = e.key.toLowerCase();
 
       // Handle undo/redo with special key combination detection
       if (key === "z" && metaKey) {
@@ -84,6 +94,15 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
         e.preventDefault();
         if (shortcuts.onPaste) {
           shortcuts.onPaste();
+        }
+        return;
+      }
+
+      // Handle show help with Cmd+/
+      if (key === "/" && metaKey) {
+        e.preventDefault();
+        if (shortcuts.onShowHelp) {
+          shortcuts.onShowHelp();
         }
         return;
       }
