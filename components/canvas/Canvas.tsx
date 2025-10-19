@@ -640,10 +640,11 @@ export const Canvas = ({
         const isSelected = fabricCanvas.getActiveObjects().includes(opt.target);
         if (isSelected) return;
 
+        if (opt.target.type === "i-text") return;
+
         // Store reference to hovered object
         hoveredObjectRef.current = opt.target;
 
-        // Add hover effect - blue border
         opt.target.set({
           strokeWidth: 2,
           stroke: "#3b82f6", // Blue highlight

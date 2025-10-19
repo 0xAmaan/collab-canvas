@@ -1,135 +1,9 @@
 # CollabCanvas Bug Fix Plan
 
-## Critical Root Cause: Schema/Type Mismatch 🔥
 
-**The primary issue:** Your schema uses `fill` but TypeScript types use `fillColor`, causing cascading validation errors.
+### TIER 4: Canvas Functionality Fix
 
-**Files affected:**
-
-- `convex/schema.ts` - defines `fill: v.optional(v.string())`
-- `types/shapes.ts` - all interfaces use `fillColor: string`
-- All components using shapes
-
-**Impact:** This single mismatch causes:
-
-- Fill color updates failing (validation error)
-- Potential shape update failures
-- Delete UI errors (trying to update non-existent shapes)
-
----
-
-## Bugs Categorized by Complexity
-
-### TIER 1: Simple Fixes (15 min total) ⭐
-
-**Low complexity, high confidence, minimal code changes**
-
-#### 1.1 AI Sidebar Width (+20px)
-
-- **File:** `components/ai/AIChatSidebar.tsx`
-- **Change:** Increase width from current to +20px
-- **Complexity:** 1/10
-
-#### 1.2 Remove ColorPicker from Bottom Toolbar
-
-- **File:** `components/toolbar/BottomToolbar.tsx`
-- **Change:** Remove color picker component/prop
-- **Important:** Verify sidebar color picker works correctly after removal
-- **Complexity:** 1/10
-
-#### 1.3 Right Sidebar Section Reordering
-
-- **File:** `components/properties/PropertiesSidebar.tsx`
-- **Change:** Reorder to Position → Size → Transform → Appearance
-- **Complexity:** 1/10
-
----
-
-### TIER 2: Core Schema Fix (30 min) 🔧
-
-**Medium complexity, high confidence, requires careful migration**
-
-#### 2.1 Unify `fill` vs `fillColor` Naming
-
-**Decision needed:** Keep `fill` (schema) or `fillColor` (types)?
-
-- **Option A:** Rename all `fillColor` → `fill` in types/components (recommended)
-- **Option B:** Rename `fill` → `fillColor` in schema (requires migration)
-
-**Recommended: Option A** (no DB migration needed)
-
-**Files to update:**
-
-1. `types/shapes.ts` - Change `fillColor` → `fill` in all interfaces
-2. `components/canvas/Shape.tsx` - Update `fillColor` references
-3. `components/properties/StylePanel.tsx` - Change `fillColor` → `fill`
-4. `components/canvas/tools/*.ts` - Update all tool files
-5. All other component references
-
-**Complexity:** 4/10 (tedious but straightforward find/replace)
-
-**Confidence:** 10/10 (will fix multiple errors at once)
-
-#### 2.2 Add `polygon` to createShape Validator
-
-- **File:** `convex/shapes.ts`
-- **Change:** Add `v.literal("polygon")` to createShape args union (line 19-26)
-- **Complexity:** 2/10
-
----
-
-### TIER 3: Property Panel Fixes (45 min) 🎨
-
-**Medium complexity, high confidence**
-
-#### 3.1 Fix Property Panel Updates (depends on 2.1)
-
-**Root cause:** Using wrong field names causes all updates to fail
-
-**Files:**
-
-- `components/properties/PositionPanel.tsx` - Works correctly
-- `components/properties/TransformPanel.tsx` - Works correctly  
-- `components/properties/StylePanel.tsx` - Fix after schema unification
-
-**After fix 2.1, verify all panels work correctly**
-
-**Complexity:** 3/10
-
-#### 3.2 Standardize Right Sidebar Styling
-
-**File:** `components/properties/PropertiesSidebar.tsx`
-
-**Changes needed:**
-
-- Consistent dividers between sections
-- Section headers: gray → white text (`text-[#888888]` → `text-white`)
-- Equal divider widths
-- Proper spacing
-
-**Complexity:** 3/10
-
----
-
-### TIER 4: UI/UX Polish (1 hour) ✨
-
-**Low-medium complexity, straightforward changes**
-
-#### 4.1 Keyboard Shortcuts UI Redesign
-
-**File:** `components/ui/KeyboardShortcutsHelp.tsx`
-
-**Changes:**
-
-- Make modal more compact (reduce padding/spacing)
-- Remove input borders, use plain text labels
-- Group shortcuts by category with dividers
-- Increase icon sizes (use `lucide-react` if available)
-- Remove purple theme or make configurable
-
-**Complexity:** 4/10
-
-#### 4.2 Text Tool: Exit to Select Mode
+#### Text Tool: Exit to Select Mode
 
 **File:** `components/canvas/tools/useTextTool.ts`
 
@@ -139,28 +13,9 @@
 
 **Change:** In `onMouseDown`, check if clicking out of active text → call tool change callback
 
-**Complexity:** 3/10
+**Complexity:** 5/10 — Requires proper planning to identify the actual issue & clean solution
 
-#### 4.3 Remove Text Hover Highlight
 
-**File:** Likely in `components/canvas/Canvas.tsx` or global CSS
-
-**Change:** Remove blue bold highlight on text hover (crosshair cursor is sufficient)
-
-**Complexity:** 2/10
-
-#### 4.4 Purple Theme → Configurable Primary Color
-
-**Create:** `constants/theme.ts` with `PRIMARY_COLOR`
-
-**Files to update:**
-
-- `components/ai/AIChatSidebar.tsx` - AI Assistant label
-- `components/ai/ChatInput.tsx` - Send button, input outline
-- `components/ui/KeyboardShortcutsHelp.tsx` - Icon background
-- Any other purple (`#8A63D2`, `bg-primary`, etc.)
-
-**Complexity:** 3/10
 
 ---
 
