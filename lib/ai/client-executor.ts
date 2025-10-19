@@ -141,9 +141,7 @@ const resolveSelector = (selector: string, shapes: Shape[]): Shape[] => {
   // Match by color - check all common colors dynamically
   for (const colorName of colorNames) {
     if (lower.includes(colorName)) {
-      const matches = shapes.filter((s) =>
-        isColorMatch(s.fillColor, colorName),
-      );
+      const matches = shapes.filter((s) => isColorMatch(s.fill, colorName));
       if (matches.length > 0) return matches;
     }
   }
@@ -165,7 +163,7 @@ const resolveSelector = (selector: string, shapes: Shape[]): Shape[] => {
   if (lower.startsWith("the ")) {
     const type = lower.replace("the ", "").trim();
     const matching = shapes.filter(
-      (s) => s.type.includes(type) || s.fillColor?.toLowerCase().includes(type),
+      (s) => s.type.includes(type) || s.fill?.toLowerCase().includes(type),
     );
     return matching.slice(-1); // Most recent
   }
@@ -186,7 +184,7 @@ async function executeCreateRectangle(
     y: cmd.y,
     width: cmd.width || 100,
     height: cmd.height || 100,
-    fillColor: cmd.fill || "#3b82f6",
+    fill: cmd.fill || "#3b82f6",
     angle: 0,
     createdBy: "ai",
     createdAt: Date.now(),
@@ -213,7 +211,7 @@ async function executeCreateCircle(
     y: cmd.y,
     width: radius * 2,
     height: radius * 2,
-    fillColor: cmd.fill,
+    fill: cmd.fill,
     angle: 0,
     createdBy: "ai",
     createdAt: Date.now(),
@@ -240,7 +238,7 @@ async function executeCreateText(
     text: cmd.text || "Text",
     fontSize: cmd.fontSize || 16,
     fontFamily: "Inter, Arial, sans-serif",
-    fillColor: cmd.fill || "#ffffff",
+    fill: cmd.fill || "#ffffff",
     createdBy: "ai",
     createdAt: Date.now(),
     lastModified: Date.now(),

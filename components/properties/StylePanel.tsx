@@ -28,14 +28,14 @@ export const StylePanel = ({
   if (selectedShapes.length === 0) return null;
 
   const firstShape = selectedShapes[0];
-  const fillColor = firstShape.fillColor;
+  const fillColor = firstShape.fill;
 
   // Check if values are mixed
-  const isMixedFill = selectedShapes.some((s) => s.fillColor !== fillColor);
+  const isMixedFill = selectedShapes.some((s) => s.fill !== fillColor);
 
   const handleFillChange = async (color: string) => {
     for (const shapeId of selectedShapeIds) {
-      await onUpdate(shapeId, { fillColor: color });
+      await onUpdate(shapeId, { fill: color });
     }
   };
 
@@ -86,7 +86,7 @@ export const StylePanel = ({
                       key={color}
                       onClick={() => {
                         handleFillChange(color);
-                        setShowFillPicker(false);
+                        // Don't close picker - allow multiple color changes
                       }}
                       className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
                         fillColor.toLowerCase() === color.toLowerCase()

@@ -145,7 +145,7 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
           text: textContent,
           fontSize: obj.fontSize || DEFAULT_TEXT.FONT_SIZE,
           fontFamily: obj.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
-          fillColor: (obj.fill as string) || DEFAULT_TEXT.FILL_COLOR,
+          fill: (obj.fill as string) || DEFAULT_TEXT.FILL_COLOR,
         };
       },
       userId,

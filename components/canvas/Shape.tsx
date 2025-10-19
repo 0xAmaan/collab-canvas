@@ -43,7 +43,7 @@ export const createFabricShape = (shape: Shape): FabricObject => {
   const baseConfig = {
     ...commonShapeConfig,
     angle: shape.angle ?? 0,
-    fill: shape.type === "path" ? undefined : shape.fillColor, // Paths should never have fill
+    fill: shape.type === "path" ? undefined : shape.fill, // Paths should never have fill
     data: { shapeId: shape._id },
   };
 
@@ -81,7 +81,7 @@ export const createFabricShape = (shape: Shape): FabricObject => {
       return new Line([shape.x1, shape.y1, shape.x2, shape.y2], {
         ...baseConfig,
         fill: undefined,
-        stroke: shape.fillColor, // Lines use stroke, not fill
+        stroke: shape.fill, // Lines use stroke, not fill
         strokeWidth: 2,
       });
 
@@ -92,7 +92,7 @@ export const createFabricShape = (shape: Shape): FabricObject => {
         top: shape.y,
         fontSize: shape.fontSize || DEFAULT_TEXT.FONT_SIZE,
         fontFamily: shape.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
-        fill: shape.fillColor,
+        fill: shape.fill,
         editable: true,
         selectable: true,
         strokeWidth: 0,
@@ -127,9 +127,9 @@ export const createFabricShape = (shape: Shape): FabricObject => {
         ...baseConfig,
         left: shape.x,
         top: shape.y,
-        fill: shape.fillColor,
-        stroke: "#000000",
-        strokeWidth: 1,
+        fill: shape.fill,
+        stroke: undefined,
+        strokeWidth: 0,
       });
 
     default:
@@ -143,15 +143,18 @@ export const createFabricShape = (shape: Shape): FabricObject => {
         strokeWidth: 0,
       });
   }
-}
+};
 
 /**
  * Update a Fabric.js object with new shape data
  */
-export const updateFabricShape = (fabricObj: FabricObject, shape: Shape): void => {
+export const updateFabricShape = (
+  fabricObj: FabricObject,
+  shape: Shape,
+): void => {
   const updates: any = {
     angle: shape.angle ?? 0,
-    fill: shape.fillColor,
+    fill: shape.fill,
   };
 
   switch (shape.type) {
@@ -182,7 +185,7 @@ export const updateFabricShape = (fabricObj: FabricObject, shape: Shape): void =
         y1: shape.y1,
         x2: shape.x2,
         y2: shape.y2,
-        stroke: shape.fillColor, // Lines use stroke
+        stroke: shape.fill, // Lines use stroke
       });
       break;
 
@@ -194,7 +197,7 @@ export const updateFabricShape = (fabricObj: FabricObject, shape: Shape): void =
         text: shape.text || DEFAULT_TEXT.TEXT,
         fontSize: shape.fontSize || DEFAULT_TEXT.FONT_SIZE,
         fontFamily: shape.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
-        fill: shape.fillColor,
+        fill: shape.fill,
       });
       break;
 
@@ -221,14 +224,14 @@ export const updateFabricShape = (fabricObj: FabricObject, shape: Shape): void =
         points: shape.points,
         left: shape.x,
         top: shape.y,
-        fill: shape.fillColor,
+        fill: shape.fill,
       });
       break;
   }
 
   fabricObj.set(updates);
   fabricObj.setCoords();
-}
+};
 
 // Legacy exports for backward compatibility
 export const createFabricRect = createFabricShape;

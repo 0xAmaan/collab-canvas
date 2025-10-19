@@ -32,7 +32,7 @@ interface ShapeData {
   angle?: number;
   strokeWidth?: number;
   strokeColor?: string;
-  fillColor: string;
+  fill: string;
   createdBy: string;
   createdAt: number;
   lastModified: number;

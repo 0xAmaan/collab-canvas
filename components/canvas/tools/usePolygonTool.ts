@@ -144,8 +144,8 @@ export const createPolygonTool = (context: ToolContext): ToolHandlers => {
     // Create final polygon
     const polygon = new Polygon(points, {
       fill: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
-      stroke: "#000000",
-      strokeWidth: 1,
+      stroke: undefined, // No stroke - just fill
+      strokeWidth: 0,
       selectable: true,
       evented: true,
       hasControls: true,
@@ -162,17 +162,21 @@ export const createPolygonTool = (context: ToolContext): ToolHandlers => {
 
     canvas.add(polygon);
 
+    // Force Fabric to calculate polygon bounds
+    polygon.setCoords();
+    canvas.renderAll();
+
     const shapeId = await finalizeShape({
       canvas: canvas,
       object: polygon,
       shapeType: "polygon",
       extractShapeData: (obj: any) => ({
         points: points,
-        fillColor: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+        fill: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
         x: obj.left || 0,
         y: obj.top || 0,
-        width: obj.width || 0,
-        height: obj.height || 0,
+        width: obj.width || 100, // Fallback if width not calculated
+        height: obj.height || 100, // Fallback if height not calculated
       }),
       userId,
       createShape: createShape,

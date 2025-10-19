@@ -23,6 +23,7 @@ export const createShape = mutation({
       v.literal("line"),
       v.literal("text"),
       v.literal("path"),
+      v.literal("polygon"),
     ),
     // Common fields
     x: v.optional(v.number()),
@@ -42,6 +43,8 @@ export const createShape = mutation({
     pathData: v.optional(v.string()),
     stroke: v.optional(v.string()),
     strokeWidth: v.optional(v.number()),
+    // Polygon fields
+    points: v.optional(v.array(v.object({ x: v.number(), y: v.number() }))),
     // Styling (optional for paths which use stroke instead)
     fill: v.optional(v.string()),
   },
@@ -69,6 +72,7 @@ export const createShape = mutation({
       pathData: args.pathData,
       stroke: args.stroke,
       strokeWidth: args.strokeWidth,
+      points: args.points,
       fill: args.fill,
       createdBy: user.subject, // Clerk user ID
       createdAt: Date.now(),

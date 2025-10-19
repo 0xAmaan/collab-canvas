@@ -33,7 +33,7 @@ export const useShapes = () => {
     ...convexShapes.map((s): Shape => {
       const baseShape = {
         _id: s._id,
-        fillColor: s.fill,
+        fill: s.fill || "#3b82f6", // Fallback color if undefined
         angle: s.angle ?? 0,
         createdBy: s.createdBy,
         createdAt: s.createdAt,
@@ -154,21 +154,21 @@ export const useShapes = () => {
           case "rectangle":
           case "circle":
           case "ellipse":
-            mutationArgs.fill = shape.fillColor;
+            mutationArgs.fill = shape.fill;
             mutationArgs.x = (shape as any).x;
             mutationArgs.y = (shape as any).y;
             mutationArgs.width = (shape as any).width;
             mutationArgs.height = (shape as any).height;
             break;
           case "line":
-            mutationArgs.fill = shape.fillColor;
+            mutationArgs.fill = shape.fill;
             mutationArgs.x1 = (shape as any).x1;
             mutationArgs.y1 = (shape as any).y1;
             mutationArgs.x2 = (shape as any).x2;
             mutationArgs.y2 = (shape as any).y2;
             break;
           case "text":
-            mutationArgs.fill = shape.fillColor;
+            mutationArgs.fill = shape.fill;
             mutationArgs.x = (shape as any).x;
             mutationArgs.y = (shape as any).y;
             mutationArgs.text = (shape as any).text;
@@ -184,9 +184,16 @@ export const useShapes = () => {
             mutationArgs.pathData = (shape as any).pathData;
             mutationArgs.stroke = (shape as any).stroke;
             mutationArgs.strokeWidth = (shape as any).strokeWidth;
-            // NOTE: We store fillColor in our Shape type for metadata/consistency,
+            // NOTE: We store fill in our Shape type for metadata/consistency,
             // but we do NOT send it to Convex for paths
-
+            break;
+          case "polygon":
+            mutationArgs.fill = shape.fill;
+            mutationArgs.x = (shape as any).x;
+            mutationArgs.y = (shape as any).y;
+            mutationArgs.width = (shape as any).width;
+            mutationArgs.height = (shape as any).height;
+            mutationArgs.points = (shape as any).points;
             break;
         }
 

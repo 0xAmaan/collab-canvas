@@ -14,7 +14,7 @@ export type ShapeType =
 // Base interface with common fields
 interface ShapeBase {
   _id: string;
-  fillColor: string;
+  fill: string;
   angle?: number;
   createdBy: string;
   createdAt: number;

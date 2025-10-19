@@ -136,7 +136,7 @@ export const POST = async (request: Request) => {
         ? `\n\nCurrent shapes on canvas: ${shapes
             .map(
               (s) =>
-                `${s.type} at (${s.type === "line" ? `${s.x1},${s.y1} to ${s.x2},${s.y2}` : `${s.x},${s.y}`}) with color ${s.fillColor}`,
+                `${s.type} at (${s.type === "line" ? `${s.x1},${s.y1} to ${s.x2},${s.y2}` : `${s.x},${s.y}`}) with color ${s.fill}`,
             )
             .join(", ")}`
         : "\n\nCanvas is currently empty.";

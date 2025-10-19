@@ -25,7 +25,7 @@ export class ShapeFactory {
   createShape(
     type: ShapeType,
     startPoint: Point,
-    fillColor: string,
+    fill: string,
   ): FabricObject | null {
     const config = SHAPE_CONFIGS[type];
 
@@ -37,7 +37,7 @@ export class ShapeFactory {
           top: startPoint.y,
           width: 0,
           height: 0,
-          fill: fillColor,
+          fill: fill,
           selectable: false,
           evented: false,
         });
@@ -49,7 +49,7 @@ export class ShapeFactory {
           left: startPoint.x,
           top: startPoint.y,
           radius: 0,
-          fill: fillColor,
+          fill: fill,
           selectable: false,
           evented: false,
         });
@@ -62,7 +62,7 @@ export class ShapeFactory {
           top: startPoint.y,
           rx: 0,
           ry: 0,
-          fill: fillColor,
+          fill: fill,
           selectable: false,
           evented: false,
         });
@@ -198,12 +198,12 @@ export class ShapeFactory {
   /**
    * Create a polygon from points
    */
-  createPolygon(points: Point[], fillColor: string): Polygon {
+  createPolygon(points: Point[], fill: string): Polygon {
     const config = SHAPE_CONFIGS.polygon;
 
     return new Polygon(points, {
       ...config.defaultProps,
-      fill: fillColor,
+      fill: fill,
     });
   }
 }

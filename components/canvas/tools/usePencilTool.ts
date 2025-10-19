@@ -201,7 +201,7 @@ export const createPencilTool = (context: ToolContext): ToolHandlers => {
           y: path.top || 0,
           width: path.width || 0,
           height: path.height || 0,
-          fillColor: selectedColor || "#000000", // Store color for metadata (NOT used for rendering)
+          fill: selectedColor || "#000000", // Store color for metadata (NOT used for rendering)
           createdBy: userId,
           createdAt: Date.now(),
           lastModified: Date.now(),

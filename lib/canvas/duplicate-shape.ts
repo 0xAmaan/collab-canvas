@@ -16,7 +16,7 @@ export const duplicateShape = (
     createdAt: Date.now(),
     lastModified: Date.now(),
     lastModifiedBy: userId,
-    fillColor: shape.fillColor,
+    fill: shape.fill,
     angle: shape.angle,
   };
 
@@ -76,7 +76,7 @@ export const duplicateShape = (
   }
 
   // Standard shapes (rectangle, circle, ellipse) - share same structure
-  // All have x, y, width, height, angle, fillColor
+  // All have x, y, width, height, angle, fill
   if (
     shape.type === "rectangle" ||
     shape.type === "circle" ||

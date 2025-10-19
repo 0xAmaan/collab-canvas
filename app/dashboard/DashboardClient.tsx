@@ -27,6 +27,7 @@ import type {
 import { getSelectedShapes } from "@/lib/canvas/selection-utils";
 import { getUserColor } from "@/lib/color-utils";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import type { Shape } from "@/types/shapes";
 import { useUser } from "@clerk/nextjs";
 import type { Canvas as FabricCanvas } from "fabric";
 import { PanelLeft } from "lucide-react";
@@ -434,37 +435,62 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
     [shapes, createShape, updateShape],
   );
 
-  // Handle color change for selected shape(s) - supports multi-select
+  // Handle shape property updates from property panel
+  // Updates both DB and Fabric canvas for instant feedback
+  const handleShapeUpdate = useCallback(
+    async (shapeId: string, updates: Partial<Shape>) => {
+      try {
+        // Update in Convex
+        await updateShape(shapeId, updates);
+
+        // Also update the Fabric.js object immediately for instant feedback
+        if (fabricCanvas) {
+          const objects = fabricCanvas.getObjects();
+          const fabricObj = objects.find((obj) => {
+            const data = obj.get("data") as { shapeId?: string } | undefined;
+            return data?.shapeId === shapeId;
+          });
+
+          if (fabricObj) {
+            // Apply updates to Fabric object
+            if (updates.fill !== undefined) fabricObj.set("fill", updates.fill);
+            if ((updates as any).x !== undefined)
+              fabricObj.set("left", (updates as any).x);
+            if ((updates as any).y !== undefined)
+              fabricObj.set("top", (updates as any).y);
+            if ((updates as any).width !== undefined)
+              fabricObj.set("width", (updates as any).width);
+            if ((updates as any).height !== undefined)
+              fabricObj.set("height", (updates as any).height);
+            if (updates.angle !== undefined)
+              fabricObj.set("angle", updates.angle);
+
+            fabricObj.setCoords();
+            fabricCanvas.requestRenderAll();
+          }
+        }
+      } catch (error) {
+        console.error("Failed to update shape:", error);
+      }
+    },
+    [updateShape, fabricCanvas],
+  );
+
+  // Handle color change for selected shape(s) - uses handleShapeUpdate for consistency
   const handleColorChange = useCallback(
     async (color: string) => {
       if (selectedShapeIds.length === 0) return;
 
       try {
-        // Update all selected shapes in Convex
+        // Update all selected shapes using unified handler
         for (const shapeId of selectedShapeIds) {
-          await updateShape(shapeId, { fill: color });
-        }
-
-        // Also update the Fabric.js objects immediately for instant feedback
-        if (fabricCanvas) {
-          const activeObject = fabricCanvas.getActiveObject();
-          if (!activeObject) return;
-
-          // Handle multi-select
-          if (activeObject.type === "activeSelection") {
-            const objects = (activeObject as any)._objects || [];
-            objects.forEach((obj: any) => obj.set("fill", color));
-          } else {
-            // Single shape
-            activeObject.set("fill", color);
-          }
-          fabricCanvas.requestRenderAll();
+          await handleShapeUpdate(shapeId, { fill: color });
         }
       } catch (error) {
         console.error("Failed to update shape color:", error);
       }
     },
-    [selectedShapeIds, updateShape, fabricCanvas],
+    [selectedShapeIds, handleShapeUpdate],
   );
 
   // Get selected shape for color picker (use first shape if multi-select)
@@ -545,7 +571,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
           <BottomToolbar
             activeTool={activeTool}
             onToolChange={handleToolChange}
-            selectedShapeColor={selectedShape?.fillColor}
+            selectedShapeColor={selectedShape?.fill}
             onColorChange={handleColorChange}
           />
         </div>
@@ -591,7 +617,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
         isMounted={isMounted}
         shapes={shapes}
         selectedShapeIds={selectedShapeIds}
-        onUpdateShape={updateShape}
+        onUpdateShape={handleShapeUpdate}
         onShowHelp={handleToggleHelp}
       />
 

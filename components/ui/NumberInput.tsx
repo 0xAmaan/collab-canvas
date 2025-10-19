@@ -38,15 +38,21 @@ export const NumberInput = ({
   }, [value]);
 
   const handleChange = (newValue: string) => {
+    // Only update local input value, don't trigger onChange yet
     setInputValue(newValue);
+  };
 
-    // Parse and validate
-    const num = parseFloat(newValue);
+  const applyValue = () => {
+    // Parse and validate when user is done typing
+    const num = parseFloat(inputValue);
     if (!isNaN(num)) {
       let finalValue = num;
       if (min !== undefined) finalValue = Math.max(min, finalValue);
       if (max !== undefined) finalValue = Math.min(max, finalValue);
       onChange(finalValue);
+    } else if (value !== undefined) {
+      // Reset to previous value if invalid
+      setInputValue(value.toString());
     }
   };
 
@@ -71,6 +77,10 @@ export const NumberInput = ({
     } else if (e.key === "ArrowDown") {
       e.preventDefault();
       handleDecrement();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      applyValue();
+      (e.target as HTMLInputElement).blur(); // Remove focus after applying
     }
   };
 
@@ -86,6 +96,7 @@ export const NumberInput = ({
           placeholder={placeholder}
           onChange={(e) => handleChange(e.target.value)}
           onKeyDown={handleKeyDown}
+          onBlur={applyValue}
           className="w-full h-7 px-2 pr-8 bg-[var(--color-panel)] border border-white/8 rounded text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#8A63D2]/50 placeholder:text-white/30"
         />
         {suffix && (
