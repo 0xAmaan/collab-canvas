@@ -2,8 +2,8 @@
 
 /* Base CSS Variables */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
 }
 
 /* Tailwind v4 Theme Configuration */
@@ -26,28 +26,21 @@
   --color-canvas-red-dark: #dc2626;
 
   /* UI Component Colors - Dark theme surfaces */
-  --color-sidebar: #1e1e1e;        /* Main sidebars (AI chat, properties) */
-  --color-panel: #2c2c2c;          /* Panels, inputs, nested surfaces */
-  --color-toolbar: #383838;        /* Toolbars, dropdowns */
+  --color-sidebar: #1e1e1e; /* Main sidebars (AI chat, properties) */
+  --color-panel: #2c2c2c; /* Panels, inputs, nested surfaces */
+  --color-toolbar: #383838; /* Toolbars, dropdowns */
 
   /* Primary Action Colors - Purple accent */
-  --color-primary: #8A63D2;        /* Primary buttons, focus states */
-  --color-primary-hover: #7a53c2;  /* Hover state for primary buttons */
+  --color-primary: #8a63d2; /* Primary buttons, focus states */
+  --color-primary-hover: #7a53c2; /* Hover state for primary buttons */
 
   /* Gradient Colors - Active tool states */
-  --color-active-from: #3b82f6;    /* Gradient start (blue-500) */
-  --color-active-to: #a855f7;      /* Gradient end (purple-500) */
+  --color-active-from: #3b82f6; /* Gradient start (blue-500) */
+  --color-active-to: #a855f7; /* Gradient end (purple-500) */
 
   /* Fonts */
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 /* Base Styles */
@@ -69,74 +62,4 @@ canvas {
   overflow: hidden;
   position: relative;
   overscroll-behavior: contain; /* Contain scroll to canvas area */
-}
-
-/* Landing page animations */
-@keyframes gradient-shift {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-@keyframes float {
-  0%,
-  100% {
-    transform: translateY(0) translateX(0);
-  }
-  25% {
-    transform: translateY(-20px) translateX(10px);
-  }
-  50% {
-    transform: translateY(-10px) translateX(-10px);
-  }
-  75% {
-    transform: translateY(-30px) translateX(5px);
-  }
-}
-
-@keyframes float-slow {
-  0%,
-  100% {
-    transform: translateY(0) translateX(0);
-  }
-  50% {
-    transform: translateY(-30px) translateX(-20px);
-  }
-}
-
-@keyframes float-slower {
-  0%,
-  100% {
-    transform: translateY(0) translateX(0);
-  }
-  50% {
-    transform: translateY(20px) translateX(30px);
-  }
-}
-
-.animate-gradient-shift {
-  animation: gradient-shift 8s ease-in-out infinite;
-}
-
-.animate-float {
-  animation: float 15s ease-in-out infinite;
-}
-
-.animate-float-slow {
-  animation: float-slow 20s ease-in-out infinite;
-}
-
-.animate-float-slower {
-  animation: float-slower 25s ease-in-out infinite;
-}
-
-.bg-grid-pattern {
-  background-image:
-    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-  background-size: 50px 50px;
 }

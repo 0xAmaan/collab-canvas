@@ -17,6 +17,8 @@ import {
   Polygon,
   PencilBrush,
   Path,
+  type TPointerEvent,
+  type BasicTransformEvent,
 } from "fabric";
 import { CANVAS, ZOOM, DEFAULT_SHAPE, DEFAULT_TEXT } from "@/constants/shapes";
 import { calculateZoomFromWheel } from "@/lib/viewport-utils";
@@ -27,6 +29,7 @@ import { SELECTION_COLORS } from "@/constants/colors";
 import { useShapes } from "@/hooks/useShapes";
 import type { Shape } from "@/types/shapes";
 import type { Tool } from "../toolbar/BottomToolbar";
+import type { Command } from "@/lib/commands/types";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
 import { duplicateShapes } from "@/lib/canvas/duplicate-shape";
 import { finalizeShape } from "@/lib/canvas/shape-finalizers";
@@ -43,7 +46,7 @@ interface CanvasProps {
   onDuplicateSelected?: (handler: () => void) => void;
   updateCursorPosition: (x: number, y: number) => void;
   history: {
-    execute: (command: any) => Promise<void>;
+    execute: (command: Command) => Promise<void>;
     undo: () => Promise<void>;
     redo: () => Promise<void>;
     canUndo: boolean;
@@ -185,7 +188,7 @@ export function Canvas({
         canvas: fabricCanvasRef.current!,
         object: circle,
         shapeType: "circle",
-        extractShapeData: (obj: any) => {
+        extractShapeData: (obj: Circle) => {
           const diameter = (obj.radius || 0) * 2;
           return {
             x: obj.left || 0,
@@ -210,7 +213,7 @@ export function Canvas({
         canvas: fabricCanvasRef.current!,
         object: ellipse,
         shapeType: "ellipse",
-        extractShapeData: (obj: any) => ({
+        extractShapeData: (obj: Ellipse) => ({
           x: obj.left || 0,
           y: obj.top || 0,
           width: (obj.rx || 0) * 2,
@@ -232,7 +235,7 @@ export function Canvas({
         canvas: fabricCanvasRef.current!,
         object: line,
         shapeType: "line",
-        extractShapeData: (obj: any) => ({
+        extractShapeData: (obj: Line) => ({
           x1: obj.x1 || 0,
           y1: obj.y1 || 0,
           x2: obj.x2 || 0,
@@ -254,7 +257,7 @@ export function Canvas({
         canvas: fabricCanvasRef.current!,
         object: text,
         shapeType: "text",
-        extractShapeData: (obj: any) => {
+        extractShapeData: (obj: IText) => {
           const textContent = obj.text || "";
           return {
             x: obj.left || 0,
@@ -308,7 +311,7 @@ export function Canvas({
         canvas: fabricCanvasRef.current,
         object: polygon,
         shapeType: "polygon",
-        extractShapeData: (obj: any) => ({
+        extractShapeData: (obj: Polygon) => ({
           points: points,
           fillColor: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
           x: obj.left || 0,
@@ -370,7 +373,7 @@ export function Canvas({
     // Create each duplicated shape
     for (const duplicateData of duplicatedShapes) {
       const command = new CreateShapeCommand(
-        duplicateData as any,
+        duplicateData,
         createShapeInConvex,
         deleteShapeInConvex,
       );
@@ -1151,22 +1154,23 @@ export function Canvas({
       const shape = shapes.find((s) => s._id === data.shapeId);
       if (!shape) return;
 
-      const shapeData: any = {
-        angle: shape.angle || 0,
-      };
-
       // Line shapes have different coordinate system
-      if (shape.type === "line") {
-        shapeData.x = shape.x1;
-        shapeData.y = shape.y1;
-        shapeData.width = 0;
-        shapeData.height = 0;
-      } else {
-        shapeData.x = (shape as any).x || 0;
-        shapeData.y = (shape as any).y || 0;
-        shapeData.width = (shape as any).width || 0;
-        shapeData.height = (shape as any).height || 0;
-      }
+      const shapeData =
+        shape.type === "line"
+          ? {
+              x: shape.x1,
+              y: shape.y1,
+              width: 0,
+              height: 0,
+              angle: shape.angle || 0,
+            }
+          : {
+              x: shape.x || 0,
+              y: shape.y || 0,
+              width: shape.width || 0,
+              height: shape.height || 0,
+              angle: shape.angle || 0,
+            };
 
       objectStateBeforeModify.set(data.shapeId, shapeData);
     };
@@ -1175,7 +1179,9 @@ export function Canvas({
     const captureShapeState = (target: FabricObject) => {
       // Handle ActiveSelection (multi-select)
       if (target.type === "activeSelection") {
-        const objects = (target as any)._objects || [];
+        // Access _objects through property access
+        const objects =
+          (target as { _objects?: FabricObject[] })._objects || [];
         objects.forEach((obj: FabricObject) => captureObjectState(obj));
         return;
       }
@@ -1185,7 +1191,7 @@ export function Canvas({
     };
 
     // Single handler for both scaling and rotating events
-    const handleObjectTransformStart = (opt: any) => {
+    const handleObjectTransformStart = (opt: BasicTransformEvent) => {
       if (!opt.target) return;
       captureShapeState(opt.target);
     };
@@ -1202,11 +1208,11 @@ export function Canvas({
       // Instead, we'll handle this in the selection:cleared event
       if (opt.target.type === "activeSelection") {
         // Store the selection for later processing when cleared
-        const selection = opt.target as any;
-        const objects = selection._objects || [];
+        const objects =
+          (opt.target as { _objects?: FabricObject[] })._objects || [];
 
         // Mark all objects in selection to prevent position updates from Convex
-        objects.forEach((obj: any) => {
+        objects.forEach((obj: FabricObject) => {
           const data = obj.get("data") as { shapeId?: string } | undefined;
           if (data?.shapeId) {
             savingShapesRef.current.add(data.shapeId);
@@ -1334,9 +1340,10 @@ export function Canvas({
     fabricCanvas.on("selection:cleared", (e) => {
       // When selection is cleared, save the absolute positions of previously selected objects
       // This handles the case where ActiveSelection modified object coordinates
-      const deselected = (e as any).deselected || [];
+      const deselected =
+        (e as { deselected?: FabricObject[] }).deselected || [];
 
-      deselected.forEach(async (obj: any) => {
+      deselected.forEach(async (obj: FabricObject) => {
         const data = obj.get("data") as { shapeId?: string } | undefined;
         const shapeId = data?.shapeId;
 
@@ -1638,7 +1645,7 @@ export function Canvas({
       }
 
       // DEBUG: Intercept BEFORE:path:created and fix fill BEFORE it's added to canvas
-      canvas.on("before:path:created", (e: any) => {
+      canvas.on("before:path:created", (e: { path?: Path }) => {
         // Try to fix fill BEFORE Fabric.js adds it to canvas
         if (e.path) {
           e.path.fill = null;
@@ -1646,8 +1653,8 @@ export function Canvas({
       });
 
       // Register path:created event listener when pencil mode is active
-      const handlePathCreated = async (e: any) => {
-        const path = e.path as Path;
+      const handlePathCreated = async (e: { path?: Path }) => {
+        const path = e.path;
         if (!path) {
           console.error("Failed to create path: no path in event");
           return;
@@ -1698,7 +1705,7 @@ export function Canvas({
           await historyRef.current.execute(command);
 
           // Get the real shapeId from the command
-          const shapeId = (command as any).shapeId;
+          const shapeId = command.getShapeId();
 
           // Remove temp ID from saving set
           savingShapesRef.current.delete(tempId);
@@ -1840,7 +1847,9 @@ export function Canvas({
         const isActiveObject = activeObject === fabricObj;
         const isInActiveSelection =
           activeObject?.type === "activeSelection" &&
-          (activeObject as any)._objects?.includes(fabricObj);
+          (activeObject as { _objects?: FabricObject[] })._objects?.includes(
+            fabricObj,
+          );
 
         if (isActiveObject || isInActiveSelection) {
           return;

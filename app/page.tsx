@@ -3,19 +3,10 @@ import { redirect } from "next/navigation";
 import { SignInButton } from "@clerk/nextjs";
 
 // ==================== Internal Components ====================
-
 const AnimatedBackground = () => (
   <>
-    {/* Animated gradient background */}
-    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20 animate-gradient-shift"></div>
-
-    {/* Grid pattern overlay */}
-    <div className="absolute inset-0 bg-grid-pattern opacity-10"></div>
-
-    {/* Floating orbs for visual interest */}
-    <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/30 rounded-full blur-3xl animate-float-slow"></div>
-    <div className="absolute bottom-20 right-10 w-96 h-96 bg-purple-500/30 rounded-full blur-3xl animate-float-slower"></div>
-    <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-pink-500/20 rounded-full blur-3xl animate-float"></div>
+    {/* Static gradient background */}
+    <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-pink-600/20"></div>
   </>
 );
 
@@ -67,16 +58,13 @@ const StatItem = ({ value, label }: any) => (
   </div>
 );
 
-// ==================== Main Component ====================
-
+/* ======================================
+              Main Component
+======================================= */
 const Home = async () => {
-  // Check if user is already authenticated
-  const { userId } = await auth();
-
   // Redirect authenticated users to dashboard
-  if (userId) {
-    redirect("/dashboard");
-  }
+  const { userId } = await auth();
+  userId && redirect("/dashboard");
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-slate-950">

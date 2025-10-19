@@ -63,9 +63,13 @@ export class CreateShapeCommand implements Command {
     if (this.shapeId) {
       try {
         await this.deleteShapeFn(this.shapeId);
-      } catch (error: any) {
+      } catch (error) {
         // If shape was already deleted, that's okay - just log it
-        if (error.message?.includes("nonexistent document")) {
+        if (
+          error instanceof Error &&
+          error.message?.includes("nonexistent document")
+        ) {
+          // Shape already deleted, no action needed
         } else {
           throw error;
         }
@@ -78,5 +82,9 @@ export class CreateShapeCommand implements Command {
       // Create shape again - will get a new ID
       this.shapeId = await this.createShapeFn(this.shapeData);
     }
+  }
+
+  getShapeId(): string | null {
+    return this.shapeId;
   }
 }

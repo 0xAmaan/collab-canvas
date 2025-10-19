@@ -77,14 +77,23 @@ export const duplicateShape = (
 
   // Standard shapes (rectangle, circle, ellipse) - share same structure
   // All have x, y, width, height, angle, fillColor
-  return {
-    ...baseShape,
-    type: shape.type as "rectangle" | "circle" | "ellipse",
-    x: (shape as any).x + offset,
-    y: (shape as any).y + offset,
-    width: (shape as any).width,
-    height: (shape as any).height,
-  } as Omit<Shape, "_id">;
+  if (
+    shape.type === "rectangle" ||
+    shape.type === "circle" ||
+    shape.type === "ellipse"
+  ) {
+    return {
+      ...baseShape,
+      type: shape.type,
+      x: shape.x + offset,
+      y: shape.y + offset,
+      width: shape.width,
+      height: shape.height,
+    };
+  }
+
+  // This should never happen, but TypeScript needs it
+  throw new Error(`Unknown shape type: ${(shape as Shape).type}`);
 };
 
 /**

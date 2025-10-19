@@ -93,20 +93,3 @@ export type Shape =
   | TextShape
   | PathShape
   | PolygonShape;
-
-// Utility types
-export interface RectangleProperties {
-  width: number;
-  height: number;
-  fillColor: string;
-}
-
-export interface ShapePosition {
-  x: number;
-  y: number;
-}
-
-export interface ShapeDimensions {
-  width: number;
-  height: number;
-}

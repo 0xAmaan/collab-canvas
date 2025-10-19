@@ -5,14 +5,6 @@
 import type { Id } from "@/convex/_generated/dataModel";
 
 /**
- * Cursor position in canvas coordinates
- */
-export interface CursorPosition {
-  x: number;
-  y: number;
-}
-
-/**
  * Presence record matching Convex schema
  */
 export interface Presence {
@@ -24,15 +16,4 @@ export interface Presence {
   cursorY: number;
   color: string;
   lastActive: number;
-}
-
-/**
- * Active user with cursor information
- */
-export interface ActiveUser {
-  userId: string;
-  userName: string;
-  cursorX: number;
-  cursorY: number;
-  color: string;
 }
