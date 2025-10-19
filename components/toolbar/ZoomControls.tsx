@@ -8,6 +8,7 @@
 
 import { useState, useEffect, memo } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
+import { ZoomOut, ZoomIn } from "lucide-react";
 import { useViewport } from "@/hooks/useViewport";
 
 interface ZoomControlsProps {
@@ -39,19 +40,7 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
           className="w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 disabled:cursor-not-allowed text-white/70"
           title="Zoom Out (10%)"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5"
-          >
-            <path d="M6.75 8.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" />
-            <path
-              fillRule="evenodd"
-              d="M9 2a7 7 0 104.391 12.452l3.329 3.328a.75.75 0 101.06-1.06l-3.328-3.329A7 7 0 009 2zM3.5 9a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <ZoomOut className="w-5 h-5" />
         </button>
         <div className="min-w-[60px] px-2 py-1 text-sm font-medium text-white/70 text-center">
           100%
@@ -61,26 +50,14 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
           className="w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 disabled:cursor-not-allowed text-white/70"
           title="Zoom In (10%)"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-5 h-5"
-          >
-            <path d="M9 6a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 019 6z" />
-            <path
-              fillRule="evenodd"
-              d="M9 2a7 7 0 104.391 12.452l3.329 3.328a.75.75 0 101.06-1.06l-3.328-3.329A7 7 0 009 2zM3.5 9a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-              clipRule="evenodd"
-            />
-          </svg>
+          <ZoomIn className="w-5 h-5" />
         </button>
       </div>
     );
   }
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-1.5 pb-5">
       {/* Zoom Out Button */}
       <button
         onClick={zoomOut}
@@ -88,19 +65,7 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white/70 hover:text-white cursor-pointer"
         title="Zoom Out (10%)"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="w-5 h-5"
-        >
-          <path d="M6.75 8.25a.75.75 0 000 1.5h6.5a.75.75 0 000-1.5h-6.5z" />
-          <path
-            fillRule="evenodd"
-            d="M9 2a7 7 0 104.391 12.452l3.329 3.328a.75.75 0 101.06-1.06l-3.328-3.329A7 7 0 009 2zM3.5 9a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <ZoomOut className="w-5 h-5" />
       </button>
 
       {/* Zoom Percentage Display */}
@@ -119,19 +84,7 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
         className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white/70 hover:text-white cursor-pointer"
         title="Zoom In (10%)"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 20 20"
-          fill="currentColor"
-          className="w-5 h-5"
-        >
-          <path d="M9 6a.75.75 0 01.75.75v1.5h1.5a.75.75 0 010 1.5h-1.5v1.5a.75.75 0 01-1.5 0v-1.5h-1.5a.75.75 0 010-1.5h1.5v-1.5A.75.75 0 019 6z" />
-          <path
-            fillRule="evenodd"
-            d="M9 2a7 7 0 104.391 12.452l3.329 3.328a.75.75 0 101.06-1.06l-3.328-3.329A7 7 0 009 2zM3.5 9a5.5 5.5 0 1111 0 5.5 5.5 0 01-11 0z"
-            clipRule="evenodd"
-          />
-        </svg>
+        <ZoomIn className="w-5 h-5" />
       </button>
     </div>
   );

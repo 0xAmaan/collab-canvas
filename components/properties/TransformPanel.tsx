@@ -6,6 +6,7 @@
  */
 
 import { NumberInput } from "@/components/ui/NumberInput";
+import { PropertySection } from "@/components/ui/PropertySection";
 import type { Shape } from "@/types/shapes";
 
 interface TransformPanelProps {
@@ -38,11 +39,7 @@ export const TransformPanel = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-[11px] uppercase text-[#888888] font-semibold tracking-wide">
-        Transform
-      </h3>
-
+    <PropertySection title="Transform" divider>
       {/* Rotation */}
       <NumberInput
         label="Rotation"
@@ -64,6 +61,6 @@ export const TransformPanel = ({
           Flip V
         </button>
       </div> */}
-    </div>
+    </PropertySection>
   );
 };

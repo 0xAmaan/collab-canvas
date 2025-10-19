@@ -5,9 +5,10 @@
  * Controls for fill color, stroke color, stroke width, and opacity
  */
 
-import { PRESET_COLORS } from "@/constants/colors";
-import type { Shape } from "@/types/shapes";
 import { useState } from "react";
+import { PRESET_COLORS } from "@/constants/colors";
+import { PropertySection } from "@/components/ui/PropertySection";
+import type { Shape } from "@/types/shapes";
 
 interface StylePanelProps {
   shapes: Shape[];
@@ -48,11 +49,7 @@ export const StylePanel = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-[11px] uppercase text-[#888888] font-semibold tracking-wide">
-        Appearance
-      </h3>
-
+    <PropertySection title="Appearance" divider>
       {/* Fill Color */}
       <div className="space-y-2">
         <label className="text-xs text-[#B8B8B8] font-medium">Fill</label>
@@ -129,6 +126,6 @@ export const StylePanel = ({
         step={1}
         suffix="%"
       /> */}
-    </div>
+    </PropertySection>
   );
 };

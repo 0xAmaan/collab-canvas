@@ -6,6 +6,7 @@
  */
 
 import { PresencePanel } from "@/components/presence/PresencePanel";
+import { PropertySection } from "@/components/ui/PropertySection";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import type { Presence } from "@/types/presence";
 import { UserButton } from "@clerk/nextjs";
@@ -36,11 +37,11 @@ export const AccountSection = ({
   const userName = currentUser?.userName || "User";
 
   return (
-    <div className="pb-6">
-      {/* User Account - Primary */}
-      <div className="mb-4">
+    <div>
+      {/* User Account */}
+      <div className="mb-6">
         <div
-          className="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
+          className="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
           onClick={(e) => {
             if (
               e.target === e.currentTarget ||
@@ -74,60 +75,56 @@ export const AccountSection = ({
         </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-white/8 mb-4" />
-
-      {/* Connection Status & Presence - Grouped */}
-      <div className="space-y-3 mb-4">
-        {/* Connection Status */}
-        {isMounted && (
-          <div className="flex items-center gap-2 px-3">
-            <div
-              className={`w-2 h-2 rounded-full ${statusColor}`}
-              title={`Connection: ${status}`}
-            />
-            <span className="text-xs text-white/50 capitalize">{status}</span>
-          </div>
-        )}
-
-        {/* Active Users */}
-        {allUsers.length > 0 && (
-          <div className="px-3 space-y-2">
-            <div className="flex items-center gap-1.5 text-xs text-white/50">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-                <circle cx="9" cy="7" r="4" />
-                <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-              </svg>
-              <span>Active Users</span>
+      {/* Connection Status & Active Users */}
+      <div className="mb-6">
+        <div className="border-t border-white/8 -mx-4 mb-4" />
+        <div className="space-y-4">
+          {/* Connection Status */}
+          {isMounted && (
+            <div className="flex items-center gap-2">
+              <div
+                className={`w-2 h-2 rounded-full ${statusColor}`}
+                title={`Connection: ${status}`}
+              />
+              <span className="text-xs text-white/50 capitalize">{status}</span>
             </div>
-            <PresencePanel
-              activeUsers={allUsers}
-              currentUserId={currentUserId}
-              maxVisible={5}
-            />
-          </div>
-        )}
+          )}
+
+          {/* Active Users */}
+          {allUsers.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-1.5 text-xs text-white/50">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                  <circle cx="9" cy="7" r="4" />
+                  <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                </svg>
+                <span>Active Users</span>
+              </div>
+              <PresencePanel
+                activeUsers={allUsers}
+                currentUserId={currentUserId}
+                maxVisible={5}
+              />
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Divider */}
-      <div className="border-t border-white/8 mb-4" />
-
-      {/* Zoom Controls - Grouped */}
-      <div className="px-3 space-y-2">
-        <div className="text-sm text-white/80 font-medium">Zoom</div>
+      {/* Zoom Controls */}
+      <PropertySection title="Zoom" divider>
         <ZoomControls canvas={canvas} />
-      </div>
+      </PropertySection>
     </div>
   );
 };

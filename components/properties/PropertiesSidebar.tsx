@@ -57,13 +57,11 @@ export const PropertiesSidebar = ({
         />
       </div>
 
-      {/* Properties Divider */}
-      <div className="border-t border-white/10 mb-6" />
-
       {/* Properties Section - Conditional */}
       <div className="flex-1 overflow-y-auto px-4">
         {hasSelection ? (
           <div className="space-y-6 pb-6">
+            <div className="border-t border-white/8 -mx-4 mb-6" />
             <PositionPanel
               shapes={shapes}
               selectedShapeIds={selectedShapeIds}

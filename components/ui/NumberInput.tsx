@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { ChevronUp, ChevronDown } from "lucide-react";
 
 interface NumberInputProps {
   label?: string;
@@ -110,30 +111,14 @@ export const NumberInput = ({
             className="px-1 h-3.5 flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
             title="Increment"
           >
-            <svg
-              width="8"
-              height="8"
-              viewBox="0 0 8 8"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M4 2L6 5H2L4 2Z" fill="currentColor" />
-            </svg>
+            <ChevronUp className="w-3 h-3" />
           </button>
           <button
             onClick={handleDecrement}
             className="px-1 h-3.5 flex items-center justify-center hover:bg-white/10 text-white/50 hover:text-white/80 transition-colors"
             title="Decrement"
           >
-            <svg
-              width="8"
-              height="8"
-              viewBox="0 0 8 8"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path d="M4 6L2 3H6L4 6Z" fill="currentColor" />
-            </svg>
+            <ChevronDown className="w-3 h-3" />
           </button>
         </div>
       </div>

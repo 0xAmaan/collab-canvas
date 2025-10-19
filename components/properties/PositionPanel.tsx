@@ -6,7 +6,9 @@
  */
 
 import { useState } from "react";
+import { Lock, Unlock } from "lucide-react";
 import { NumberInput } from "@/components/ui/NumberInput";
+import { PropertySection } from "@/components/ui/PropertySection";
 import type { Shape } from "@/types/shapes";
 
 interface PositionPanelProps {
@@ -82,11 +84,7 @@ export const PositionPanel = ({
   };
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-[11px] uppercase text-[#888888] font-semibold tracking-wide">
-        Position & Size
-      </h3>
-
+    <PropertySection title="Position & Size">
       {/* Position */}
       {(hasPositionX || hasPositionY) && (
         <div className="grid grid-cols-2 gap-3">
@@ -136,7 +134,7 @@ export const PositionPanel = ({
           {/* Aspect Ratio Lock */}
           <button
             onClick={() => setAspectRatioLocked(!aspectRatioLocked)}
-            className={`flex items-center gap-2 text-xs transition-colors ${
+            className={`flex items-center gap-2 text-xs transition-colors cursor-pointer ${
               aspectRatioLocked
                 ? "text-primary"
                 : "text-white/50 hover:text-white/70"
@@ -144,64 +142,14 @@ export const PositionPanel = ({
             title="Lock aspect ratio"
           >
             {aspectRatioLocked ? (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="4"
-                  y="7"
-                  width="8"
-                  height="6"
-                  rx="1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M5.5 7V5.5C5.5 4.11929 6.61929 3 8 3C9.38071 3 10.5 4.11929 10.5 5.5V7"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
+              <Lock className="w-4 h-4 flex-shrink-0" />
             ) : (
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 16 16"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect
-                  x="4"
-                  y="7"
-                  width="8"
-                  height="6"
-                  rx="1"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <path
-                  d="M5.5 7V5.5C5.5 4.11929 6.61929 3 8 3C9.38071 3 10.5 4.11929 10.5 5.5V6"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-                <line
-                  x1="10.5"
-                  y1="4"
-                  x2="13"
-                  y2="4"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              </svg>
+              <Unlock className="w-4 h-4 flex-shrink-0" />
             )}
-            <span>Lock aspect ratio</span>
+            <span className="leading-4">Lock aspect ratio</span>
           </button>
         </>
       )}
-    </div>
+    </PropertySection>
   );
 };
