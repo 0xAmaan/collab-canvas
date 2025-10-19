@@ -3,8 +3,21 @@ import { v } from "convex/values";
 
 // Database Schema for CollabCanvas
 export default defineSchema({
+  // Projects table - stores canvas projects (multiple canvases per user)
+  projects: defineTable({
+    name: v.string(), // Project name
+    ownerId: v.string(), // Clerk user ID of owner
+    isPublic: v.boolean(), // false = private, true = public (shareable)
+    createdAt: v.number(), // Creation timestamp
+    lastModified: v.number(), // Last modified timestamp
+    thumbnail: v.optional(v.string()), // Base64 preview image
+  })
+    .index("by_owner", ["ownerId"])
+    .index("by_owner_modified", ["ownerId", "lastModified"]),
+
   // Shapes table - stores all shapes on the canvas (rectangle, circle, ellipse, line, text)
   shapes: defineTable({
+    projectId: v.id("projects"), // REQUIRED - which project this shape belongs to
     type: v.union(
       v.literal("rectangle"),
       v.literal("circle"),
@@ -44,10 +57,13 @@ export default defineSchema({
     zIndex: v.optional(v.number()), // Rendering order (higher = front)
   })
     .index("by_created_at", ["createdAt"])
-    .index("by_zIndex", ["zIndex"]),
+    .index("by_zIndex", ["zIndex"])
+    .index("by_project", ["projectId"])
+    .index("by_project_zIndex", ["projectId", "zIndex"]),
 
   // Presence table - tracks online users and their cursor positions
   presence: defineTable({
+    projectId: v.id("projects"), // Which project user is viewing
     userId: v.string(), // User ID (from Clerk)
     userName: v.string(), // User display name
     cursorX: v.number(), // Cursor X position
@@ -56,5 +72,7 @@ export default defineSchema({
     lastActive: v.number(), // Last activity timestamp
   })
     .index("by_user", ["userId"])
-    .index("by_last_active", ["lastActive"]),
+    .index("by_last_active", ["lastActive"])
+    .index("by_project", ["projectId"])
+    .index("by_user_project", ["userId", "projectId"]),
 });

@@ -8,8 +8,10 @@ import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { useThrottle } from "@/hooks/useThrottle";
 import type { Presence } from "@/types/presence";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface UsePresenceOptions {
+  projectId: Id<"projects"> | undefined;
   userId: string;
   userName: string;
   userColor: string;
@@ -17,6 +19,7 @@ interface UsePresenceOptions {
 }
 
 export const usePresence = ({
+  projectId,
   userId,
   userName,
   userColor,
@@ -36,7 +39,7 @@ export const usePresence = ({
   // Convex queries and mutations
   const activeUsers = useQuery(
     api.presence.getActiveUsers,
-    enabled ? {} : "skip",
+    enabled && projectId ? { projectId } : "skip",
   );
   const joinCanvas = useMutation(api.presence.joinCanvas);
   const leaveCanvas = useMutation(api.presence.leaveCanvas);
@@ -73,7 +76,8 @@ export const usePresence = ({
         }
         // Store last cursor position for potential rejoin
         lastCursorPositionRef.current = { x: cursorX, y: cursorY };
-        updatePresence({ cursorX, cursorY }).catch((error) => {
+        if (!projectId) return;
+        updatePresence({ projectId, cursorX, cursorY }).catch((error) => {
           // If presence is gone, mark as not joined so visibility handler will rejoin
           if (error.message?.includes("Presence record not found")) {
             console.error(
@@ -84,7 +88,7 @@ export const usePresence = ({
           }
         });
       },
-      [updatePresence, enabled, userId],
+      [updatePresence, enabled, userId, projectId],
     ),
     50, // 50ms throttle for cursor updates
   );
@@ -93,8 +97,8 @@ export const usePresence = ({
   useEffect(() => {
     if (!enabled || hasJoinedRef.current) return;
 
-    // Additional safety check: don't join if userId is invalid
-    if (!userId || userId === "anonymous") {
+    // Additional safety check: don't join if userId or projectId is invalid
+    if (!userId || userId === "anonymous" || !projectId) {
       return;
     }
 
@@ -103,6 +107,7 @@ export const usePresence = ({
     const join = async () => {
       try {
         await joinCanvas({
+          projectId,
           userName,
           color: userColor,
         });
@@ -114,6 +119,7 @@ export const usePresence = ({
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
             await updatePresence({
+              projectId,
               cursorX: lastPos.x,
               cursorY: lastPos.y,
             });
@@ -130,12 +136,12 @@ export const usePresence = ({
       mounted = false;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, userId, userName, userColor]);
+  }, [enabled, userId, userName, userColor, projectId]);
 
   // Heartbeat mechanism - keep presence alive every 5 seconds
   // Only run when window is visible
   useEffect(() => {
-    if (!enabled || !hasJoinedRef.current) return;
+    if (!enabled || !hasJoinedRef.current || !projectId) return;
 
     const checkAndRejoin = async () => {
       // Skip heartbeat if window is not active
@@ -144,7 +150,7 @@ export const usePresence = ({
       }
 
       try {
-        await heartbeat();
+        await heartbeat({ projectId });
       } catch (error) {
         console.error("[usePresence] Heartbeat failed:", error);
         // Presence record was likely deleted (user was inactive too long)
@@ -156,6 +162,7 @@ export const usePresence = ({
         // Attempt to rejoin
         try {
           await joinCanvas({
+            projectId,
             userName,
             color: userColor,
           });
@@ -166,6 +173,7 @@ export const usePresence = ({
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
             await updatePresence({
+              projectId,
               cursorX: lastPos.x,
               cursorY: lastPos.y,
             });
@@ -184,12 +192,12 @@ export const usePresence = ({
       clearInterval(intervalId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, isReady, userName, userColor]);
+  }, [enabled, isReady, userName, userColor, projectId]);
 
   // Handle visibility changes - rejoin when tab becomes visible
   // Page Visibility API is more reliable than focus events for tab switches
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !projectId) return;
 
     const handleVisibilityChange = async () => {
       const isVisible = !document.hidden;
@@ -207,6 +215,7 @@ export const usePresence = ({
 
         try {
           await joinCanvas({
+            projectId,
             userName,
             color: userColor,
           });
@@ -218,6 +227,7 @@ export const usePresence = ({
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
             await updatePresence({
+              projectId,
               cursorX: lastPos.x,
               cursorY: lastPos.y,
             });
@@ -257,33 +267,37 @@ export const usePresence = ({
       window.removeEventListener("blur", handleBlur);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, userName, userColor]);
+  }, [enabled, userName, userColor, projectId]);
 
   // Leave canvas on unmount - only run cleanup on actual unmount (not hot reload)
   useEffect(() => {
     return () => {
       // Check if this is a real unmount (page close) vs hot reload
       // During hot reload, the module will be replaced but window persists
-      if (hasJoinedRef.current && !window.location.href.includes("localhost")) {
+      if (
+        hasJoinedRef.current &&
+        projectId &&
+        !window.location.href.includes("localhost")
+      ) {
         // Best effort cleanup
-        leaveCanvas().catch((error) => {});
+        leaveCanvas({ projectId }).catch((error) => {});
         hasJoinedRef.current = false;
         setIsReady(false);
       } else if (hasJoinedRef.current) {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Empty array - only run on mount/unmount
+  }, [projectId]); // Include projectId for cleanup
 
   // Cleanup on page unload (best effort)
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || !projectId) return;
 
     const handleBeforeUnload = () => {
       if (hasJoinedRef.current) {
         // Synchronous beacon API would be better, but Convex mutations are async
         // This is best effort - the cron job will clean up stale presence
-        leaveCanvas().catch(() => {
+        leaveCanvas({ projectId }).catch(() => {
           // Ignore errors during unload
         });
       }
@@ -295,7 +309,7 @@ export const usePresence = ({
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled]); // Only depend on enabled, not leaveCanvas
+  }, [enabled, projectId]); // Only depend on enabled and projectId, not leaveCanvas
 
   // Performance optimization: Memoize user list filtering
   // Filter out current user from active users (for cursors)

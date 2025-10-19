@@ -30,14 +30,21 @@ import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
 import type { Shape } from "@/types/shapes";
 import { useUser } from "@clerk/nextjs";
 import type { Canvas as FabricCanvas } from "fabric";
-import { PanelLeft } from "lucide-react";
+import { PanelLeft, ArrowLeft, Globe, Lock } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useProject } from "@/hooks/useProject";
+import type { Id } from "@/convex/_generated/dataModel";
+import Link from "next/link";
 
 interface DashboardClientProps {
   userName: string;
+  projectId: Id<"projects">;
 }
 
-export const DashboardClient = ({ userName }: DashboardClientProps) => {
+export const DashboardClient = ({
+  userName,
+  projectId,
+}: DashboardClientProps) => {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
@@ -71,6 +78,9 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
   // Connection status
   const { status, color } = useConnectionStatus();
 
+  // Project management
+  const { project, updateProject: updateProjectData } = useProject(projectId);
+
   // Set mounted state to prevent hydration mismatch
   useEffect(() => {
     setIsMounted(true);
@@ -78,7 +88,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
 
   // Shapes management
   const { shapes, updateShape, createShape, deleteShape, reorderShapes } =
-    useShapes();
+    useShapes(projectId);
 
   // User info and color
   const userId = user?.id || "anonymous";
@@ -87,6 +97,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
 
   // Presence for showing active users and cursor tracking
   const { allUsers, otherUsers, updateCursorPosition, isReady } = usePresence({
+    projectId,
     userId,
     userName,
     userColor,
@@ -317,6 +328,29 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
     [reorderShapes],
   );
 
+  // Handle project visibility toggle
+  const handleTogglePublic = useCallback(async () => {
+    if (!project) return;
+    try {
+      await updateProjectData({ isPublic: !project.isPublic });
+    } catch (error) {
+      console.error("Failed to toggle project visibility:", error);
+    }
+  }, [project, updateProjectData]);
+
+  // Handle project rename
+  const handleRenameProject = useCallback(
+    async (newName: string) => {
+      if (!project) return;
+      try {
+        await updateProjectData({ name: newName });
+      } catch (error) {
+        console.error("Failed to rename project:", error);
+      }
+    },
+    [project, updateProjectData],
+  );
+
   // Handle Spacebar temporary hand mode
   const handleSpacebarDown = useCallback(() => {
     // Store current tool and switch to hand
@@ -544,6 +578,15 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
     onSpacebarUp: handleSpacebarUp,
   });
 
+  // Show loading state if project data isn't loaded yet
+  if (!project) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-sidebar">
+        <div className="text-white text-lg">Loading project...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen flex overflow-hidden bg-slate-950">
       {/* Subtle gradient background */}
@@ -559,7 +602,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
         }}
       ></div>
 
-      {/* Left Sidebar - AI Chat & Layers Panels */}
+      {/* Left Sidebar - AI Chat & Layers Panels with Project Header */}
       <LeftSidebar
         isOpen={isSidebarOpen}
         onToggle={handleToggleSidebar}
@@ -570,17 +613,71 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
         selectedShapeIds={selectedShapeIds}
         canvas={fabricCanvas}
         onReorderShapes={handleReorderShapes}
+        projectName={project.name}
+        isPublic={project.isPublic}
+        isOwner={project.isOwner}
+        onTogglePublic={handleTogglePublic}
+        onRenameProject={handleRenameProject}
       />
 
-      {/* Sidebar Toggle Button - show when closed */}
+      {/* Sidebar Toggle Button - show when closed with horizontal project info */}
       {!isSidebarOpen && (
-        <button
-          onClick={handleToggleSidebar}
-          className="fixed left-4 top-6 z-30 p-2 bg-panel hover:bg-toolbar rounded-lg text-white shadow-xl transition-colors cursor-pointer border border-white/10"
-          title="Open AI Chat (⌘+\)"
-        >
-          <PanelLeft className="w-5 h-5" />
-        </button>
+        <div className="fixed left-4 top-6 z-30 bg-panel rounded-lg shadow-xl border border-white/10">
+          <div className="flex items-center gap-2 p-2">
+            {/* Back Button */}
+            <Link
+              href="/projects"
+              className="p-1.5 hover:bg-white/5 text-white/80 hover:text-white rounded transition-colors"
+              title="Back to Projects"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </Link>
+
+            {/* Project Name - plain text, no background */}
+            <div className="px-2 text-white text-sm">
+              <span className="font-semibold whitespace-nowrap">
+                {project.name}
+              </span>
+            </div>
+
+            {/* Share/Status Icon */}
+            {project.isOwner ? (
+              <button
+                onClick={handleTogglePublic}
+                className="p-1.5 hover:bg-white/5 text-white/80 hover:text-white rounded transition-colors cursor-pointer"
+                title={
+                  project.isPublic
+                    ? "Public - Click to make Private"
+                    : "Private - Click to make Public"
+                }
+              >
+                {project.isPublic ? (
+                  <Globe className="w-4 h-4 text-green-400" />
+                ) : (
+                  <Lock className="w-4 h-4 text-gray-400" />
+                )}
+              </button>
+            ) : (
+              project.isPublic && (
+                <div
+                  className="p-1.5 text-green-400 rounded bg-green-400/10"
+                  title="Public Project"
+                >
+                  <Globe className="w-4 h-4" />
+                </div>
+              )
+            )}
+
+            {/* Toggle Button - moved to the right */}
+            <button
+              onClick={handleToggleSidebar}
+              className="p-1.5 hover:bg-toolbar text-white transition-colors cursor-pointer rounded"
+              title="Open Sidebar (⌘+\)"
+            >
+              <PanelLeft className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
       )}
 
       {/* Main Canvas Area */}
@@ -607,6 +704,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
             onDuplicateSelected={registerDuplicateHandler}
             updateCursorPosition={safeUpdateCursorPosition}
             history={history}
+            projectId={projectId}
           />
 
           {/* Multiplayer cursors container - synced with canvas viewport transform */}

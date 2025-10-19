@@ -12,11 +12,12 @@ import { v } from "convex/values";
 
 /**
  * Join the canvas - create or update presence record
- * Called when user enters the dashboard
+ * Called when user enters a project
  * Idempotent - safe to call multiple times
  */
 export const joinCanvas = mutation({
   args: {
+    projectId: v.id("projects"),
     userName: v.string(),
     color: v.string(), // Cursor color assigned by client
   },
@@ -29,10 +30,12 @@ export const joinCanvas = mutation({
 
     const userId = user.subject;
 
-    // Check if presence record already exists
+    // Check if presence record already exists for this user in this project
     const existing = await ctx.db
       .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_project", (q) =>
+        q.eq("userId", userId).eq("projectId", args.projectId),
+      )
       .first();
 
     if (existing) {
@@ -46,6 +49,7 @@ export const joinCanvas = mutation({
     } else {
       // Create new presence record
       const presenceId = await ctx.db.insert("presence", {
+        projectId: args.projectId,
         userId,
         userName: args.userName,
         cursorX: 0,
@@ -65,6 +69,7 @@ export const joinCanvas = mutation({
  */
 export const updatePresence = mutation({
   args: {
+    projectId: v.id("projects"),
     cursorX: v.number(),
     cursorY: v.number(),
   },
@@ -77,10 +82,12 @@ export const updatePresence = mutation({
 
     const userId = user.subject;
 
-    // Find user's presence record
+    // Find user's presence record for this project
     const presence = await ctx.db
       .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_project", (q) =>
+        q.eq("userId", userId).eq("projectId", args.projectId),
+      )
       .first();
 
     if (!presence) {
@@ -106,7 +113,10 @@ export const updatePresence = mutation({
  * Only updates timestamp - no other data
  */
 export const heartbeat = mutation({
-  handler: async (ctx) => {
+  args: {
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
     // Verify user is authenticated
     const user = await ctx.auth.getUserIdentity();
     if (!user) {
@@ -115,10 +125,12 @@ export const heartbeat = mutation({
 
     const userId = user.subject;
 
-    // Find user's presence record
+    // Find user's presence record for this project
     const presence = await ctx.db
       .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_project", (q) =>
+        q.eq("userId", userId).eq("projectId", args.projectId),
+      )
       .first();
 
     if (!presence) {
@@ -141,7 +153,10 @@ export const heartbeat = mutation({
  * Ensures clean exit when possible
  */
 export const leaveCanvas = mutation({
-  handler: async (ctx) => {
+  args: {
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
     // Verify user is authenticated
     const user = await ctx.auth.getUserIdentity();
     if (!user) {
@@ -151,10 +166,12 @@ export const leaveCanvas = mutation({
 
     const userId = user.subject;
 
-    // Find and delete user's presence record
+    // Find and delete user's presence record for this project
     const presence = await ctx.db
       .query("presence")
-      .withIndex("by_user", (q) => q.eq("userId", userId))
+      .withIndex("by_user_project", (q) =>
+        q.eq("userId", userId).eq("projectId", args.projectId),
+      )
       .first();
 
     if (presence) {
@@ -171,22 +188,26 @@ export const leaveCanvas = mutation({
 // ============================================================================
 
 /**
- * Get all active users
+ * Get all active users for a specific project
  * Returns users with recent activity (within last 30 seconds)
  * This is the main subscription point for multiplayer cursors and presence panel
  */
 export const getActiveUsers = query({
-  handler: async (ctx) => {
+  args: {
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
     // Calculate cutoff time (30 seconds ago)
     const cutoffTime = Date.now() - 30 * 1000;
 
-    // Get all presence records with recent activity
+    // Get all presence records for this project with recent activity
     const activeUsers = await ctx.db
       .query("presence")
-      .withIndex("by_last_active", (q) => q.gte("lastActive", cutoffTime))
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
       .collect();
 
-    return activeUsers;
+    // Filter to only recent activity (last 30 seconds)
+    return activeUsers.filter((user) => user.lastActive >= cutoffTime);
   },
 });
 

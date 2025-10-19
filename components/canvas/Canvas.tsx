@@ -31,6 +31,7 @@ import type {
   ToolContext,
   ToolHandlers,
 } from "@/components/canvas/tools/types";
+import type { Id } from "@/convex/_generated/dataModel";
 
 interface CanvasProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
@@ -49,6 +50,7 @@ interface CanvasProps {
     canRedo: boolean;
     clear: () => void;
   };
+  projectId: Id<"projects">;
 }
 
 export const Canvas = ({
@@ -61,6 +63,7 @@ export const Canvas = ({
   onDuplicateSelected,
   updateCursorPosition,
   history,
+  projectId,
 }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -75,7 +78,7 @@ export const Canvas = ({
     moveShape: moveShapeInConvex,
     updateShape: updateShapeInConvex,
     deleteShape: deleteShapeInConvex,
-  } = useShapes();
+  } = useShapes(projectId);
 
   // Track last move update time for throttling real-time movement
   const lastMoveUpdateRef = useRef<number>(0);

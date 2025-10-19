@@ -1,10 +1,37 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 
 /**
  * Shape Mutations and Queries
  * Handles all shape operations on the shared canvas
  */
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Check if user has access to a project
+ * Returns project data and ownership status
+ * Throws error if no access
+ */
+async function checkProjectAccess(ctx: any, projectId: Id<"projects">) {
+  const project = await ctx.db.get(projectId);
+  if (!project) {
+    throw new Error("Project not found");
+  }
+
+  const user = await ctx.auth.getUserIdentity();
+  const isOwner = user?.subject === project.ownerId;
+  const canAccess = isOwner || project.isPublic;
+
+  if (!canAccess) {
+    throw new Error("No access to this project");
+  }
+
+  return { project, isOwner };
+}
 
 // ============================================================================
 // MUTATIONS (Write Operations)
@@ -16,6 +43,7 @@ import { v } from "convex/values";
  */
 export const createShape = mutation({
   args: {
+    projectId: v.id("projects"),
     type: v.union(
       v.literal("rectangle"),
       v.literal("circle"),
@@ -55,9 +83,15 @@ export const createShape = mutation({
       throw new Error("Not authenticated");
     }
 
-    // Get max zIndex to assign new shape to front
-    const allShapes = await ctx.db.query("shapes").collect();
-    const maxZIndex = allShapes.reduce(
+    // Check project access (must have write permission)
+    await checkProjectAccess(ctx, args.projectId);
+
+    // Get max zIndex within this project to assign new shape to front
+    const projectShapes = await ctx.db
+      .query("shapes")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
+    const maxZIndex = projectShapes.reduce(
       (max, shape) => Math.max(max, shape.zIndex ?? -1),
       -1,
     );
@@ -65,6 +99,7 @@ export const createShape = mutation({
 
     // Insert new shape into database
     const shapeId = await ctx.db.insert("shapes", {
+      projectId: args.projectId,
       type: args.type,
       x: args.x,
       y: args.y,
@@ -131,6 +166,9 @@ export const updateShape = mutation({
       return args.shapeId;
     }
 
+    // Check project access
+    await checkProjectAccess(ctx, shape.projectId);
+
     // Build update object with only provided fields
     const updates: any = {
       lastModified: Date.now(),
@@ -183,6 +221,9 @@ export const moveShape = mutation({
       return args.shapeId;
     }
 
+    // Check project access
+    await checkProjectAccess(ctx, shape.projectId);
+
     // Quick update - only position and timestamp
     await ctx.db.patch(args.shapeId, {
       x: args.x,
@@ -209,6 +250,15 @@ export const deleteShape = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Check if shape exists
+    const shape = await ctx.db.get(args.shapeId);
+    if (!shape) {
+      return args.shapeId;
+    }
+
+    // Check project access
+    await checkProjectAccess(ctx, shape.projectId);
+
     // Delete the shape
     await ctx.db.delete(args.shapeId);
 
@@ -221,14 +271,23 @@ export const deleteShape = mutation({
 // ============================================================================
 
 /**
- * Get all shapes on the canvas
+ * Get all shapes on the canvas for a specific project
  * This is the main subscription point - Convex will push updates to all clients
  * Shapes are ordered by z-index (rendering order)
  */
 export const getShapes = query({
-  handler: async (ctx) => {
-    // Get all shapes ordered by z-index
-    const shapes = await ctx.db.query("shapes").collect();
+  args: {
+    projectId: v.id("projects"),
+  },
+  handler: async (ctx, args) => {
+    // Check project access
+    await checkProjectAccess(ctx, args.projectId);
+
+    // Get all shapes for this project
+    const shapes = await ctx.db
+      .query("shapes")
+      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+      .collect();
 
     // Sort by zIndex (handle undefined as 0, ascending order)
     shapes.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
@@ -247,6 +306,13 @@ export const getShape = query({
   },
   handler: async (ctx, args) => {
     const shape = await ctx.db.get(args.shapeId);
+    if (!shape) {
+      return null;
+    }
+
+    // Check project access
+    await checkProjectAccess(ctx, shape.projectId);
+
     return shape;
   },
 });
@@ -273,6 +339,9 @@ export const updateZIndex = mutation({
       return args.shapeId;
     }
 
+    // Check project access
+    await checkProjectAccess(ctx, shape.projectId);
+
     // Update z-index
     await ctx.db.patch(args.shapeId, {
       zIndex: args.zIndex,
@@ -289,6 +358,7 @@ export const updateZIndex = mutation({
  */
 export const reorderShapes = mutation({
   args: {
+    projectId: v.id("projects"),
     updates: v.array(
       v.object({
         id: v.id("shapes"),
@@ -302,6 +372,9 @@ export const reorderShapes = mutation({
     if (!user) {
       throw new Error("Not authenticated");
     }
+
+    // Check project access
+    await checkProjectAccess(ctx, args.projectId);
 
     // Update all shapes in batch
     for (const update of args.updates) {

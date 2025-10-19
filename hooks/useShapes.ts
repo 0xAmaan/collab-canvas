@@ -13,9 +13,10 @@ type OptimisticShape = Shape & {
   _isOptimistic?: boolean;
 };
 
-export const useShapes = () => {
+export const useShapes = (projectId: Id<"projects"> | undefined) => {
   // Subscribe to all shapes from Convex (real-time)
-  const convexShapes = useQuery(api.shapes.getShapes) ?? [];
+  const convexShapes =
+    useQuery(api.shapes.getShapes, projectId ? { projectId } : "skip") ?? [];
 
   // Local optimistic updates
   const [optimisticShapes, setOptimisticShapes] = useState<OptimisticShape[]>(
@@ -134,6 +135,10 @@ export const useShapes = () => {
    */
   const createShape = useCallback(
     async (shape: Omit<Shape, "_id">) => {
+      if (!projectId) {
+        throw new Error("Project ID is required to create shapes");
+      }
+
       // Generate temporary ID for optimistic update
       const tempId = `temp_${Date.now()}_${Math.random()}`;
 
@@ -149,6 +154,7 @@ export const useShapes = () => {
       try {
         // Build mutation args based on shape type
         const mutationArgs: any = {
+          projectId,
           type: shape.type,
         };
 
@@ -214,7 +220,7 @@ export const useShapes = () => {
         throw error;
       }
     },
-    [createShapeMutation],
+    [createShapeMutation, projectId],
   );
 
   /**
@@ -308,8 +314,13 @@ export const useShapes = () => {
    */
   const reorderShapes = useCallback(
     async (updates: Array<{ id: string; zIndex: number }>) => {
+      if (!projectId) {
+        throw new Error("Project ID is required to reorder shapes");
+      }
+
       try {
         await reorderShapesMutation({
+          projectId,
           updates: updates.map((u) => ({
             id: u.id as Id<"shapes">,
             zIndex: u.zIndex,
@@ -320,7 +331,7 @@ export const useShapes = () => {
         throw error;
       }
     },
-    [reorderShapesMutation],
+    [reorderShapesMutation, projectId],
   );
 
   return {
