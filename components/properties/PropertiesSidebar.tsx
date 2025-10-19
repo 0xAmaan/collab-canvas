@@ -44,7 +44,7 @@ export const PropertiesSidebar = ({
   const [isShortcutsHovered, setIsShortcutsHovered] = useState(false);
 
   return (
-    <div className="w-[300px] h-full bg-[var(--color-sidebar)] border-l border-white/8 flex flex-col relative z-10">
+    <div className="w-[300px] h-full bg-[var(--color-sidebar)] border-l border-white/8 flex flex-col relative z-10 flex-shrink-0">
       {/* Account Section - Always Visible */}
       <div className="pt-4 px-4">
         <AccountSection

@@ -31,29 +31,6 @@ High Level Overview
 
 ---
 
-### TIER 6: Multi-Select Issues (1 hour) 🎯
-
-**Medium-high complexity**
-
-#### 6.1 Multi-Selection "Completely Broken"
-
-**File:** `components/canvas/tools/useSelectTool.ts`, `components/canvas/Canvas.tsx`
-
-**Current implementation looks correct** (lines 37-48 in useSelectTool.ts enable Fabric.js multi-select)
-
-**Investigation needed:**
-
-1. Reproduce exact issue (what doesn't work?)
-2. Check if `canvas.selection = true` is being overridden
-3. Verify Fabric.js ActiveSelection is handled correctly
-4. Check shape update/delete handlers support multi-select
-
-**Complexity:** 6/10
-
-**Depth:** Medium-high (need specific reproduction steps)
-
----
-
 ### TIER 7: Advanced Issues (1.5 hours) 🔬
 
 **High complexity, deep investigation needed**

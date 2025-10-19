@@ -565,7 +565,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
       )}
 
       {/* Main Canvas Area */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative min-w-0">
         {/* Floating Toolbar - Bottom Center */}
         <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20">
           <BottomToolbar
