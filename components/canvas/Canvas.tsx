@@ -144,17 +144,38 @@ export const Canvas = ({
 
   // Handle deletion of selected shape(s) - supports multi-select
   const handleDeleteSelected = useCallback(async () => {
-    const activeObject = fabricCanvasRef.current?.getActiveObject();
+    const fabricCanvas = fabricCanvasRef.current;
+    if (!fabricCanvas) return;
+
+    const activeObject = fabricCanvas.getActiveObject();
     const shapesToDelete = getSelectedShapes(activeObject, shapesRef.current);
 
-    for (const shape of shapesToDelete) {
-      const command = new DeleteShapeCommand(
-        shape,
-        createShapeInConvex,
-        deleteShapeInConvex,
-      );
-      await historyRef.current.execute(command);
-    }
+    // Get Fabric objects before we lose the selection
+    const activeObjects =
+      activeObject?.type === "activeselection"
+        ? (activeObject as any)._objects || []
+        : activeObject
+          ? [activeObject]
+          : [];
+
+    // OPTIMISTIC UPDATE: Remove from canvas immediately for instant feedback
+    activeObjects.forEach((obj: FabricObject) => {
+      fabricCanvas.remove(obj);
+    });
+    fabricCanvas.discardActiveObject();
+    fabricCanvas.requestRenderAll();
+
+    // Delete from database in parallel (no await in loop)
+    await Promise.all(
+      shapesToDelete.map(async (shape) => {
+        const command = new DeleteShapeCommand(
+          shape,
+          createShapeInConvex,
+          deleteShapeInConvex,
+        );
+        await historyRef.current.execute(command);
+      }),
+    );
   }, [createShapeInConvex, deleteShapeInConvex]);
 
   // Handle duplication of selected shape(s) (Cmd+D) - supports all shape types and multi-select

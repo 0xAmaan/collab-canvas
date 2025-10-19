@@ -1,11 +1,6 @@
 # CollabCanvas Bug Fix Plan
 
-High Level Overview
-### TIER 7: Advanced
-- **7.1** Delete shape UI error
-- **7.2** Connection status accuracy
-- **7.3** Left sidebar resize issue
-- **7.4** Canvas resize lag
+
 
 
 
@@ -27,33 +22,37 @@ High Level Overview
 
 ---
 
-
-
----
-
 ### TIER 7: Advanced Issues (1.5 hours) 🔬
 
 **High complexity, deep investigation needed**
 
-#### 7.1 Delete Shape UI Error (depends on 2.1)
+#### 7.1 Delete Shape UI Error ✅ FIXED
 
 **Error:** "Update on nonexistent document ID" after delete
 
-**Root cause theory:**
+**Root cause (CONFIRMED):**
 
-1. Delete triggers UI update
-2. UI tries to update shape that no longer exists
-3. Likely in property panel watching deleted shape
+Race condition: When shapes are deleted while async update operations are in-flight (from `object:moving`, `object:modified`, `selection:cleared` events), the pending updates attempt to modify non-existent documents.
 
-**Investigation:**
+**Solution implemented:**
 
-1. After fixing 2.1, check if error persists
-2. If yes, find which component updates on delete
-3. Add safeguards to skip updates for deleted shapes
+**Server-side fix (convex/shapes.ts):**
+- Added `ctx.db.get()` check before `ctx.db.patch()` in both `updateShape` and `moveShape` mutations
+- If shape doesn't exist, gracefully return instead of throwing error
+- This prevents Convex server errors entirely
+
+**Client-side fix (Canvas.tsx):**
+- Updated `handleDeleteSelected` to immediately remove Fabric.js objects and clear selection
+- Provides instant UI feedback for multi-select deletion (Test C)
+- Prevents deleted shapes from remaining visible until deselection
+
+**Files modified:**
+- `convex/shapes.ts`: Added existence checks in updateShape and moveShape
+- `Canvas.tsx`: Enhanced handleDeleteSelected with immediate canvas cleanup
 
 **Complexity:** 7/10
 
-**Depth:** High (race condition in reactive state)
+**Depth:** High (race condition in reactive state + canvas sync)
 
 
 

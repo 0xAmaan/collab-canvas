@@ -115,6 +115,13 @@ export const updateShape = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Check if shape exists first (prevent race condition with deletion)
+    const shape = await ctx.db.get(args.shapeId);
+    if (!shape) {
+      // Shape was deleted, silently return (this is expected behavior)
+      return args.shapeId;
+    }
+
     // Build update object with only provided fields
     const updates: any = {
       lastModified: Date.now(),
@@ -158,6 +165,13 @@ export const moveShape = mutation({
     const user = await ctx.auth.getUserIdentity();
     if (!user) {
       throw new Error("Not authenticated");
+    }
+
+    // Check if shape exists first (prevent race condition with deletion)
+    const shape = await ctx.db.get(args.shapeId);
+    if (!shape) {
+      // Shape was deleted, silently return (this is expected behavior)
+      return args.shapeId;
     }
 
     // Quick update - only position and timestamp
