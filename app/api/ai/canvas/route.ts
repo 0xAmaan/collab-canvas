@@ -163,10 +163,6 @@ export async function POST(request: Request) {
     if (result.toolCalls) {
       for (const toolCall of result.toolCalls) {
         // Debug: log the entire tool call object
-        console.log(
-          "[AI Canvas] Full tool call:",
-          JSON.stringify(toolCall, null, 2),
-        );
 
         // Vercel AI SDK v5 uses different property names
         // Try multiple possible property names for compatibility
@@ -177,21 +173,9 @@ export async function POST(request: Request) {
           ...args,
         };
 
-        console.log(
-          "[AI Canvas] Tool call:",
-          toolCall.toolName,
-          "Input:",
-          args,
-        );
-        console.log("[AI Canvas] Constructed command:", cmd);
         commands.push(cmd as ShapeCommand);
       }
     }
-
-    console.log(
-      "[AI Canvas] All commands to execute:",
-      JSON.stringify(commands, null, 2),
-    );
 
     // Build response message
     let message = result.text || "Command executed successfully";

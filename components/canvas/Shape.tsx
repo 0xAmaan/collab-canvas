@@ -102,9 +102,6 @@ export function createFabricShape(shape: Shape): FabricObject {
       try {
         const pathData = JSON.parse(shape.pathData);
 
-        console.log("🔷 [CREATE PATH] baseConfig.fill:", baseConfig.fill);
-        console.log("🔷 [CREATE PATH] shape.fillColor:", shape.fillColor);
-
         // baseConfig already has fill: undefined for paths, so we can use it directly
         const pathObj = new Path(pathData, {
           ...baseConfig,
@@ -114,18 +111,8 @@ export function createFabricShape(shape: Shape): FabricObject {
           strokeWidth: shape.strokeWidth,
         });
 
-        console.log(
-          "🔷 [CREATE PATH] pathObj.fill IMMEDIATELY after creation:",
-          pathObj.fill,
-        );
-
         return pathObj;
       } catch (error) {
-        console.error(
-          "❌ [RECONSTRUCT PATH] Failed to parse path data:",
-          error,
-          shape,
-        );
         // Fallback to a simple line if path data is invalid
         return new Line([0, 0, 100, 100], {
           ...baseConfig,

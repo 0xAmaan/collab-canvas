@@ -59,32 +59,18 @@ export function usePresence({
       (cursorX: number, cursorY: number) => {
         // Guard: Don't update if window is not active
         if (!isWindowActive()) {
-          console.log(
-            "[usePresence] Cursor update blocked - window not active",
-          );
           return;
         }
         // Guard: Don't update if not enabled or haven't joined yet
         if (!enabled) {
-          console.log("[usePresence] Cursor update blocked - not enabled");
           return;
         }
         if (isRejoiningRef.current) {
-          console.log(
-            "[usePresence] Cursor update blocked - rejoining in progress",
-          );
           return;
         }
         if (!hasJoinedRef.current) {
-          console.log(
-            "[usePresence] Cursor update blocked - haven't joined yet. userId:",
-            userId,
-            "hasJoinedRef:",
-            hasJoinedRef.current,
-          );
           return;
         }
-        // console.log("[usePresence] Sending cursor update for user:", userId);
         // Store last cursor position for potential rejoin
         lastCursorPositionRef.current = { x: cursorX, y: cursorY };
         updatePresence({ cursorX, cursorY }).catch((error) => {
@@ -109,7 +95,6 @@ export function usePresence({
 
     // Additional safety check: don't join if userId is invalid
     if (!userId || userId === "anonymous") {
-      console.log("[usePresence] Skipping join - userId is invalid:", userId);
       return;
     }
 
@@ -117,11 +102,6 @@ export function usePresence({
 
     const join = async () => {
       try {
-        console.log(
-          "[usePresence] Calling joinCanvas for user:",
-          userName,
-          userId,
-        );
         await joinCanvas({
           userName,
           color: userColor,
@@ -129,18 +109,10 @@ export function usePresence({
         if (mounted) {
           hasJoinedRef.current = true;
           setIsReady(true); // Trigger re-render so parent sees isReady = true
-          console.log(
-            "[usePresence] Successfully joined canvas for user:",
-            userName,
-          );
 
           // Send initial cursor position if we have one (for rejoins during same session)
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
-            console.log(
-              "[usePresence] Sending last cursor position after initial join:",
-              lastPos,
-            );
             await updatePresence({
               cursorX: lastPos.x,
               cursorY: lastPos.y,
@@ -165,29 +137,18 @@ export function usePresence({
   useEffect(() => {
     if (!enabled || !hasJoinedRef.current) return;
 
-    console.log("[usePresence] Starting heartbeat interval for user:", userId);
-
     const checkAndRejoin = async () => {
       // Skip heartbeat if window is not active
       if (!isWindowActive()) {
-        console.log("[usePresence] Heartbeat skipped - window not active");
         return;
       }
 
-      console.log(
-        "[usePresence] Heartbeat running for user:",
-        userId,
-        "at",
-        new Date().toLocaleTimeString(),
-      );
       try {
         await heartbeat();
-        console.log("[usePresence] Heartbeat successful");
       } catch (error) {
         console.error("[usePresence] Heartbeat failed:", error);
         // Presence record was likely deleted (user was inactive too long)
         // Reset state and rejoin
-        console.log("[usePresence] Rejoining canvas after failed heartbeat");
         isRejoiningRef.current = true;
         hasJoinedRef.current = false;
         setIsReady(false);
@@ -200,15 +161,10 @@ export function usePresence({
           });
           hasJoinedRef.current = true;
           setIsReady(true);
-          console.log("[usePresence] Successfully rejoined canvas");
 
           // Send last known cursor position after rejoining via heartbeat
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
-            console.log(
-              "[usePresence] Sending last cursor position after heartbeat rejoin:",
-              lastPos,
-            );
             await updatePresence({
               cursorX: lastPos.x,
               cursorY: lastPos.y,
@@ -225,10 +181,6 @@ export function usePresence({
     const intervalId = setInterval(checkAndRejoin, 5000);
 
     return () => {
-      console.log(
-        "[usePresence] Clearing heartbeat interval for user:",
-        userId,
-      );
       clearInterval(intervalId);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -239,34 +191,18 @@ export function usePresence({
   useEffect(() => {
     if (!enabled) return;
 
-    console.log(
-      "[usePresence] Setting up visibility change listener for user:",
-      userId,
-    );
-
     const handleVisibilityChange = async () => {
       const isVisible = !document.hidden;
       const hasFocus = document.hasFocus();
       isWindowVisibleRef.current = isVisible;
       isWindowFocusedRef.current = hasFocus;
 
-      console.log(
-        "[usePresence] Visibility changed:",
-        isVisible ? "visible" : "hidden",
-        "hasFocus:",
-        hasFocus,
-      );
-
       if (isVisible) {
         // Tab became visible - always try to rejoin
-        console.log(
-          "[usePresence] Tab became visible, rejoining to ensure presence...",
-        );
 
         // Always rejoin when tab becomes visible to ensure presence record exists
         // joinCanvas is idempotent - it will either create or update the record
         // This fixes the issue where hasJoinedRef thinks we're joined but cron deleted us
-        console.log("[usePresence] Rejoining on visibility change");
         isRejoiningRef.current = true;
 
         try {
@@ -276,47 +212,31 @@ export function usePresence({
           });
           hasJoinedRef.current = true;
           setIsReady(true);
-          console.log(
-            "[usePresence] Rejoined successfully on visibility change",
-          );
 
           // Send last known cursor position immediately after rejoining
           // This makes the cursor appear on other users' screens right away
           const lastPos = lastCursorPositionRef.current;
           if (lastPos.x !== 0 || lastPos.y !== 0) {
-            console.log(
-              "[usePresence] Sending last cursor position after rejoin:",
-              lastPos,
-            );
             await updatePresence({
               cursorX: lastPos.x,
               cursorY: lastPos.y,
             });
           }
         } catch (error) {
-          console.error(
-            "[usePresence] Failed to rejoin on visibility change:",
-            error,
-          );
         } finally {
           isRejoiningRef.current = false;
         }
       } else {
         // Tab became hidden
-        console.log(
-          "[usePresence] Tab became hidden - cursor updates will be blocked",
-        );
       }
     };
 
     // Listen to visibility change events
     document.addEventListener("visibilitychange", handleVisibilityChange);
-    console.log("[usePresence] Visibility change listener registered");
 
     // Also listen to window focus/blur for browser window switches
     // This catches cases where you switch between different browser windows
     const handleFocus = async () => {
-      console.log("[usePresence] Window focus event fired");
       isWindowFocusedRef.current = true;
       // Treat focus the same as visibility change when becoming visible
       if (!document.hidden) {
@@ -325,13 +245,11 @@ export function usePresence({
     };
 
     const handleBlur = () => {
-      console.log("[usePresence] Window blur event fired");
       isWindowFocusedRef.current = false;
     };
 
     window.addEventListener("focus", handleFocus);
     window.addEventListener("blur", handleBlur);
-    console.log("[usePresence] Focus/Blur listeners registered");
 
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
@@ -347,17 +265,11 @@ export function usePresence({
       // Check if this is a real unmount (page close) vs hot reload
       // During hot reload, the module will be replaced but window persists
       if (hasJoinedRef.current && !window.location.href.includes("localhost")) {
-        console.log("[usePresence] Component unmounting, leaving canvas");
         // Best effort cleanup
-        leaveCanvas().catch((error) => {
-          console.error("[usePresence] Failed to leave canvas:", error);
-        });
+        leaveCanvas().catch((error) => {});
         hasJoinedRef.current = false;
         setIsReady(false);
       } else if (hasJoinedRef.current) {
-        console.log(
-          "[usePresence] Unmount detected but keeping presence (likely hot reload)",
-        );
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -369,7 +281,6 @@ export function usePresence({
 
     const handleBeforeUnload = () => {
       if (hasJoinedRef.current) {
-        console.log("[usePresence] Page unloading, leaving canvas");
         // Synchronous beacon API would be better, but Convex mutations are async
         // This is best effort - the cron job will clean up stale presence
         leaveCanvas().catch(() => {

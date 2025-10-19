@@ -974,7 +974,6 @@ export function Canvas({
       if (activeToolRef.current === "select") {
         // Alt+drag duplication: Clone the shape and drag the duplicate
         if (e.altKey && opt.target) {
-          console.log("[Alt+Drag] Alt key detected, starting duplication");
           const data = opt.target.get("data") as
             | { shapeId?: string }
             | undefined;
@@ -988,7 +987,6 @@ export function Canvas({
               // Store original shape data for duplication on mouse up
               originalShapeDataRef.current = originalShape;
               isDuplicatingRef.current = true;
-              console.log("[Alt+Drag] Duplication state set to true");
 
               // Clone the Fabric object visually
               const clonedRect = new Rect({
@@ -1369,7 +1367,6 @@ export function Canvas({
 
       // Handle Alt+drag duplication completion
       if (isDuplicatingRef.current && originalShapeDataRef.current) {
-        console.log("[Alt+Drag] Completing duplication on mouse up");
         const activeObject = fabricCanvas.getActiveObject();
         if (activeObject && originalShapeDataRef.current.type === "rectangle") {
           const originalShape = originalShapeDataRef.current;
@@ -1945,25 +1942,16 @@ export function Canvas({
       canvas.hoverCursor = "crosshair";
 
       // Override _finalizeAndAddPath to skip closePath() and arc() which cause flash
-      console.log("🔧 [PENCIL SETUP] Checking _finalizeAndAddPath:", {
-        exists: typeof (brush as any)._finalizeAndAddPath === "function",
-        brushType: brush.constructor.name,
-      });
-
       const originalFinalize = (brush as any)._finalizeAndAddPath?.bind(brush);
       if (originalFinalize) {
-        console.log("✅ [PENCIL SETUP] Overriding _finalizeAndAddPath");
-
         // Also override onMouseDown to see if drawing starts
         const originalOnMouseDown = brush.onMouseDown.bind(brush);
         brush.onMouseDown = function (pointer: any, options: any) {
-          console.log("🖱️ [BRUSH] Mouse down - starting to draw");
           originalOnMouseDown(pointer, options);
         };
 
         const boundBrush = brush; // Capture brush in closure
         (brush as any)._finalizeAndAddPath = function () {
-          console.log("🔵 [FINALIZE] CALLED!");
           const ctx = canvas.contextTop;
           if (!ctx) {
             console.warn("⚠️ [FINALIZE] No contextTop - returning early");
@@ -1971,8 +1959,6 @@ export function Canvas({
           }
 
           // Get path data - need to compute box first
-          console.log("🔵 [FINALIZE] Getting SVG path data...");
-          console.log("🔵 [FINALIZE] _points:", (this as any)._points?.length);
 
           // Compute the bounding box (required for path data)
           const points = (this as any)._points || [];
@@ -1990,7 +1976,6 @@ export function Canvas({
             return;
           }
           (this as any).box = boundingBox;
-          console.log("🔵 [FINALIZE] Box computed:", boundingBox);
 
           // Now get the path data
           const pathData =
@@ -2004,12 +1989,6 @@ export function Canvas({
               )
               ?.join("") || "";
 
-          console.log("🔵 [FINALIZE] Path data length:", pathData.length);
-          console.log(
-            "🔵 [FINALIZE] Path data preview:",
-            pathData.substring(0, 100),
-          );
-
           if (!pathData || pathData === "M 0 0 Q 0 0 0 0 L 0 0") {
             console.warn("⚠️ [FINALIZE] Invalid path data - returning early");
             canvas.renderAll();
@@ -2017,7 +1996,6 @@ export function Canvas({
           }
 
           // Create path WITHOUT calling closePath() or arc()
-          console.log("🔵 [FINALIZE] Creating path object...");
           const path = (this as any).createPath?.(pathData);
           if (!path) {
             console.warn(
@@ -2025,10 +2003,6 @@ export function Canvas({
             );
             return;
           }
-          console.log("🔵 [FINALIZE] Path created successfully:", {
-            fill: path.fill,
-            stroke: path.stroke,
-          });
 
           // Set position
           const box = (this as any).box;
@@ -2047,11 +2021,6 @@ export function Canvas({
           canvas.renderAll();
 
           // Fire event
-          console.log("🔵 [FINALIZE] Firing path:created event for path:", {
-            hasPath: !!path,
-            fill: path?.fill,
-            pathData: pathData.substring(0, 50),
-          });
           canvas.fire("path:created", { path: path });
         };
       } else {
@@ -2062,42 +2031,23 @@ export function Canvas({
 
       // DEBUG: Intercept BEFORE:path:created and fix fill BEFORE it's added to canvas
       canvas.on("before:path:created", (e: any) => {
-        console.log("🔴 [BEFORE PATH CREATED]", {
-          pathExists: !!e.path,
-          fill: e.path?.fill,
-          stroke: e.path?.stroke,
-        });
-
         // Try to fix fill BEFORE Fabric.js adds it to canvas
         if (e.path) {
           e.path.fill = null;
-          console.log(
-            "🔴 [BEFORE PATH CREATED] Set fill to null BEFORE adding to canvas",
-          );
         }
       });
 
       // Register path:created event listener when pencil mode is active
       const handlePathCreated = async (e: any) => {
-        console.log("🟡 [PATH CREATED - START] Path received:", {
-          fill: e.path?.fill,
-          stroke: e.path?.stroke,
-          onCanvas: canvas.getObjects().includes(e.path),
-        });
-
         const path = e.path as Path;
         if (!path) {
           console.error("Failed to create path: no path in event");
           return;
         }
 
-        console.log("🟠 [PATH CREATED - BEFORE SET] About to set fill to null");
-
         // Ensure path is stroke-only (no fill)
         path.set({ fill: null });
         path.dirty = true;
-
-        console.log("🟢 [PATH CREATED - AFTER SET] Fill is now:", path.fill);
 
         // Generate a temporary ID to track this path while it's being saved
         const tempId = `temp_path_${Date.now()}`;
@@ -2170,12 +2120,9 @@ export function Canvas({
       };
 
       canvas.on("path:created", handlePathCreated);
-      console.log("✅ [PENCIL SETUP] Registered path:created event listener");
 
       // Cleanup function to remove listener when leaving pencil mode
       return () => {
-        console.log("🔴 [PENCIL CLEANUP] Removing event listener");
-
         canvas.off("path:created", handlePathCreated);
         canvas.isDrawingMode = false;
       };
@@ -2250,40 +2197,21 @@ export function Canvas({
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
 
-    // console.log("\n=== SYNC EFFECT START ===");
-    // console.log("[Sync] Shapes from DB:", shapes.length);
-    // console.log(
-    //   "[Sync] DB Shape IDs:",
-    //   shapes.map((s) => s._id),
-    // );
-
     const fabricCanvas = fabricCanvasRef.current;
 
     // Build map of Fabric objects by shape ID
     const fabricObjectMap = new Map();
     const canvasObjects = fabricCanvas.getObjects();
-    // console.log("[Sync] Canvas objects count:", canvasObjects.length);
 
     canvasObjects.forEach((obj) => {
       const data = obj.get("data") as { shapeId?: string } | undefined;
       if (data?.shapeId) {
         fabricObjectMap.set(data.shapeId, obj);
-        // console.log(
-        //   `[Sync] Found canvas object with shapeId: ${data.shapeId}, type: ${obj.type}`,
-        // );
-      } else {
-        // console.log(
-        //   `[Sync] Found canvas object WITHOUT shapeId, type: ${obj.type}`,
-        // );
       }
     });
 
     // Track shapes from database
     const dbShapeIds = new Set(shapes.map((s) => s._id));
-    // console.log(
-    //   "[Sync] Currently saving shapes:",
-    //   Array.from(savingShapesRef.current),
-    // );
 
     // Performance optimization: Batch rendering by disabling auto-render
     const shouldBatchRender = shapes.length > 5; // Only batch if multiple shapes
@@ -2296,10 +2224,6 @@ export function Canvas({
       const fabricObj = fabricObjectMap.get(shape._id);
 
       if (fabricObj) {
-        // console.log(
-        //   `[Sync] Shape ${shape._id} (${shape.type}) already exists on canvas, checking if update needed...`,
-        // );
-
         // Skip updates if user is actively interacting with this object
         // This prevents jittery behavior and control glitching when editing
         const activeObject = fabricCanvas.getActiveObject();
@@ -2311,80 +2235,40 @@ export function Canvas({
           (activeObject as any)._objects?.includes(fabricObj);
 
         if (isActiveObject || isInActiveSelection) {
-          // console.log(
-          //   `[Sync] Skipping update for ${shape._id} - user is interacting with it`,
-          // );
           return;
         }
 
         // Skip updates if this shape is currently being saved
         // This prevents the old data from overwriting the new data before Convex syncs
         if (savingShapesRef.current.has(shape._id)) {
-          // console.log(
-          //   `[Sync] Skipping update for ${shape._id} - currently being saved`,
-          // );
           return;
         }
 
-        // console.log(`[Sync] Updating shape ${shape._id}`);
         // Update existing shape
         updateFabricRect(fabricObj, shape);
       } else {
-        // Only log when adding NEW shapes (important for debugging)
-        console.log(
-          `[Sync] ✅ Adding NEW shape ${shape._id} (${shape.type}) to canvas`,
-        );
-        // console.log(`[Sync] Shape data:`, shape);
-
         // Add new shape
         const fabricRect = createFabricRect(shape);
-
-        // DEBUG: Check fill before adding to canvas
-        if (shape.type === "path") {
-          console.log(
-            "🟣 [SYNC ADD] Path fill BEFORE canvas.add():",
-            (fabricRect as any).fill,
-          );
-        }
-
         fabricCanvas.add(fabricRect);
-
-        // DEBUG: Check fill after adding to canvas
-        if (shape.type === "path") {
-          console.log(
-            "🟣 [SYNC ADD] Path fill AFTER canvas.add():",
-            (fabricRect as any).fill,
-          );
-        }
       }
     });
 
     // Remove shapes that no longer exist in database
-    // console.log("[Sync] Checking for objects to remove...");
     fabricCanvas.getObjects().forEach((obj) => {
       const data = obj.get("data") as { shapeId?: string } | undefined;
 
       if (!data?.shapeId) {
-        // console.log(
-        //   `[Sync] Object has no shapeId (type: ${obj.type}) - keeping it (might be temporary)`,
-        // );
         return;
       }
 
       const inDatabase = dbShapeIds.has(data.shapeId);
       const beingSaved = savingShapesRef.current.has(data.shapeId);
 
-      // console.log(
-      //   `[Sync] Object ${data.shapeId} (${obj.type}): inDB=${inDatabase}, beingSaved=${beingSaved}`,
-      // );
-
       // Only remove if:
       // 1. It has a shapeId (it's been saved before)
       // 2. That shapeId is not in the database anymore
       // 3. It's not currently being saved (to prevent race condition)
       if (!inDatabase && !beingSaved) {
-        // Only log when actually removing something (important!)
-        console.log(`[Sync] ❌ REMOVING object with shapeId: ${data.shapeId}`);
         fabricCanvas.remove(obj);
       }
     });
@@ -2394,7 +2278,6 @@ export function Canvas({
       fabricCanvas.renderOnAddRemove = true;
     }
     fabricCanvas.requestRenderAll();
-    // console.log("=== SYNC EFFECT END ===\n");
   }, [shapes]);
 
   return (

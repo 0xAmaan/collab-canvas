@@ -45,12 +45,10 @@ export function useHistory() {
     setUndoStack((prevUndo) => {
       // Prevent double-execution using ref (synchronous check inside setState)
       if (isExecutingRef.current) {
-        console.log("[useHistory] Undo blocked - already executing");
         return prevUndo;
       }
 
       if (prevUndo.length === 0) {
-        console.log("[useHistory] Undo called but stack is empty");
         return prevUndo;
       }
 
@@ -58,7 +56,6 @@ export function useHistory() {
       isExecutingRef.current = true;
 
       const command = prevUndo[prevUndo.length - 1];
-      console.log("[useHistory] Undoing command:", command.constructor.name);
 
       // Execute undo asynchronously
       command
@@ -84,7 +81,6 @@ export function useHistory() {
     setRedoStack((prevRedo) => {
       // Prevent double-execution using ref (synchronous check inside setState)
       if (isExecutingRef.current) {
-        console.log("[useHistory] Redo blocked - already executing");
         return prevRedo;
       }
 

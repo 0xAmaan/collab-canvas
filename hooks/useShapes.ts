@@ -144,8 +144,6 @@ export function useShapes() {
       setOptimisticShapes((prev) => [...prev, optimisticShape]);
 
       try {
-        console.log("[useShapes] Creating shape with data:", shape);
-
         // Build mutation args based on shape type
         const mutationArgs: any = {
           type: shape.type,
@@ -178,19 +176,6 @@ export function useShapes() {
             mutationArgs.fontFamily = (shape as any).fontFamily;
             break;
           case "path":
-            console.log("🔵 [useShapes PATH] Building mutation args for path:");
-            console.log("  - x:", (shape as any).x);
-            console.log("  - y:", (shape as any).y);
-            console.log("  - width:", (shape as any).width);
-            console.log("  - height:", (shape as any).height);
-            console.log(
-              "  - pathData length:",
-              (shape as any).pathData?.length,
-            );
-            console.log("  - stroke:", (shape as any).stroke);
-            console.log("  - strokeWidth:", (shape as any).strokeWidth);
-            console.log("  - fillColor (WILL NOT SEND):", shape.fillColor);
-
             // CRITICAL: Do NOT send fill for paths - they should be stroke-only
             mutationArgs.x = (shape as any).x;
             mutationArgs.y = (shape as any).y;
@@ -202,17 +187,8 @@ export function useShapes() {
             // NOTE: We store fillColor in our Shape type for metadata/consistency,
             // but we do NOT send it to Convex for paths
 
-            console.log(
-              "✅ [useShapes PATH] Final mutationArgs (no fill):",
-              mutationArgs,
-            );
             break;
         }
-
-        console.log(
-          "[useShapes] Mutation args to send to Convex:",
-          mutationArgs,
-        );
 
         // Call Convex mutation
         const realId = await createShapeMutation(mutationArgs);

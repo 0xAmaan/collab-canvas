@@ -204,9 +204,6 @@ async function executeCreateCircle(
   cmd: CreateCircleCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  // Debug logging
-  console.log("[Client Executor] Create circle command:", cmd);
-
   // Ensure radius has a default value
   const radius = cmd.radius || 50;
 
@@ -223,8 +220,6 @@ async function executeCreateCircle(
     lastModified: Date.now(),
     lastModifiedBy: "ai",
   };
-
-  console.log("[Client Executor] Shape data to create:", shapeData);
 
   const shapeId = await context.createShape(shapeData);
 

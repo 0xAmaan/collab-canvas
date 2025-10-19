@@ -96,27 +96,11 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const safeUpdateCursorPosition = useCallback(
     (x: number, y: number) => {
       if (!isAuthenticated) {
-        console.log(
-          "[DashboardClient] Cursor update blocked - not authenticated. userId:",
-          userId,
-        );
         return;
       }
       if (!isReady) {
-        console.log(
-          "[DashboardClient] Cursor update blocked - not ready. userId:",
-          userId,
-          "isReady:",
-          isReady,
-        );
         return;
       }
-      // console.log(
-      //   "[DashboardClient] Passing cursor update through. userId:",
-      //   userId,
-      //   "isReady:",
-      //   isReady,
-      // );
       updateCursorPosition(x, y);
     },
     [isAuthenticated, isReady, updateCursorPosition, userId],
