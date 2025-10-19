@@ -38,6 +38,9 @@ export const createSelectTool = (context: ToolContext): ToolHandlers => {
     canvas.defaultCursor = "default";
     canvas.hoverCursor = "move";
 
+    // Force immediate cursor update (without waiting for mouse move)
+    canvas.setCursor("default");
+
     // Make all objects selectable
     canvas.getObjects().forEach((obj) => {
       obj.selectable = true;
