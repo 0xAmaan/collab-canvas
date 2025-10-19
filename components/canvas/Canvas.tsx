@@ -529,12 +529,47 @@ export const Canvas = ({
           const newWidth = (opt.target.width ?? 0) * scaleX;
           const newHeight = (opt.target.height ?? 0) * scaleY;
 
-          opt.target.set({
-            width: newWidth,
-            height: newHeight,
-            scaleX: 1,
-            scaleY: 1,
-          });
+          // CRITICAL FIX: For circles and ellipses, we need to update radius/rx/ry, not width/height
+          if (opt.target.type === "circle") {
+            // For circles: Update radius directly
+            const currentRadius = (opt.target as any).radius ?? 0;
+            const newRadius = currentRadius * scaleX; // Use scaleX (both should be same for uniform scaling)
+            opt.target.set({
+              radius: newRadius,
+              width: newWidth,
+              height: newHeight,
+              scaleX: 1,
+              scaleY: 1,
+            });
+          } else if (opt.target.type === "ellipse") {
+            // For ellipses: Update rx and ry directly
+            const currentRx = (opt.target as any).rx ?? 0;
+            const currentRy = (opt.target as any).ry ?? 0;
+            const newRx = currentRx * scaleX;
+            const newRy = currentRy * scaleY;
+            opt.target.set({
+              rx: newRx,
+              ry: newRy,
+              width: newWidth,
+              height: newHeight,
+              scaleX: 1,
+              scaleY: 1,
+            });
+          } else {
+            // For other shapes (rectangles, etc): just update width/height
+            opt.target.set({
+              width: newWidth,
+              height: newHeight,
+              scaleX: 1,
+              scaleY: 1,
+            });
+          }
+
+          // Update coordinates after changing dimensions
+          opt.target.setCoords();
+
+          // Force canvas to re-render with new dimensions
+          fabricCanvas.requestRenderAll();
         }
 
         const newValues = {
