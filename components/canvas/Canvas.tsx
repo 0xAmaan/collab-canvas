@@ -58,6 +58,7 @@ interface CanvasProps {
     clear: () => void;
   };
   projectId: Id<"projects">;
+  onExposeSavingRef?: (ref: React.MutableRefObject<Set<string>>) => void;
 }
 
 export const Canvas = ({
@@ -71,6 +72,7 @@ export const Canvas = ({
   updateCursorPosition,
   history,
   projectId,
+  onExposeSavingRef,
 }: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
@@ -119,6 +121,13 @@ export const Canvas = ({
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Expose savingShapesRef to parent for property panel updates
+  useEffect(() => {
+    if (onExposeSavingRef) {
+      onExposeSavingRef(savingShapesRef);
+    }
+  }, [onExposeSavingRef]);
 
   // Initialize canvas dimensions
   useEffect(() => {
@@ -941,6 +950,9 @@ export const Canvas = ({
         // Skip updates if this shape is currently being saved
         // This prevents the old data from overwriting the new data before Convex syncs
         if (savingShapesRef.current.has(shape._id)) {
+          console.log(
+            `[SYNC] Skip ${shape._id.slice(-4)} - in savingShapesRef`,
+          );
           return;
         }
 
@@ -956,6 +968,15 @@ export const Canvas = ({
         // The drag handler manages position; database sync should not interfere
         if (isActiveObject && canvasState.isDraggingShape) {
           return; // Skip ALL updates during active drag
+        }
+
+        // DEBUG: Log color updates
+        const currentFill = fabricObj.get("fill");
+        const newFill = shape.fill;
+        if (currentFill !== newFill) {
+          console.log(
+            `[SYNC] Color update for ${shape._id.slice(-4)}: ${currentFill} → ${newFill}, isActive: ${isActiveObject}`,
+          );
         }
 
         // If object is selected but NOT being dragged, apply updates (for AI features)

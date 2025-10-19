@@ -105,6 +105,7 @@ export const useProject = (projectId: Id<"projects"> | undefined) => {
     duplicateProject,
     updateThumbnail,
     isLoading: project === undefined,
+    hasError: project === null,
   };
 };
 

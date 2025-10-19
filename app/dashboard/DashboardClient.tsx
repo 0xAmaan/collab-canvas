@@ -58,6 +58,9 @@ export const DashboardClient = ({
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
+  const canvasSavingShapesRef = useRef<React.MutableRefObject<
+    Set<string>
+  > | null>(null);
 
   // Track previous tool for spacebar temporary hand mode
   const previousToolRef = useRef<Tool>("select");
@@ -507,44 +510,38 @@ export const DashboardClient = ({
   );
 
   // Handle shape property updates from property panel
-  // Updates both DB and Fabric canvas for instant feedback
   const handleShapeUpdate = useCallback(
     async (shapeId: string, updates: Partial<Shape>) => {
+      console.log(
+        `[UPDATE] Starting update for ${shapeId.slice(-4)}:`,
+        updates,
+      );
+
+      // Add to savingShapesRef to prevent sync from overwriting during update
+      if (canvasSavingShapesRef.current) {
+        canvasSavingShapesRef.current.current.add(shapeId);
+        console.log(`[UPDATE] Added ${shapeId.slice(-4)} to savingShapesRef`);
+      }
+
       try {
         // Update in Convex
         await updateShape(shapeId, updates);
-
-        // Also update the Fabric.js object immediately for instant feedback
-        if (fabricCanvas) {
-          const objects = fabricCanvas.getObjects();
-          const fabricObj = objects.find((obj) => {
-            const data = obj.get("data") as { shapeId?: string } | undefined;
-            return data?.shapeId === shapeId;
-          });
-
-          if (fabricObj) {
-            // Apply updates to Fabric object
-            if (updates.fill !== undefined) fabricObj.set("fill", updates.fill);
-            if ((updates as any).x !== undefined)
-              fabricObj.set("left", (updates as any).x);
-            if ((updates as any).y !== undefined)
-              fabricObj.set("top", (updates as any).y);
-            if ((updates as any).width !== undefined)
-              fabricObj.set("width", (updates as any).width);
-            if ((updates as any).height !== undefined)
-              fabricObj.set("height", (updates as any).height);
-            if (updates.angle !== undefined)
-              fabricObj.set("angle", updates.angle);
-
-            fabricObj.setCoords();
-            fabricCanvas.requestRenderAll();
-          }
-        }
+        console.log(`[UPDATE] Convex update complete for ${shapeId.slice(-4)}`);
       } catch (error) {
         console.error("Failed to update shape:", error);
+      } finally {
+        // Remove from savingShapesRef after a delay to allow Convex to propagate
+        if (canvasSavingShapesRef.current) {
+          setTimeout(() => {
+            canvasSavingShapesRef.current?.current.delete(shapeId);
+            console.log(
+              `[UPDATE] Removed ${shapeId.slice(-4)} from savingShapesRef`,
+            );
+          }, 150);
+        }
       }
     },
-    [updateShape, fabricCanvas],
+    [updateShape],
   );
 
   // Handle color change for selected shape(s) - uses handleShapeUpdate for consistency
@@ -601,10 +598,28 @@ export const DashboardClient = ({
   });
 
   // Show loading state if project data isn't loaded yet
-  if (!project) {
+  // project === undefined means loading, project === null means error/no access
+  if (project === undefined) {
     return (
       <div className="h-screen flex items-center justify-center bg-sidebar">
         <div className="text-white text-lg">Loading project...</div>
+      </div>
+    );
+  }
+
+  // If project is null, it means either project doesn't exist or user doesn't have access
+  if (project === null) {
+    return (
+      <div className="h-screen flex flex-col items-center justify-center bg-sidebar gap-4">
+        <div className="text-white text-lg">
+          Project not found or access denied
+        </div>
+        <Link
+          href="/projects"
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+        >
+          Back to Projects
+        </Link>
       </div>
     );
   }
@@ -727,6 +742,9 @@ export const DashboardClient = ({
             updateCursorPosition={safeUpdateCursorPosition}
             history={history}
             projectId={projectId}
+            onExposeSavingRef={(ref) => {
+              canvasSavingShapesRef.current = ref;
+            }}
           />
 
           {/* Multiplayer cursors container - synced with canvas viewport transform */}

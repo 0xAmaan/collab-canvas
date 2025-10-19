@@ -274,46 +274,60 @@ export const deleteShape = mutation({
  * Get all shapes on the canvas for a specific project
  * This is the main subscription point - Convex will push updates to all clients
  * Shapes are ordered by z-index (rendering order)
+ * Returns empty array if project access fails
  */
 export const getShapes = query({
   args: {
     projectId: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    // Check project access
-    await checkProjectAccess(ctx, args.projectId);
+    try {
+      // Check project access
+      await checkProjectAccess(ctx, args.projectId);
 
-    // Get all shapes for this project
-    const shapes = await ctx.db
-      .query("shapes")
-      .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
-      .collect();
+      // Get all shapes for this project
+      const shapes = await ctx.db
+        .query("shapes")
+        .withIndex("by_project", (q) => q.eq("projectId", args.projectId))
+        .collect();
 
-    // Sort by zIndex (handle undefined as 0, ascending order)
-    shapes.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
+      // Sort by zIndex (handle undefined as 0, ascending order)
+      shapes.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
-    return shapes;
+      return shapes;
+    } catch (error: any) {
+      // Log error but return empty array instead of crashing client
+      console.error("getShapes error:", error.message);
+      return [];
+    }
   },
 });
 
 /**
  * Get a single shape by ID
  * Useful for detail views or specific operations
+ * Returns null if shape not found or access denied
  */
 export const getShape = query({
   args: {
     shapeId: v.id("shapes"),
   },
   handler: async (ctx, args) => {
-    const shape = await ctx.db.get(args.shapeId);
-    if (!shape) {
+    try {
+      const shape = await ctx.db.get(args.shapeId);
+      if (!shape) {
+        return null;
+      }
+
+      // Check project access
+      await checkProjectAccess(ctx, shape.projectId);
+
+      return shape;
+    } catch (error: any) {
+      // Log error but return null instead of crashing client
+      console.error("getShape error:", error.message);
       return null;
     }
-
-    // Check project access
-    await checkProjectAccess(ctx, shape.projectId);
-
-    return shape;
   },
 });
 

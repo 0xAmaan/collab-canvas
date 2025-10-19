@@ -92,7 +92,10 @@ export const StylePanel = ({
 
   // Commit to database and recent colors ONLY when done dragging
   const handleFillChangeComplete = async (color: string) => {
-    console.log("handleFillChangeComplete called with color:", color);
+    console.log(
+      `[STYLE] handleFillChangeComplete: ${color}, shapes:`,
+      selectedShapeIds,
+    );
 
     // Cancel any pending RAF updates
     if (rafIdRef.current !== null) {
@@ -103,19 +106,18 @@ export const StylePanel = ({
     // Save to recent colors
     addRecentColor(color);
 
-    console.log("Saving to database for shapes:", selectedShapeIds);
-
     // Save to database - onUpdate (handleShapeUpdate) will update the visual
-    // No need to call updateCanvasColor here as it's redundant
     for (const shapeId of selectedShapeIds) {
+      console.log(
+        `[STYLE] Calling onUpdate for ${shapeId.slice(-4)} with color ${color}`,
+      );
       await onUpdate(shapeId, { fill: color });
-      console.log("Database update complete for shape:", shapeId);
+      console.log(`[STYLE] onUpdate complete for ${shapeId.slice(-4)}`);
     }
 
     // Clear local color state once DB save completes
     setLocalFillColor(null);
-
-    console.log("Fill change complete - all done");
+    console.log("[STYLE] Cleared local color, waiting for Convex sync...");
   };
 
   const handleTogglePicker = () => {

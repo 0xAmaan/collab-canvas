@@ -238,39 +238,64 @@ export const updateProjectThumbnail = mutation({
 /**
  * Get all projects owned by current user
  * Sorted by last modified (newest first)
+ * Returns empty array if not authenticated (allows graceful loading)
  */
 export const getMyProjects = query({
   handler: async (ctx) => {
-    // Verify user is authenticated
-    const user = await ctx.auth.getUserIdentity();
-    if (!user) {
-      throw new Error("Not authenticated");
+    try {
+      // Verify user is authenticated
+      const user = await ctx.auth.getUserIdentity();
+      if (!user) {
+        // Return empty array instead of throwing - allows page to load
+        // User will be redirected by middleware if they need to authenticate
+        console.log(
+          "getMyProjects: User not authenticated, returning empty array",
+        );
+        return [];
+      }
+
+      // Get all projects owned by user, sorted by last modified
+      const projects = await ctx.db
+        .query("projects")
+        .withIndex("by_owner", (q) => q.eq("ownerId", user.subject))
+        .collect();
+
+      // Sort by lastModified descending (newest first)
+      projects.sort((a, b) => b.lastModified - a.lastModified);
+
+      return projects;
+    } catch (error: any) {
+      // Log error but return empty array instead of crashing client
+      console.error("getMyProjects error:", error.message);
+      return [];
     }
-
-    // Get all projects owned by user, sorted by last modified
-    const projects = await ctx.db
-      .query("projects")
-      .withIndex("by_owner", (q) => q.eq("ownerId", user.subject))
-      .collect();
-
-    // Sort by lastModified descending (newest first)
-    projects.sort((a, b) => b.lastModified - a.lastModified);
-
-    return projects;
   },
 });
 
 /**
  * Get a single project by ID
  * Checks permissions (owner or public)
+ * Returns null if project doesn't exist or user doesn't have access
  */
 export const getProject = query({
   args: {
     projectId: v.id("projects"),
   },
   handler: async (ctx, args) => {
-    const { project, isOwner } = await checkProjectAccess(ctx, args.projectId);
-    return { ...project, isOwner };
+    try {
+      const { project, isOwner } = await checkProjectAccess(
+        ctx,
+        args.projectId,
+      );
+      return { ...project, isOwner };
+    } catch (error: any) {
+      // Log the error for debugging but don't throw to client
+      console.error("getProject error:", error.message);
+
+      // Return null instead of throwing - allows client to handle gracefully
+      // This prevents "Server Error" in production
+      return null;
+    }
   },
 });
 
