@@ -1,19 +1,14 @@
 # CollabCanvas Bug Fix Plan
 
 High Level Overview
-### TIER 5: Shape Rendering
-- **5.1** Line disappearing on hover
-- **5.2** Circle/ellipse resize visual lag
-- **5.3** Pencil/path not persisting to DB
-
-### TIER 6: Multi-Select
-- **6.1** Multi-selection issues
-
 ### TIER 7: Advanced
 - **7.1** Delete shape UI error
 - **7.2** Connection status accuracy
 - **7.3** Left sidebar resize issue
 - **7.4** Canvas resize lag
+
+
+
 
 
 ### TIER 4: Canvas Functionality Fix
@@ -32,60 +27,7 @@ High Level Overview
 
 ---
 
-### TIER 5: Shape Rendering Bugs (1.5 hours) 🐛
 
-**Medium-high complexity, requires investigation**
-
-#### 5.1 Line Disappearing on Hover
-
-**File:** `components/canvas/Shape.tsx`
-
-**Likely cause:** Lines use `stroke` not `fill`, but hover effect may set `strokeWidth: 0`
-
-**Investigation needed:**
-
-1. Check hover handlers in Canvas.tsx
-2. Line rendering uses `fillColor` for stroke (line 84, 185)
-3. After fix 2.1 (`fillColor` → `fill`), verify line stroke is set correctly
-
-**Complexity:** 5/10
-
-**Depth:** Medium (may need to trace hover event handlers)
-
-#### 5.2 Circle/Ellipse Resize Visual Lag
-
-**File:** `components/canvas/Canvas.tsx`, shape update handlers
-
-**Likely cause:** Canvas not re-rendering immediately after resize, or conflicting updates from DB
-
-**Investigation needed:**
-
-1. Check `object:modified` handler
-2. Verify immediate `canvas.renderAll()` after resize
-3. Check if DB update overwrites local changes
-4. May need optimistic UI updates
-
-**Complexity:** 6/10
-
-**Depth:** Medium-high (state sync between local canvas and DB)
-
-#### 5.3 Pencil/Path Not Persisting to DB
-
-**Files:**
-
-- `components/canvas/tools/usePencilTool.ts`
-- `convex/shapes.ts`
-
-**Investigation needed:**
-
-1. Check if `finalizePath` is called correctly
-2. Verify `pathData` serialization (should be JSON string)
-3. Check if `createShape` mutation accepts path data
-4. Verify path rendering after reload
-
-**Complexity:** 5/10
-
-**Depth:** Medium (need to trace path creation flow)
 
 ---
 
@@ -181,71 +123,7 @@ High Level Overview
 
 ---
 
-## Recommended Execution Order
 
-### Phase 1: Foundation (30-45 min)
-
-**Critical path - fixes root cause**
-
-1. Fix 2.1: Unify `fill`/`fillColor` naming
-2. Fix 2.2: Add polygon to createShape validator
-3. Test: Create shapes, update colors, delete shapes
-
-### Phase 2: Quick Wins (30 min)
-
-**High-impact, low-effort fixes**
-
-4. All TIER 1 fixes (UI tweaks)
-5. Fix 3.2: Standardize sidebar styling
-6. Fix 4.2: Text tool exit behavior
-
-### Phase 3: Deep Bugs (2-3 hours)
-
-**Requires investigation**
-
-7. Fix 5.1: Line disappearing
-8. Fix 5.2: Circle/ellipse resize
-9. Fix 5.3: Pencil persistence
-10. Fix 6.1: Multi-select
-11. Fix 7.1: Delete UI error
-
-### Phase 4: Polish (1 hour)
-
-**Nice-to-haves**
-
-12. Fix 4.1: Keyboard shortcuts UI
-13. Fix 4.3: Text hover highlight
-14. Fix 4.4: Theme colors
-15. Fix 7.2: Connection status
-16. Fix 7.3: Sidebar resize
-17. Fix 7.4: Canvas performance
-
----
-
-## Risk Assessment
-
-**High Confidence (will fix on first try):**
-
-- TIER 1 all
-- TIER 2 all  
-- TIER 3 all
-- TIER 4: 4.2, 4.4
-
-**Medium Confidence (may need iteration):**
-
-- TIER 4: 4.1, 4.3
-- TIER 5: 5.1, 5.3
-- TIER 6: 6.1
-
-**Low Confidence (need deep investigation):**
-
-- TIER 5: 5.2
-- TIER 7: 7.1, 7.2, 7.4
-
-**Unknown (need more info from user):**
-
-- TIER 6: 6.1 (need specific repro steps)
-- TIER 7: 7.3 (need to find component)
 
 ---
 
