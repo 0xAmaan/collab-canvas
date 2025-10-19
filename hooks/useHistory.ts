@@ -1,36 +1,65 @@
 /**
  * Custom hook for managing undo/redo history
- * Implements command pattern with 25-operation stack limit
+ * Implements command pattern with 5-operation stack limit
  */
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import type { Command } from "@/lib/commands/types";
 
-const MAX_HISTORY_SIZE = 25;
+const MAX_HISTORY_SIZE = 5;
+
+type PendingAction =
+  | { type: "undo"; command: Command }
+  | { type: "redo"; command: Command };
 
 export const useHistory = () => {
   const [undoStack, setUndoStack] = useState<Command[]>([]);
   const [redoStack, setRedoStack] = useState<Command[]>([]);
+  const [pendingQueue, setPendingQueue] = useState<PendingAction[]>([]);
   const isExecutingRef = useRef(false);
 
-  /**
-   * Execute a command and add it to history
-   */
+  // Execute pending commands in useEffect to avoid setState during render
+  useEffect(() => {
+    if (pendingQueue.length === 0 || isExecutingRef.current) return;
+
+    const actionsToExecute = [...pendingQueue];
+    isExecutingRef.current = true;
+    setPendingQueue([]);
+
+    const executeActions = async () => {
+      try {
+        await Promise.all(
+          actionsToExecute.map((action) =>
+            action.type === "undo"
+              ? action.command.undo()
+              : action.command.redo(),
+          ),
+        );
+      } catch (error) {
+        console.error("Failed to execute command:", error);
+      } finally {
+        isExecutingRef.current = false;
+        // Trigger next batch if commands accumulated during execution
+        setPendingQueue((current) =>
+          current.length > 0 ? [...current] : current,
+        );
+      }
+    };
+
+    executeActions();
+  }, [pendingQueue]);
+
   const execute = useCallback(async (command: Command) => {
     try {
       await command.execute();
 
-      // Add to undo stack
       setUndoStack((prev) => {
         const newStack = [...prev, command];
-        // Cap at 25 operations
-        if (newStack.length > MAX_HISTORY_SIZE) {
-          newStack.shift();
-        }
-        return newStack;
+        return newStack.length > MAX_HISTORY_SIZE
+          ? newStack.slice(1)
+          : newStack;
       });
 
-      // Clear redo stack (new action invalidates redo history)
       setRedoStack([]);
     } catch (error) {
       console.error("Failed to execute command:", error);
@@ -38,94 +67,52 @@ export const useHistory = () => {
     }
   }, []);
 
-  /**
-   * Undo the last operation
-   */
-  const undo = useCallback(async () => {
+  const undo = useCallback(() => {
     setUndoStack((prevUndo) => {
-      // Prevent double-execution using ref (synchronous check inside setState)
-      if (isExecutingRef.current) {
-        return prevUndo;
-      }
-
-      if (prevUndo.length === 0) {
-        return prevUndo;
-      }
-
-      // Set flag immediately to block concurrent calls
-      isExecutingRef.current = true;
+      if (prevUndo.length === 0) return prevUndo;
 
       const command = prevUndo[prevUndo.length - 1];
 
-      // Execute undo asynchronously
-      command
-        .undo()
-        .catch((error) => {
-          console.error("Failed to undo command:", error);
-        })
-        .finally(() => {
-          isExecutingRef.current = false;
-        });
+      setPendingQueue((prev) =>
+        prev.some((a) => a.type === "undo" && a.command === command)
+          ? prev
+          : [...prev, { type: "undo", command }],
+      );
 
-      // Move command from undo to redo stack
       setRedoStack((prevRedo) => [...prevRedo, command]);
-
       return prevUndo.slice(0, -1);
     });
   }, []);
 
-  /**
-   * Redo the last undone operation
-   */
-  const redo = useCallback(async () => {
+  const redo = useCallback(() => {
     setRedoStack((prevRedo) => {
-      // Prevent double-execution using ref (synchronous check inside setState)
-      if (isExecutingRef.current) {
-        return prevRedo;
-      }
-
-      if (prevRedo.length === 0) {
-        return prevRedo;
-      }
-
-      // Set flag immediately to block concurrent calls
-      isExecutingRef.current = true;
+      if (prevRedo.length === 0) return prevRedo;
 
       const command = prevRedo[prevRedo.length - 1];
 
-      // Execute redo asynchronously
-      command
-        .redo()
-        .catch((error) => {
-          console.error("Failed to redo command:", error);
-        })
-        .finally(() => {
-          isExecutingRef.current = false;
-        });
+      setPendingQueue((prev) =>
+        prev.some((a) => a.type === "redo" && a.command === command)
+          ? prev
+          : [...prev, { type: "redo", command }],
+      );
 
-      // Move command from redo to undo stack
       setUndoStack((prevUndo) => {
         const newStack = [...prevUndo, command];
-        // Cap at 25 operations
-        if (newStack.length > MAX_HISTORY_SIZE) {
-          newStack.shift();
-        }
-        return newStack;
+        return newStack.length > MAX_HISTORY_SIZE
+          ? newStack.slice(1)
+          : newStack;
       });
 
       return prevRedo.slice(0, -1);
     });
   }, []);
 
-  /**
-   * Clear all history
-   */
   const clear = useCallback(() => {
     setUndoStack([]);
     setRedoStack([]);
+    setPendingQueue([]);
   }, []);
 
-  // Return memoized object to prevent unnecessary re-renders
   return useMemo(
     () => ({
       execute,

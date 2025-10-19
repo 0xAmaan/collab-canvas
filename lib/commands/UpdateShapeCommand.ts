@@ -15,10 +15,10 @@ interface ShapeUpdates {
 }
 
 export class UpdateShapeCommand implements Command {
-  private shapeId: string;
-  private oldValues: ShapeUpdates;
-  private newValues: ShapeUpdates;
-  private updateShapeFn: (
+  private readonly shapeId: string;
+  private readonly oldValues: ShapeUpdates;
+  private readonly newValues: ShapeUpdates;
+  private readonly updateShapeFn: (
     shapeId: string,
     updates: ShapeUpdates,
   ) => Promise<void>;

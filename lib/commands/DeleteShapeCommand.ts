@@ -1,25 +1,26 @@
 /**
  * Command for deleting a shape
- * Supports undo (restore shape) and redo (delete again)
+ * Supports undo (restore) and redo (delete again)
  */
 
 import type { Command } from "@/lib/commands/types";
 import type { Shape } from "@/types/shapes";
 
+type ShapeData = Omit<Shape, "_id">;
+
 export class DeleteShapeCommand implements Command {
-  private shapeData: Omit<Shape, "_id">;
   private shapeId: string;
-  private createShapeFn: (data: Omit<Shape, "_id">) => Promise<string>;
-  private deleteShapeFn: (shapeId: string) => Promise<void>;
+  private readonly shapeData: ShapeData;
+  private readonly createShapeFn: (data: ShapeData) => Promise<string>;
+  private readonly deleteShapeFn: (shapeId: string) => Promise<void>;
 
   constructor(
     shapeData: Shape,
-    createShapeFn: (data: Omit<Shape, "_id">) => Promise<string>,
+    createShapeFn: (data: ShapeData) => Promise<string>,
     deleteShapeFn: (shapeId: string) => Promise<void>,
   ) {
-    this.shapeId = shapeData._id;
-    // Store shape data without the ID
     const { _id, ...dataWithoutId } = shapeData;
+    this.shapeId = _id;
     this.shapeData = dataWithoutId;
     this.createShapeFn = createShapeFn;
     this.deleteShapeFn = deleteShapeFn;
@@ -30,11 +31,20 @@ export class DeleteShapeCommand implements Command {
   }
 
   async undo(): Promise<void> {
-    // Restore the shape - will get a new ID but same properties
     this.shapeId = await this.createShapeFn(this.shapeData);
   }
 
   async redo(): Promise<void> {
-    await this.deleteShapeFn(this.shapeId);
+    try {
+      await this.deleteShapeFn(this.shapeId);
+    } catch (error) {
+      // Ignore if shape was already deleted
+      if (
+        error instanceof Error &&
+        !error.message?.includes("nonexistent document")
+      ) {
+        throw error;
+      }
+    }
   }
 }

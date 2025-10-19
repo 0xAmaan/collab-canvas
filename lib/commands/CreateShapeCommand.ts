@@ -1,53 +1,22 @@
 /**
  * Command for creating a shape
- * Supports undo (delete) and redo (create again)
+ * Supports undo (delete) and redo (recreate)
  */
 
 import type { Command } from "@/lib/commands/types";
 import type { Shape } from "@/types/shapes";
 
-interface ShapeData {
-  type:
-    | "rectangle"
-    | "circle"
-    | "ellipse"
-    | "line"
-    | "text"
-    | "path"
-    | "polygon";
-  x?: number;
-  y?: number;
-  width?: number;
-  height?: number;
-  x1?: number;
-  y1?: number;
-  x2?: number;
-  y2?: number;
-  text?: string;
-  fontSize?: number;
-  fontFamily?: string;
-  pathData?: string;
-  stroke?: string;
-  points?: { x: number; y: number }[];
-  angle?: number;
-  strokeWidth?: number;
-  strokeColor?: string;
-  fill: string;
-  createdBy: string;
-  createdAt: number;
-  lastModified: number;
-  lastModifiedBy: string;
-}
+type ShapeData = Omit<Shape, "_id">;
 
 export class CreateShapeCommand implements Command {
   private shapeId: string | null = null;
-  private shapeData: ShapeData;
-  private createShapeFn: (data: Omit<Shape, "_id">) => Promise<string>;
-  private deleteShapeFn: (shapeId: string) => Promise<void>;
+  private readonly shapeData: ShapeData;
+  private readonly createShapeFn: (data: ShapeData) => Promise<string>;
+  private readonly deleteShapeFn: (shapeId: string) => Promise<void>;
 
   constructor(
     shapeData: ShapeData,
-    createShapeFn: (data: Omit<Shape, "_id">) => Promise<string>,
+    createShapeFn: (data: ShapeData) => Promise<string>,
     deleteShapeFn: (shapeId: string) => Promise<void>,
   ) {
     this.shapeData = shapeData;
@@ -60,28 +29,23 @@ export class CreateShapeCommand implements Command {
   }
 
   async undo(): Promise<void> {
-    if (this.shapeId) {
-      try {
-        await this.deleteShapeFn(this.shapeId);
-      } catch (error) {
-        // If shape was already deleted, that's okay - just log it
-        if (
-          error instanceof Error &&
-          error.message?.includes("nonexistent document")
-        ) {
-          // Shape already deleted, no action needed
-        } else {
-          throw error;
-        }
+    if (!this.shapeId) return;
+
+    try {
+      await this.deleteShapeFn(this.shapeId);
+    } catch (error) {
+      // Ignore if shape was already deleted
+      if (
+        error instanceof Error &&
+        !error.message?.includes("nonexistent document")
+      ) {
+        throw error;
       }
     }
   }
 
   async redo(): Promise<void> {
-    if (this.shapeId) {
-      // Create shape again - will get a new ID
-      this.shapeId = await this.createShapeFn(this.shapeData);
-    }
+    this.shapeId = await this.createShapeFn(this.shapeData);
   }
 
   getShapeId(): string | null {
