@@ -9,8 +9,8 @@ import { useState } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import type { Presence } from "@/types/presence";
 import type { Shape } from "@/types/shapes";
+import { Circle, Square, RectangleHorizontal, Triangle } from "lucide-react";
 import { AccountSection } from "@/components/properties/AccountSection";
-import { EmptyState } from "@/components/properties/EmptyState";
 import { PositionPanel } from "@/components/properties/PositionPanel";
 import { StylePanel } from "@/components/properties/StylePanel";
 import { TransformPanel } from "@/components/properties/TransformPanel";
@@ -81,7 +81,22 @@ export const PropertiesSidebar = ({
             />
           </div>
         ) : (
-          <EmptyState />
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <div className="w-16 h-16 mb-4 rounded-full bg-white/5 flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-1 w-8 h-8">
+                <Circle className="w-3.5 h-3.5 text-white/30" />
+                <RectangleHorizontal className="w-3.5 h-3.5 text-white/30" />
+                <Square className="w-3.5 h-3.5 text-white/30" />
+                <Triangle className="w-3.5 h-3.5 text-white/30" />
+              </div>
+            </div>
+            <h3 className="text-sm font-medium text-white/70 mb-2">
+              Select a shape to edit properties
+            </h3>
+            <p className="text-xs text-white/40 max-w-[200px]">
+              Click on any shape or use keyboard shortcuts to get started
+            </p>
+          </div>
         )}
       </div>
 
