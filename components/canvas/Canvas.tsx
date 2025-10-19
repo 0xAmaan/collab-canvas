@@ -28,6 +28,9 @@ import { useShapes } from "@/hooks/useShapes";
 import type { Shape } from "@/types/shapes";
 import type { Tool } from "../toolbar/BottomToolbar";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import { duplicateShapes } from "@/lib/canvas/duplicate-shape";
+import { finalizeShape } from "@/lib/canvas/shape-finalizers";
+import { getSelectedShapes } from "@/lib/canvas/selection-utils";
 import { UpdateShapeCommand } from "@/lib/commands/UpdateShapeCommand";
 import { DeleteShapeCommand } from "@/lib/commands/DeleteShapeCommand";
 
@@ -155,281 +158,118 @@ export function Canvas({
 
   // Finalize rectangle creation
   const finalizeRectangle = useCallback(
-    async (rect: Rect) => {
-      // Only create if rectangle has meaningful size
-      if ((rect.width || 0) < 5 || (rect.height || 0) < 5) {
-        // Too small, remove it
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(rect);
-        }
-        return null;
-      }
-
-      try {
-        // Create shape data
-        const shapeData = {
-          type: "rectangle" as const,
-          x: rect.left || 0,
-          y: rect.top || 0,
-          width: rect.width || DEFAULT_SHAPE.WIDTH,
-          height: rect.height || DEFAULT_SHAPE.HEIGHT,
+    async (rect: Rect) =>
+      finalizeShape({
+        canvas: fabricCanvasRef.current!,
+        object: rect,
+        shapeType: "rectangle",
+        extractShapeData: (obj) => ({
+          x: obj.left || 0,
+          y: obj.top || 0,
+          width: obj.width || DEFAULT_SHAPE.WIDTH,
+          height: obj.height || DEFAULT_SHAPE.HEIGHT,
           fillColor: DEFAULT_SHAPE.FILL_COLOR,
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
-
-        // Use command pattern for undo/redo support
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
-
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command
-        const shapeId = (command as any).shapeId;
-
-        // Store the real shape ID in the rect's data so sync recognizes it
-        // This prevents the sync from creating a duplicate
-        if (shapeId) {
-          rect.set("data", { shapeId: shapeId });
-        }
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create shape:", error);
-        // Remove the rectangle from canvas on error
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(rect);
-        }
-        return null;
-      }
-    },
+        }),
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      }),
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
   // Finalize circle creation
   const finalizeCircle = useCallback(
-    async (circle: Circle) => {
-      // Only create if circle has meaningful size
-      if ((circle.radius || 0) < 3) {
-        // Too small, remove it
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(circle);
-        }
-        return null;
-      }
-
-      try {
-        // Create shape data - store as width/height (diameter)
-        const diameter = (circle.radius || 0) * 2;
-        const shapeData = {
-          type: "circle" as const,
-          x: circle.left || 0,
-          y: circle.top || 0,
-          width: diameter,
-          height: diameter, // Circle has equal width/height
-          fillColor: DEFAULT_SHAPE.FILL_COLOR,
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
-
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
-
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command and store it to prevent duplication
-        const shapeId = (command as any).shapeId;
-        if (shapeId) {
-          circle.set("data", { shapeId: shapeId });
-        }
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create circle:", error);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(circle);
-        }
-        return null;
-      }
-    },
+    async (circle: Circle) =>
+      finalizeShape({
+        canvas: fabricCanvasRef.current!,
+        object: circle,
+        shapeType: "circle",
+        extractShapeData: (obj: any) => {
+          const diameter = (obj.radius || 0) * 2;
+          return {
+            x: obj.left || 0,
+            y: obj.top || 0,
+            width: diameter,
+            height: diameter,
+            fillColor: DEFAULT_SHAPE.FILL_COLOR,
+          };
+        },
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      }),
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
   // Finalize ellipse creation
   const finalizeEllipse = useCallback(
-    async (ellipse: Ellipse) => {
-      // Only create if ellipse has meaningful size
-      if ((ellipse.rx || 0) < 3 || (ellipse.ry || 0) < 3) {
-        // Too small, remove it
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(ellipse);
-        }
-        return null;
-      }
-
-      try {
-        // Create shape data - store as width/height
-        const shapeData = {
-          type: "ellipse" as const,
-          x: ellipse.left || 0,
-          y: ellipse.top || 0,
-          width: (ellipse.rx || 0) * 2,
-          height: (ellipse.ry || 0) * 2,
+    async (ellipse: Ellipse) =>
+      finalizeShape({
+        canvas: fabricCanvasRef.current!,
+        object: ellipse,
+        shapeType: "ellipse",
+        extractShapeData: (obj: any) => ({
+          x: obj.left || 0,
+          y: obj.top || 0,
+          width: (obj.rx || 0) * 2,
+          height: (obj.ry || 0) * 2,
           fillColor: DEFAULT_SHAPE.FILL_COLOR,
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
-
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
-
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command and store it to prevent duplication
-        const shapeId = (command as any).shapeId;
-        if (shapeId) {
-          ellipse.set("data", { shapeId: shapeId });
-        }
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create ellipse:", error);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(ellipse);
-        }
-        return null;
-      }
-    },
+        }),
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      }),
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
   // Finalize line creation
   const finalizeLine = useCallback(
-    async (line: Line) => {
-      // Only create if line has meaningful length
-      const x1 = line.x1 || 0;
-      const y1 = line.y1 || 0;
-      const x2 = line.x2 || 0;
-      const y2 = line.y2 || 0;
-      const length = Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2);
-
-      if (length < 5) {
-        // Too small, remove it
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(line);
-        }
-        return null;
-      }
-
-      try {
-        // Create shape data
-        const shapeData = {
-          type: "line" as const,
-          x1,
-          y1,
-          x2,
-          y2,
-          fillColor: DEFAULT_SHAPE.FILL_COLOR, // Lines use this for stroke color
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
-
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
-
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command and store it to prevent duplication
-        const shapeId = (command as any).shapeId;
-        if (shapeId) {
-          line.set("data", { shapeId: shapeId });
-        }
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create line:", error);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(line);
-        }
-        return null;
-      }
-    },
+    async (line: Line) =>
+      finalizeShape({
+        canvas: fabricCanvasRef.current!,
+        object: line,
+        shapeType: "line",
+        extractShapeData: (obj: any) => ({
+          x1: obj.x1 || 0,
+          y1: obj.y1 || 0,
+          x2: obj.x2 || 0,
+          y2: obj.y2 || 0,
+          fillColor: DEFAULT_SHAPE.FILL_COLOR,
+        }),
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      }),
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
   // Finalize text creation
   const finalizeText = useCallback(
-    async (text: IText) => {
-      // Don't create if text is empty or just the placeholder
-      const textContent = text.text || "";
-      if (!textContent || textContent === DEFAULT_TEXT.TEXT) {
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(text);
-        }
-        return null;
-      }
-
-      try {
-        // Create shape data
-        const shapeData = {
-          type: "text" as const,
-          x: text.left || 0,
-          y: text.top || 0,
-          width: text.width || 100,
-          height: text.height || 40,
-          text: textContent,
-          fontSize: text.fontSize || DEFAULT_TEXT.FONT_SIZE,
-          fontFamily: text.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
-          fillColor: (text.fill as string) || DEFAULT_TEXT.FILL_COLOR,
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
-
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
-
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command and store it to prevent duplication
-        const shapeId = (command as any).shapeId;
-        if (shapeId) {
-          text.set("data", { shapeId: shapeId });
-        }
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create text:", error);
-        if (fabricCanvasRef.current) {
-          fabricCanvasRef.current.remove(text);
-        }
-        return null;
-      }
-    },
+    async (text: IText) =>
+      finalizeShape({
+        canvas: fabricCanvasRef.current!,
+        object: text,
+        shapeType: "text",
+        extractShapeData: (obj: any) => {
+          const textContent = obj.text || "";
+          return {
+            x: obj.left || 0,
+            y: obj.top || 0,
+            text: textContent,
+            fontSize: obj.fontSize || DEFAULT_TEXT.FONT_SIZE,
+            fontFamily: obj.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
+            fillColor: (obj.fill as string) || DEFAULT_TEXT.FILL_COLOR,
+          };
+        },
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      }),
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
@@ -443,64 +283,48 @@ export function Canvas({
 
       if (!fabricCanvasRef.current) return null;
 
-      try {
-        // Create final polygon
-        const polygon = new Polygon(points, {
-          fill: selectedColor,
-          stroke: "#000000",
-          strokeWidth: 1,
-          selectable: true,
-          evented: true,
-          hasControls: true,
-          hasBorders: true,
-          borderColor: SELECTION_COLORS.BORDER,
-          cornerColor: SELECTION_COLORS.HANDLE,
-          cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
-          cornerSize: 10,
-          transparentCorners: false,
-          cornerStyle: "circle" as const,
-          borderScaleFactor: 2,
-          padding: 0,
-        });
+      // Create final polygon
+      const polygon = new Polygon(points, {
+        fill: selectedColor,
+        stroke: "#000000",
+        strokeWidth: 1,
+        selectable: true,
+        evented: true,
+        hasControls: true,
+        hasBorders: true,
+        borderColor: SELECTION_COLORS.BORDER,
+        cornerColor: SELECTION_COLORS.HANDLE,
+        cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
+        cornerSize: 10,
+        transparentCorners: false,
+        cornerStyle: "circle" as const,
+        borderScaleFactor: 2,
+        padding: 0,
+      });
 
-        fabricCanvasRef.current.add(polygon);
+      fabricCanvasRef.current.add(polygon);
 
-        // Create shape data
-        const shapeData = {
-          type: "polygon" as const,
+      const shapeId = await finalizeShape({
+        canvas: fabricCanvasRef.current,
+        object: polygon,
+        shapeType: "polygon",
+        extractShapeData: (obj: any) => ({
           points: points,
           fillColor: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
-          x: polygon.left || 0,
-          y: polygon.top || 0,
-          width: polygon.width || 0,
-          height: polygon.height || 0,
-          createdBy: userId,
-          createdAt: Date.now(),
-          lastModified: Date.now(),
-          lastModifiedBy: userId,
-        };
+          x: obj.left || 0,
+          y: obj.top || 0,
+          width: obj.width || 0,
+          height: obj.height || 0,
+        }),
+        userId,
+        createShape: createShapeInConvex,
+        deleteShape: deleteShapeInConvex,
+        history: historyRef.current,
+      });
 
-        const command = new CreateShapeCommand(
-          shapeData,
-          createShapeInConvex,
-          deleteShapeInConvex,
-        );
+      fabricCanvasRef.current.renderAll();
 
-        await historyRef.current.execute(command);
-
-        // Get the shapeId from the command and store it to prevent duplication
-        const shapeId = (command as any).shapeId;
-        if (shapeId) {
-          polygon.set("data", { shapeId: shapeId });
-        }
-
-        fabricCanvasRef.current.renderAll();
-
-        return shapeId;
-      } catch (error) {
-        console.error("Failed to create polygon:", error);
-        return null;
-      }
+      return shapeId;
     },
     [userId, selectedColor, createShapeInConvex, deleteShapeInConvex],
   );
@@ -520,174 +344,33 @@ export function Canvas({
   // Handle deletion of selected shape(s) - supports multi-select
   const handleDeleteSelected = useCallback(async () => {
     const activeObject = fabricCanvasRef.current?.getActiveObject();
-    if (!activeObject) return;
+    const shapesToDelete = getSelectedShapes(activeObject, shapesRef.current);
 
-    // Check if it's a multi-select (ActiveSelection)
-    if (activeObject.type === "activeSelection") {
-      // Get all selected objects
-      const objects = (activeObject as any)._objects || [];
-
-      // Delete each selected shape
-      for (const obj of objects) {
-        const data = obj.get("data") as { shapeId?: string } | undefined;
-        if (data?.shapeId) {
-          const shapeToDelete = shapesRef.current.find(
-            (s) => s._id === data.shapeId,
-          );
-          if (shapeToDelete) {
-            const command = new DeleteShapeCommand(
-              shapeToDelete,
-              createShapeInConvex,
-              deleteShapeInConvex,
-            );
-            await historyRef.current.execute(command);
-          }
-        }
-      }
-    } else {
-      // Single shape deletion
-      const data = activeObject.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId) {
-        const shapeToDelete = shapesRef.current.find(
-          (s) => s._id === data.shapeId,
-        );
-        if (shapeToDelete) {
-          const command = new DeleteShapeCommand(
-            shapeToDelete,
-            createShapeInConvex,
-            deleteShapeInConvex,
-          );
-          await historyRef.current.execute(command);
-        }
-      }
+    for (const shape of shapesToDelete) {
+      const command = new DeleteShapeCommand(
+        shape,
+        createShapeInConvex,
+        deleteShapeInConvex,
+      );
+      await historyRef.current.execute(command);
     }
   }, [createShapeInConvex, deleteShapeInConvex]);
 
   // Handle duplication of selected shape(s) (Cmd+D) - supports all shape types and multi-select
   const handleDuplicateSelected = useCallback(async () => {
     const activeObject = fabricCanvasRef.current?.getActiveObject();
-    if (!activeObject) return;
+    const shapesToDuplicate = getSelectedShapes(
+      activeObject,
+      shapesRef.current,
+    );
 
-    const shapesToDuplicate: typeof shapes = [];
+    // Duplicate all shapes using utility function
+    const duplicatedShapes = duplicateShapes(shapesToDuplicate, userId);
 
-    // Check if it's a multi-select (ActiveSelection)
-    if (activeObject.type === "activeSelection") {
-      const objects = (activeObject as any)._objects || [];
-      for (const obj of objects) {
-        const data = obj.get("data") as { shapeId?: string } | undefined;
-        if (data?.shapeId) {
-          const shape = shapesRef.current.find((s) => s._id === data.shapeId);
-          if (shape) shapesToDuplicate.push(shape);
-        }
-      }
-    } else {
-      // Single shape
-      const data = activeObject.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId) {
-        const shape = shapesRef.current.find((s) => s._id === data.shapeId);
-        if (shape) shapesToDuplicate.push(shape);
-      }
-    }
-
-    // Duplicate each shape with offset
-    for (const shapeToDuplicate of shapesToDuplicate) {
-      let duplicateData: any = {
-        type: shapeToDuplicate.type,
-        createdBy: userId,
-        createdAt: Date.now(),
-        lastModified: Date.now(),
-        lastModifiedBy: userId,
-      };
-
-      // Add type-specific properties
-      switch (shapeToDuplicate.type) {
-        case "rectangle":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            width: shapeToDuplicate.width,
-            height: shapeToDuplicate.height,
-            angle: shapeToDuplicate.angle,
-            fillColor: shapeToDuplicate.fillColor,
-          };
-          break;
-        case "circle":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            width: shapeToDuplicate.width,
-            height: shapeToDuplicate.height,
-            angle: shapeToDuplicate.angle,
-            fillColor: shapeToDuplicate.fillColor,
-          };
-          break;
-        case "ellipse":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            width: shapeToDuplicate.width,
-            height: shapeToDuplicate.height,
-            angle: shapeToDuplicate.angle,
-            fillColor: shapeToDuplicate.fillColor,
-          };
-          break;
-        case "line":
-          duplicateData = {
-            ...duplicateData,
-            x1: (shapeToDuplicate.x1 || 0) + 10,
-            y1: (shapeToDuplicate.y1 || 0) + 10,
-            x2: (shapeToDuplicate.x2 || 0) + 10,
-            y2: (shapeToDuplicate.y2 || 0) + 10,
-            strokeWidth: shapeToDuplicate.strokeWidth,
-            strokeColor: shapeToDuplicate.strokeColor,
-          };
-          break;
-        case "text":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            text: shapeToDuplicate.text,
-            fontSize: shapeToDuplicate.fontSize,
-            fontFamily: shapeToDuplicate.fontFamily,
-            fillColor: shapeToDuplicate.fillColor,
-            angle: shapeToDuplicate.angle,
-          };
-          break;
-        case "path":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            width: shapeToDuplicate.width,
-            height: shapeToDuplicate.height,
-            pathData: shapeToDuplicate.pathData,
-            stroke: shapeToDuplicate.stroke,
-            strokeWidth: shapeToDuplicate.strokeWidth,
-            fillColor: shapeToDuplicate.fillColor,
-            angle: shapeToDuplicate.angle,
-          };
-          break;
-        case "polygon":
-          duplicateData = {
-            ...duplicateData,
-            x: shapeToDuplicate.x + 10,
-            y: shapeToDuplicate.y + 10,
-            width: shapeToDuplicate.width,
-            height: shapeToDuplicate.height,
-            points: shapeToDuplicate.points,
-            fillColor: shapeToDuplicate.fillColor,
-            angle: shapeToDuplicate.angle,
-          };
-          break;
-      }
-
-      // Use command pattern for undo/redo support
+    // Create each duplicated shape
+    for (const duplicateData of duplicatedShapes) {
       const command = new CreateShapeCommand(
-        duplicateData,
+        duplicateData as any,
         createShapeInConvex,
         deleteShapeInConvex,
       );
@@ -1460,130 +1143,55 @@ export function Canvas({
       { x: number; y: number; width: number; height: number; angle: number }
     >();
 
-    fabricCanvas.on("object:scaling", (opt) => {
-      if (!opt.target) return;
+    // Helper: Capture object state before modification (used by scaling/rotating)
+    const captureObjectState = (obj: FabricObject) => {
+      const data = obj.get("data") as { shapeId?: string } | undefined;
+      if (!data?.shapeId || objectStateBeforeModify.has(data.shapeId)) return;
 
+      const shape = shapes.find((s) => s._id === data.shapeId);
+      if (!shape) return;
+
+      const shapeData: any = {
+        angle: shape.angle || 0,
+      };
+
+      // Line shapes have different coordinate system
+      if (shape.type === "line") {
+        shapeData.x = shape.x1;
+        shapeData.y = shape.y1;
+        shapeData.width = 0;
+        shapeData.height = 0;
+      } else {
+        shapeData.x = (shape as any).x || 0;
+        shapeData.y = (shape as any).y || 0;
+        shapeData.width = (shape as any).width || 0;
+        shapeData.height = (shape as any).height || 0;
+      }
+
+      objectStateBeforeModify.set(data.shapeId, shapeData);
+    };
+
+    // Helper: Capture state for target (handles both single and multi-select)
+    const captureShapeState = (target: FabricObject) => {
       // Handle ActiveSelection (multi-select)
-      if (opt.target.type === "activeSelection") {
-        const objects = (opt.target as any)._objects || [];
-        for (const obj of objects) {
-          const data = obj.get("data") as { shapeId?: string } | undefined;
-          if (data?.shapeId && !objectStateBeforeModify.has(data.shapeId)) {
-            const shape = shapes.find((s) => s._id === data.shapeId);
-            if (shape) {
-              const shapeData: any = {
-                angle: shape.angle || 0,
-              };
-
-              // Add type-specific properties
-              if (shape.type === "line") {
-                shapeData.x = shape.x1;
-                shapeData.y = shape.y1;
-                shapeData.width = 0;
-                shapeData.height = 0;
-              } else {
-                shapeData.x = (shape as any).x || 0;
-                shapeData.y = (shape as any).y || 0;
-                shapeData.width = (shape as any).width || 0;
-                shapeData.height = (shape as any).height || 0;
-              }
-
-              objectStateBeforeModify.set(data.shapeId, shapeData);
-            }
-          }
-        }
+      if (target.type === "activeSelection") {
+        const objects = (target as any)._objects || [];
+        objects.forEach((obj: FabricObject) => captureObjectState(obj));
         return;
       }
 
       // Handle single object
-      const data = opt.target.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId && !objectStateBeforeModify.has(data.shapeId)) {
-        // Store original state
-        const shape = shapes.find((s) => s._id === data.shapeId);
-        if (shape) {
-          const shapeData: any = {
-            angle: shape.angle || 0,
-          };
+      captureObjectState(target);
+    };
 
-          // Add type-specific properties
-          if (shape.type === "line") {
-            shapeData.x = shape.x1;
-            shapeData.y = shape.y1;
-            shapeData.width = 0;
-            shapeData.height = 0;
-          } else {
-            shapeData.x = (shape as any).x || 0;
-            shapeData.y = (shape as any).y || 0;
-            shapeData.width = (shape as any).width || 0;
-            shapeData.height = (shape as any).height || 0;
-          }
-
-          objectStateBeforeModify.set(data.shapeId, shapeData);
-        }
-      }
-    });
-
-    fabricCanvas.on("object:rotating", (opt) => {
+    // Single handler for both scaling and rotating events
+    const handleObjectTransformStart = (opt: any) => {
       if (!opt.target) return;
+      captureShapeState(opt.target);
+    };
 
-      // Handle ActiveSelection (multi-select)
-      if (opt.target.type === "activeSelection") {
-        const objects = (opt.target as any)._objects || [];
-        for (const obj of objects) {
-          const data = obj.get("data") as { shapeId?: string } | undefined;
-          if (data?.shapeId && !objectStateBeforeModify.has(data.shapeId)) {
-            const shape = shapes.find((s) => s._id === data.shapeId);
-            if (shape) {
-              const shapeData: any = {
-                angle: shape.angle || 0,
-              };
-
-              // Add type-specific properties
-              if (shape.type === "line") {
-                shapeData.x = shape.x1;
-                shapeData.y = shape.y1;
-                shapeData.width = 0;
-                shapeData.height = 0;
-              } else {
-                shapeData.x = (shape as any).x || 0;
-                shapeData.y = (shape as any).y || 0;
-                shapeData.width = (shape as any).width || 0;
-                shapeData.height = (shape as any).height || 0;
-              }
-
-              objectStateBeforeModify.set(data.shapeId, shapeData);
-            }
-          }
-        }
-        return;
-      }
-
-      // Handle single object
-      const data = opt.target.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId && !objectStateBeforeModify.has(data.shapeId)) {
-        const shape = shapes.find((s) => s._id === data.shapeId);
-        if (shape) {
-          const shapeData: any = {
-            angle: shape.angle || 0,
-          };
-
-          // Add type-specific properties
-          if (shape.type === "line") {
-            shapeData.x = shape.x1;
-            shapeData.y = shape.y1;
-            shapeData.width = 0;
-            shapeData.height = 0;
-          } else {
-            shapeData.x = (shape as any).x || 0;
-            shapeData.y = (shape as any).y || 0;
-            shapeData.width = (shape as any).width || 0;
-            shapeData.height = (shape as any).height || 0;
-          }
-
-          objectStateBeforeModify.set(data.shapeId, shapeData);
-        }
-      }
-    });
+    fabricCanvas.on("object:scaling", handleObjectTransformStart);
+    fabricCanvas.on("object:rotating", handleObjectTransformStart);
 
     // Handle object modifications (resize, rotation, etc.) - sync to Convex
     fabricCanvas.on("object:modified", async (opt) => {

@@ -22,6 +22,7 @@ import { useHistory } from "@/hooks/useHistory";
 import { useClipboard } from "@/hooks/useClipboard";
 import { getUserColor } from "@/lib/color-utils";
 import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import { getSelectedShapes } from "@/lib/canvas/selection-utils";
 import { AIInput } from "@/components/ai/AIInput";
 import { AIFeedback } from "@/components/ai/AIFeedback";
 import { AIChatSidebar, type ChatMessageType } from "@/components/ai";
@@ -240,28 +241,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     if (!fabricCanvas) return;
 
     const activeObject = fabricCanvas.getActiveObject();
-    if (!activeObject) return;
-
-    const shapesToCopy: typeof shapes = [];
-
-    // Check if it's a multi-select (ActiveSelection)
-    if (activeObject.type === "activeSelection") {
-      const objects = (activeObject as any)._objects || [];
-      for (const obj of objects) {
-        const data = obj.get("data") as { shapeId?: string } | undefined;
-        if (data?.shapeId) {
-          const shape = shapes.find((s) => s._id === data.shapeId);
-          if (shape) shapesToCopy.push(shape);
-        }
-      }
-    } else {
-      // Single shape selection
-      const data = activeObject.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId) {
-        const shape = shapes.find((s) => s._id === data.shapeId);
-        if (shape) shapesToCopy.push(shape);
-      }
-    }
+    const shapesToCopy = getSelectedShapes(activeObject, shapes);
 
     if (shapesToCopy.length > 0) {
       clipboard.copy(shapesToCopy);
@@ -470,19 +450,17 @@ export function DashboardClient({ userName }: DashboardClientProps) {
         // Also update the Fabric.js objects immediately for instant feedback
         if (fabricCanvas) {
           const activeObject = fabricCanvas.getActiveObject();
-          if (activeObject) {
-            // Check if it's a multi-select (ActiveSelection)
-            if (activeObject.type === "activeSelection") {
-              const objects = (activeObject as any)._objects || [];
-              for (const obj of objects) {
-                obj.set("fill", color);
-              }
-            } else {
-              // Single shape
-              activeObject.set("fill", color);
-            }
-            fabricCanvas.requestRenderAll();
+          if (!activeObject) return;
+
+          // Handle multi-select
+          if (activeObject.type === "activeSelection") {
+            const objects = (activeObject as any)._objects || [];
+            objects.forEach((obj: any) => obj.set("fill", color));
+          } else {
+            // Single shape
+            activeObject.set("fill", color);
           }
+          fabricCanvas.requestRenderAll();
         }
       } catch (error) {
         console.error("Failed to update shape color:", error);
