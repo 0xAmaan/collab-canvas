@@ -1,4 +1,4 @@
-# CollabCanvas Schema Rearchitecture Plan
+# CollabCanvas Schema Rearchitecture Plan!
 
 ### Current Schema Issues
 
