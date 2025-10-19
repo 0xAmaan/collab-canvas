@@ -69,12 +69,12 @@ export const PropertiesSidebar = ({
               selectedShapeIds={selectedShapeIds}
               onUpdate={onUpdateShape}
             />
-            <StylePanel
+            <TransformPanel
               shapes={shapes}
               selectedShapeIds={selectedShapeIds}
               onUpdate={onUpdateShape}
             />
-            <TransformPanel
+            <StylePanel
               shapes={shapes}
               selectedShapeIds={selectedShapeIds}
               onUpdate={onUpdateShape}

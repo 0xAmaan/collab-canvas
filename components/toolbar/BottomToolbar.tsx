@@ -11,7 +11,6 @@ import {
   type ToolConfig,
 } from "@/components/toolbar/ToolDropdown";
 import { ToolSingleButton } from "@/components/toolbar/ToolSingleButton";
-import { ColorPicker } from "@/components/toolbar/ColorPicker";
 
 export type Tool =
   | "select"
@@ -256,11 +255,6 @@ const BottomToolbarComponent = ({
         isActive={activeTool === "text"}
         onClick={() => onToolChange("text")}
       />
-
-      {/* Color Picker - only show when shape is selected */}
-      {selectedShapeColor && onColorChange && (
-        <ColorPicker value={selectedShapeColor} onChange={onColorChange} />
-      )}
     </div>
   );
 };

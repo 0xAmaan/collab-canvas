@@ -48,7 +48,7 @@ export const AIChatSidebar = ({
   return (
     <div
       className={`h-full bg-sidebar border-r border-white/10 flex flex-col transition-all duration-200 ease-in-out relative z-10 ${
-        isOpen ? "w-[240px]" : "w-0"
+        isOpen ? "w-[280px]" : "w-0"
       } overflow-hidden`}
     >
       {/* Brand Header */}
