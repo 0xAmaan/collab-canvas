@@ -46,7 +46,7 @@ export const ChatMessage = ({
         {/* Message bubble */}
         <div
           className={`px-3 py-2 rounded-lg ${
-            isUser ? "bg-[#8A63D2] text-white" : "bg-[#2C2C2C] text-[#E5E5E5]"
+            isUser ? "bg-primary text-white" : "bg-panel text-[#E5E5E5]"
           } ${isError ? "border border-red-500/50" : ""}`}
         >
           {isLoading ? (

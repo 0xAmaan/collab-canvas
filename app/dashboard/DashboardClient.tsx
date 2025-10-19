@@ -555,7 +555,7 @@ export function DashboardClient({ userName }: DashboardClientProps) {
       {!isSidebarOpen && (
         <button
           onClick={handleToggleSidebar}
-          className="fixed left-4 top-6 z-30 p-2 bg-[#2C2C2C] hover:bg-[#3A3A3A] rounded-lg text-white shadow-xl transition-colors cursor-pointer border border-white/10"
+          className="fixed left-4 top-6 z-30 p-2 bg-panel hover:bg-toolbar rounded-lg text-white shadow-xl transition-colors cursor-pointer border border-white/10"
           title="Open AI Chat (⌘+\)"
         >
           <PanelLeft className="w-5 h-5" />

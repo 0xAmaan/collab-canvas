@@ -209,7 +209,7 @@ function BottomToolbarComponent({
   );
 
   return (
-    <div className="flex items-center gap-2 px-3 py-2 bg-[#383838] backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl">
+    <div className="flex items-center gap-2 px-3 py-2 bg-toolbar backdrop-blur-xl rounded-xl border border-white/10 shadow-2xl">
       {/* Selection Tools Dropdown */}
       <ToolDropdown
         tools={selectionTools}

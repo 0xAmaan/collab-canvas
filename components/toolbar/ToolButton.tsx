@@ -35,7 +35,7 @@ export function ToolButton({
         cursor-pointer
         ${
           active
-            ? "bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-lg shadow-blue-500/50"
+            ? "bg-gradient-to-br from-active-from to-active-to text-white shadow-lg shadow-blue-500/50"
             : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white"
         }
         border ${active ? "border-blue-400/50" : "border-white/10 hover:border-white/20"}
@@ -52,7 +52,7 @@ export function ToolButton({
 
       {/* Active glow effect */}
       {active && (
-        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-blue-500 to-purple-600 blur opacity-50"></div>
+        <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-active-from to-active-to blur opacity-50"></div>
       )}
 
       {/* Keyboard shortcut hint - Excalidraw style subscript */}

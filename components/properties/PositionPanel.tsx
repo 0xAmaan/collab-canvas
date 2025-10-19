@@ -138,7 +138,7 @@ export const PositionPanel = ({
             onClick={() => setAspectRatioLocked(!aspectRatioLocked)}
             className={`flex items-center gap-2 text-xs transition-colors ${
               aspectRatioLocked
-                ? "text-[#8A63D2]"
+                ? "text-primary"
                 : "text-white/50 hover:text-white/70"
             }`}
             title="Lock aspect ratio"

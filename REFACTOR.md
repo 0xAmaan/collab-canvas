@@ -18,66 +18,7 @@
 
 ## 🎯 Refactoring Phases
 
-### **PHASE 1: Dead Code Removal**  — COMPLETED
 
-**Goal**: Remove unused/test code without touching working features
-
-#### Files to Delete:
-1. **`app/temporary/page.tsx`** (81 lines)
-   - Purpose: Raw Fabric.js pencil test for debugging fill flash issue
-   - Why remove: Debugging completed, test no longer needed
-   - Risk: Zero (not linked in navigation, isolated test)
-
-2. **`components/toolbar/Toolbar.tsx`** (203 lines)
-   - Purpose: Original toolbar component (outdated)
-   - Replaced by: `BottomToolbar.tsx` (277 lines, actively used)
-   - Why remove: Duplicate functionality, BottomToolbar has Figma-style dropdowns
-   - Risk: Low (verify no imports first)
-   - **Action**: Run grep to confirm zero imports, then delete
-
-#### Files to Keep:
-- ✅ `components/toolbar/ZoomControls.tsx` - **ACTIVELY USED** in `AccountSection.tsx` line 11
-- ✅ `context/` directory - User will revisit later
-
-#### Console Log Cleanup:
-
-**Target: Remove ~135 debug logs, keep ~15 error logs**
-
-1. **`components/canvas/Canvas.tsx`** (61 console statements)
-   - **Remove** (lines approx):
-     - L1948-2012: Pencil brush debugging (14 logs)
-     - L2050-2100: Path creation verbose logging (8 logs)
-     - L2254-2397: Sync effect commented-out logs (15 logs)
-     - L977, 991: Alt+drag duplication debug (2 logs)
-   - **Keep**:
-     - L203, 260, 315, 371, 426, 501: Shape creation errors (6 logs)
-     - L1456, 1671, 1703, 1758: Sync/update errors (4 logs)
-     - L2162-2166: Path creation critical error with stack trace
-
-2. **`app/dashboard/DashboardClient.tsx`** (5 console statements)
-   - **Remove**:
-     - L99-111: Cursor update blocked logs (3 debug logs)
-   - **Keep**:
-     - L449: AI command error (1 error log)
-     - L error handlers as-is
-
-3. **`hooks/usePresence.ts`** (37 console statements)
-   - **Remove**: All debug logs (presence join/leave/cursor updates)
-   - **Keep**: Error logs only (authentication failures, mutation errors)
-
-4. **`hooks/useShapes.ts`** (16 console statements)
-   - **Remove**: All debug logs
-   - **Keep**: Error logs only (mutation failures)
-
-5. **`hooks/useHistory.ts`** (7 console statements)
-   - **Remove**: All debug logs (command execution, undo/redo logging)
-   - **Keep**: Error logs only
-
-6. **Other files**: Remove debug logs, keep error logs
-
-**Verification**: After cleanup, run `grep -r "console\\.log" --include="*.ts" --include="*.tsx" | wc -l` to confirm ~15 remaining
-
----
 
 ### **PHASE 2: Style Consolidation**
 

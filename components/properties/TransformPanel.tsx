@@ -57,10 +57,10 @@ export const TransformPanel = ({
 
       {/* Flip Buttons - Future Enhancement */}
       {/* <div className="flex gap-2">
-        <button className="flex-1 px-3 py-2 bg-[#2C2C2C] hover:bg-[#383838] border border-white/10 rounded-lg text-xs text-white/70 hover:text-white transition-colors">
+        <button className="flex-1 px-3 py-2 bg-panel hover:bg-toolbar border border-white/10 rounded-lg text-xs text-white/70 hover:text-white transition-colors">
           Flip H
         </button>
-        <button className="flex-1 px-3 py-2 bg-[#2C2C2C] hover:bg-[#383838] border border-white/10 rounded-lg text-xs text-white/70 hover:text-white transition-colors">
+        <button className="flex-1 px-3 py-2 bg-panel hover:bg-toolbar border border-white/10 rounded-lg text-xs text-white/70 hover:text-white transition-colors">
           Flip V
         </button>
       </div> */}

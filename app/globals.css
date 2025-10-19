@@ -25,8 +25,18 @@
   --color-canvas-red-light: #f87171;
   --color-canvas-red-dark: #dc2626;
 
-  --color-sidebar: #1e1e1e;
-  --color-panel: #2c2c2c;
+  /* UI Component Colors - Dark theme surfaces */
+  --color-sidebar: #1e1e1e;        /* Main sidebars (AI chat, properties) */
+  --color-panel: #2c2c2c;          /* Panels, inputs, nested surfaces */
+  --color-toolbar: #383838;        /* Toolbars, dropdowns */
+
+  /* Primary Action Colors - Purple accent */
+  --color-primary: #8A63D2;        /* Primary buttons, focus states */
+  --color-primary-hover: #7a53c2;  /* Hover state for primary buttons */
+
+  /* Gradient Colors - Active tool states */
+  --color-active-from: #3b82f6;    /* Gradient start (blue-500) */
+  --color-active-to: #a855f7;      /* Gradient end (purple-500) */
 
   /* Fonts */
   --font-sans: var(--font-geist-sans);

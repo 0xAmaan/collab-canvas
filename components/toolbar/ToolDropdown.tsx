@@ -129,7 +129,7 @@ export const ToolDropdown = ({
 
       {/* Dropdown menu - opens upward */}
       {isOpen && (
-        <div className="absolute bottom-full mb-2 left-0 z-50 min-w-[200px] bg-[#383838] backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl p-1 overflow-hidden">
+        <div className="absolute bottom-full mb-2 left-0 z-50 min-w-[200px] bg-toolbar backdrop-blur-xl border border-white/10 rounded-lg shadow-2xl p-1 overflow-hidden">
           {tools.map((tool) => (
             <button
               key={tool.id}

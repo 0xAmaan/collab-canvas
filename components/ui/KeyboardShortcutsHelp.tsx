@@ -70,12 +70,12 @@ export function KeyboardShortcutsHelp({
     <div className="fixed inset-0 z-50 pointer-events-none flex items-end justify-end p-6">
       <div
         ref={modalRef}
-        className="pointer-events-auto bg-[#282828] backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 w-96 animate-in fade-in slide-in-from-bottom-4 duration-200"
+        className="pointer-events-auto bg-panel backdrop-blur-xl rounded-xl shadow-2xl border border-white/10 w-96 animate-in fade-in slide-in-from-bottom-4 duration-200"
       >
         {/* Header */}
         <div className="px-5 py-3 border-b border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-[#8A63D2] flex items-center justify-center shadow-lg">
+            <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center shadow-lg">
               <svg
                 width="14"
                 height="14"
@@ -126,7 +126,7 @@ export function KeyboardShortcutsHelp({
               <span className="text-xs text-white/70 group-hover:text-white flex-1 transition-colors">
                 {shortcut.description}
               </span>
-              <kbd className="px-2.5 py-1 text-xs font-semibold text-white/90 bg-[var(--color-panel)] border border-white/15 rounded-md shadow-sm min-w-[50px] text-center group-hover:bg-[#333333] group-hover:border-white/25 transition-all">
+              <kbd className="px-2.5 py-1 text-xs font-semibold text-white/90 bg-[var(--color-panel)] border border-white/15 rounded-md shadow-sm min-w-[50px] text-center group-hover:bg-toolbar group-hover:border-white/25 transition-all">
                 {shortcut.displayKey}
               </kbd>
             </div>
@@ -134,7 +134,7 @@ export function KeyboardShortcutsHelp({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-2.5 border-t border-white/10 bg-[#242424] rounded-b-xl">
+        <div className="px-5 py-2.5 border-t border-white/10 bg-sidebar rounded-b-xl">
           <p className="text-xs text-white/50 text-center flex items-center justify-center gap-2">
             <span>Press</span>
             <kbd className="px-2 py-0.5 text-xs bg-[var(--color-panel)] border border-white/15 rounded font-semibold text-white/90">

@@ -27,7 +27,7 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
     return (
       <form
         onSubmit={handleSubmit}
-        className="border-t border-white/10 p-3 bg-[#1A1A1A]"
+        className="border-t border-white/10 p-3 bg-sidebar"
       >
         <div className="flex items-center gap-2">
           <input
@@ -36,14 +36,14 @@ export const ChatInput = forwardRef<HTMLInputElement, ChatInputProps>(
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask AI to create shapes..."
-            className="flex-1 bg-[#2C2C2C] text-white placeholder-[#666666] outline-none text-[13px] px-3 py-2 rounded-lg border border-white/10 focus:border-[#8A63D2] focus:ring-1 focus:ring-[#8A63D2] transition-colors"
+            className="flex-1 bg-panel text-white placeholder-[#666666] outline-none text-[13px] px-3 py-2 rounded-lg border border-white/10 focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
             disabled={isLoading}
             autoComplete="off"
           />
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="px-3 py-2 bg-[#8A63D2] hover:bg-[#7a53c2] rounded-lg text-white text-[13px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+            className="px-3 py-2 bg-primary hover:bg-primary-hover rounded-lg text-white text-[13px] font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             title="Send message"
           >
             {isLoading ? (
