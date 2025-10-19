@@ -31,12 +31,12 @@ interface BottomToolbarProps {
   onColorChange?: (color: string) => void;
 }
 
-function BottomToolbarComponent({
+const BottomToolbarComponent = ({
   activeTool,
   onToolChange,
   selectedShapeColor,
   onColorChange,
-}: BottomToolbarProps) {
+}: BottomToolbarProps) => {
   // Selection Tools Group
   const selectionTools: ToolConfig[] = [
     {
@@ -263,7 +263,7 @@ function BottomToolbarComponent({
       )}
     </div>
   );
-}
+};
 
 // Memoize component to prevent re-renders when unrelated state changes
 export const BottomToolbar = memo(

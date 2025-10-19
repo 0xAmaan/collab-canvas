@@ -13,7 +13,7 @@ type OptimisticShape = Shape & {
   _isOptimistic?: boolean;
 };
 
-export function useShapes() {
+export const useShapes = () => {
   // Subscribe to all shapes from Convex (real-time)
   const convexShapes = useQuery(api.shapes.getShapes) ?? [];
 
@@ -283,4 +283,4 @@ export function useShapes() {
     deleteShape,
     isLoading: convexShapes === undefined,
   };
-}
+};

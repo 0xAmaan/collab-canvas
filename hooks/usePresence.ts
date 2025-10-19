@@ -16,12 +16,12 @@ interface UsePresenceOptions {
   enabled?: boolean;
 }
 
-export function usePresence({
+export const usePresence = ({
   userId,
   userName,
   userColor,
   enabled = true,
-}: UsePresenceOptions) {
+}: UsePresenceOptions) => {
   const hasJoinedRef = useRef(false);
   const isRejoiningRef = useRef(false); // Track if we're in the middle of rejoining
   const isWindowVisibleRef = useRef(
@@ -313,4 +313,4 @@ export function usePresence({
     updateCursorPosition: throttledUpdatePresence,
     isReady, // Use state instead of ref so changes trigger re-renders
   };
-}
+};

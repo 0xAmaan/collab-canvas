@@ -15,7 +15,7 @@ import {
 import { getZoom, zoomToPoint, setViewportTransform } from "@/lib/canvas-utils";
 import type { ViewportState, Point } from "@/types/viewport";
 
-export function useViewport(canvas: FabricCanvas | null) {
+export const useViewport = (canvas: FabricCanvas | null) => {
   const [viewport, setViewport] = useState<ViewportState>(() => {
     // Initialize from localStorage on mount
     if (typeof window !== "undefined") {
@@ -166,4 +166,4 @@ export function useViewport(canvas: FabricCanvas | null) {
     canZoomIn: viewport.zoom < ZOOM.MAX,
     canZoomOut: viewport.zoom > ZOOM.MIN,
   };
-}
+};

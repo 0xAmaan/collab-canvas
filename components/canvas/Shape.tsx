@@ -39,7 +39,7 @@ const commonShapeConfig = {
  * Create a Fabric.js object from a Shape definition
  * Supports: rectangle, circle, ellipse, line, text
  */
-export function createFabricShape(shape: Shape): FabricObject {
+export const createFabricShape = (shape: Shape): FabricObject => {
   const baseConfig = {
     ...commonShapeConfig,
     angle: shape.angle ?? 0,
@@ -148,7 +148,7 @@ export function createFabricShape(shape: Shape): FabricObject {
 /**
  * Update a Fabric.js object with new shape data
  */
-export function updateFabricShape(fabricObj: FabricObject, shape: Shape): void {
+export const updateFabricShape = (fabricObj: FabricObject, shape: Shape): void => {
   const updates: any = {
     angle: shape.angle ?? 0,
     fill: shape.fillColor,

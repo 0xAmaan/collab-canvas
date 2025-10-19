@@ -17,14 +17,14 @@ interface ToolButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   shortcut?: string;
 }
 
-export function ToolButton({
+export const ToolButton = ({
   active = false,
   icon,
   tooltip,
   shortcut,
   className = "",
   ...props
-}: ToolButtonProps) {
+}: ToolButtonProps) => {
   return (
     <button
       type="button"
@@ -63,4 +63,4 @@ export function ToolButton({
       )}
     </button>
   );
-}
+};

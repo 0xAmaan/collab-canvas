@@ -11,10 +11,10 @@ import { useRef, useCallback, useEffect } from "react";
  * @param delay - Minimum delay between executions in milliseconds
  * @returns Throttled function
  */
-export function useThrottle<T extends (...args: any[]) => any>(
+export const useThrottle = <T extends (...args: any[]) => any>(
   callback: T,
   delay: number,
-): (...args: Parameters<T>) => void {
+): ((...args: Parameters<T>) => void) => {
   const lastRanRef = useRef<number>(0);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -53,4 +53,4 @@ export function useThrottle<T extends (...args: any[]) => any>(
     },
     [callback, delay],
   );
-}
+};

@@ -2,7 +2,7 @@ import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { DashboardClient } from "@/app/dashboard/DashboardClient";
 
-export default async function DashboardPage() {
+const DashboardPage = async () => {
   // Protect this route - only authenticated users
   const { userId } = await auth();
 
@@ -15,4 +15,6 @@ export default async function DashboardPage() {
   const userName = user?.username || "User";
 
   return <DashboardClient userName={userName} />;
-}
+};
+
+export default DashboardPage;

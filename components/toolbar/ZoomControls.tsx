@@ -14,7 +14,7 @@ interface ZoomControlsProps {
   canvas: FabricCanvas | null;
 }
 
-function ZoomControlsComponent({ canvas }: ZoomControlsProps) {
+const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const {
     viewport,
@@ -135,7 +135,7 @@ function ZoomControlsComponent({ canvas }: ZoomControlsProps) {
       </button>
     </div>
   );
-}
+};
 
 // Memoize component to prevent re-renders when canvas reference hasn't changed
 export const ZoomControls = memo(

@@ -12,7 +12,7 @@ interface MultiplayerCursorProps {
   zoom: number;
 }
 
-function MultiplayerCursorComponent({ user, zoom }: MultiplayerCursorProps) {
+const MultiplayerCursorComponent = ({ user, zoom }: MultiplayerCursorProps) => {
   // Scale cursor inversely to zoom to maintain constant screen size
   const inverseScale = 1 / zoom;
 
@@ -60,7 +60,7 @@ function MultiplayerCursorComponent({ user, zoom }: MultiplayerCursorProps) {
       </div>
     </div>
   );
-}
+};
 
 // Memoize the component to prevent re-renders when other cursors update
 export const MultiplayerCursor = memo(

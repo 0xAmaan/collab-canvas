@@ -14,14 +14,14 @@ interface AvatarProps {
   isCurrentUser?: boolean;
 }
 
-export function Avatar({
+export const Avatar = ({
   src,
   alt,
   fallback,
   size = 40,
   backgroundColor = "#3b82f6",
   isCurrentUser = false,
-}: AvatarProps) {
+}: AvatarProps) => {
   return (
     <div
       className={`relative inline-flex items-center justify-center rounded-full overflow-hidden border-2 transition-all ${
@@ -54,4 +54,4 @@ export function Avatar({
       )}
     </div>
   );
-}
+};

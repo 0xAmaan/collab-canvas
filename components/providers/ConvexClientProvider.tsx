@@ -12,7 +12,7 @@ import { ReactNode } from "react";
 
 const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL!);
 
-export function ConvexClientProvider({ children }: { children: ReactNode }) {
+export const ConvexClientProvider = ({ children }: { children: ReactNode }) => {
   // Wrap useAuth to specify the JWT template name
   const useAuthWithTemplate = () => {
     const auth = useAuth();
@@ -30,4 +30,4 @@ export function ConvexClientProvider({ children }: { children: ReactNode }) {
       {children}
     </ConvexProviderWithClerk>
   );
-}
+};

@@ -50,7 +50,7 @@ interface CanvasProps {
   };
 }
 
-export function Canvas({
+export const Canvas = ({
   onCanvasReady,
   activeTool,
   userId = "anonymous",
@@ -59,7 +59,7 @@ export function Canvas({
   onDuplicateSelected,
   updateCursorPosition,
   history,
-}: CanvasProps) {
+}: CanvasProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const fabricCanvasRef = useRef<FabricCanvas | null>(null);
   const activeToolRef = useRef<Tool>(activeTool);
@@ -864,4 +864,4 @@ export function Canvas({
       <canvas ref={canvasRef} />
     </div>
   );
-}
+};

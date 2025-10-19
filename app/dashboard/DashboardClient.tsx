@@ -4,8 +4,9 @@
  * Client-side dashboard component with Canvas and Toolbar
  */
 
-import { AIChatSidebar, type ChatMessageType } from "@/components/ai";
+import { AIChatSidebar } from "@/components/ai/AIChatSidebar";
 import { AIFeedback } from "@/components/ai/AIFeedback";
+import type { ChatMessageType } from "@/components/ai/ChatHistory";
 import { Canvas } from "@/components/canvas/Canvas";
 import { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";
 import { PropertiesSidebar } from "@/components/properties/PropertiesSidebar";
@@ -35,7 +36,7 @@ interface DashboardClientProps {
   userName: string;
 }
 
-export function DashboardClient({ userName }: DashboardClientProps) {
+export const DashboardClient = ({ userName }: DashboardClientProps) => {
   const [fabricCanvas, setFabricCanvas] = useState<FabricCanvas | null>(null);
   const [activeTool, setActiveTool] = useState<Tool>("select");
   const [deleteHandler, setDeleteHandler] = useState<(() => void) | null>(null);
@@ -601,4 +602,4 @@ export function DashboardClient({ userName }: DashboardClientProps) {
       />
     </div>
   );
-}
+};

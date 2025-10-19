@@ -101,7 +101,7 @@ const tools = {
   }),
 };
 
-export async function POST(request: Request) {
+export const POST = async (request: Request) => {
   try {
     // Parse request body
     const body: AICommandRequest = await request.json();
@@ -200,4 +200,4 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-}
+};

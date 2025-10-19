@@ -22,7 +22,7 @@ interface ExecutorContext {
 /**
  * Convert hex color to RGB
  */
-function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+const hexToRgb = (hex: string): { r: number; g: number; b: number } | null => {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
@@ -31,17 +31,17 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
         b: parseInt(result[3], 16),
       }
     : null;
-}
+};
 
 /**
  * Check if RGB values match a color name using heuristics
  */
-function rgbMatchesColorName(
+const rgbMatchesColorName = (
   r: number,
   g: number,
   b: number,
   colorName: string,
-): boolean {
+): boolean => {
   // Normalize to 0-1 range
   const rn = r / 255;
   const gn = g / 255;
@@ -93,12 +93,12 @@ function rgbMatchesColorName(
     default:
       return false;
   }
-}
+};
 
 /**
  * Check if a color hex code matches a color name (dynamic)
  */
-function isColorMatch(hex: string | undefined, colorName: string): boolean {
+const isColorMatch = (hex: string | undefined, colorName: string): boolean => {
   if (!hex) return false;
   const lower = hex.toLowerCase();
 
@@ -110,12 +110,12 @@ function isColorMatch(hex: string | undefined, colorName: string): boolean {
   if (!rgb) return false;
 
   return rgbMatchesColorName(rgb.r, rgb.g, rgb.b, colorName);
-}
+};
 
 /**
  * Resolve selector to matching shapes
  */
-function resolveSelector(selector: string, shapes: Shape[]): Shape[] {
+const resolveSelector = (selector: string, shapes: Shape[]): Shape[] => {
   const lower = selector.toLowerCase();
 
   // List of common color names to check
@@ -171,7 +171,7 @@ function resolveSelector(selector: string, shapes: Shape[]): Shape[] {
   }
 
   return [];
-}
+};
 
 /**
  * Execute create rectangle command

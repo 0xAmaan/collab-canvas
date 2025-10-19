@@ -1,4 +1,4 @@
-![Abstract of the wave pattern at Coyote Buttes, Arizona][image1]
+
 
 # CollabCanvas Rubric
 

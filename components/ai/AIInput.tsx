@@ -12,7 +12,7 @@ interface AIInputProps {
   isLoading: boolean;
 }
 
-export function AIInput({ onSubmit, isLoading }: AIInputProps) {
+export const AIInput = ({ onSubmit, isLoading }: AIInputProps) => {
   const [input, setInput] = useState("");
 
   const handleSubmit = (e: FormEvent) => {
@@ -73,4 +73,4 @@ export function AIInput({ onSubmit, isLoading }: AIInputProps) {
       </div>
     </form>
   );
-}
+};

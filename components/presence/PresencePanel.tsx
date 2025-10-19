@@ -16,11 +16,11 @@ interface PresencePanelProps {
   maxVisible?: number;
 }
 
-function PresencePanelComponent({
+const PresencePanelComponent = ({
   activeUsers,
   currentUserId,
   maxVisible = 5,
-}: PresencePanelProps) {
+}: PresencePanelProps) => {
   // Memoize visible users calculation - exclude current user
   const { visibleUsers, remainingCount, totalOtherUsers } = useMemo(() => {
     // Filter out current user first
@@ -73,7 +73,7 @@ function PresencePanelComponent({
       </div>
     </div>
   );
-}
+};
 
 // Memoize component to prevent re-renders when unrelated state changes
 export const PresencePanel = memo(

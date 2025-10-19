@@ -162,34 +162,34 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
 /**
  * Get shortcut by key
  */
-export function getShortcutByKey(key: string): KeyboardShortcut | undefined {
+export const getShortcutByKey = (key: string): KeyboardShortcut | undefined => {
   return KEYBOARD_SHORTCUTS.find(
     (shortcut) => shortcut.key === key.toLowerCase(),
   );
-}
+};
 
 /**
  * Get shortcut by action
  */
-export function getShortcutByAction(
+export const getShortcutByAction = (
   action: KeyboardAction,
-): KeyboardShortcut | undefined {
+): KeyboardShortcut | undefined => {
   return KEYBOARD_SHORTCUTS.find((shortcut) => shortcut.action === action);
-}
+};
 
 /**
  * Get display label for a keyboard shortcut action
  */
-export function getShortcutLabel(action: KeyboardAction): string {
+export const getShortcutLabel = (action: KeyboardAction): string => {
   const shortcut = getShortcutByAction(action);
   return shortcut?.displayKey || "";
-}
+};
 
 /**
  * Get all shortcuts for display in help
  * Filters out duplicate actions (like Delete/Backspace)
  */
-export function getUniqueShortcuts(): KeyboardShortcut[] {
+export const getUniqueShortcuts = (): KeyboardShortcut[] => {
   const seen = new Set<KeyboardAction>();
   return KEYBOARD_SHORTCUTS.filter((shortcut) => {
     if (seen.has(shortcut.action)) {
@@ -198,4 +198,4 @@ export function getUniqueShortcuts(): KeyboardShortcut[] {
     seen.add(shortcut.action);
     return true;
   });
-}
+};

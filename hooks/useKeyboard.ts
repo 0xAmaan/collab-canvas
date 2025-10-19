@@ -34,7 +34,7 @@ interface KeyboardShortcuts {
  * Hook to handle keyboard shortcuts
  * Automatically ignores shortcuts when typing in input fields
  */
-export function useKeyboard(shortcuts: KeyboardShortcuts) {
+export const useKeyboard = (shortcuts: KeyboardShortcuts) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if any modifier keys are pressed
@@ -220,4 +220,4 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
       window.removeEventListener("keyup", handleKeyUp);
     };
   }, [shortcuts]);
-}
+};

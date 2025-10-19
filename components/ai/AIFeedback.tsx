@@ -12,7 +12,7 @@ interface AIFeedbackProps {
   message?: string;
 }
 
-export function AIFeedback({ status, message }: AIFeedbackProps) {
+export const AIFeedback = ({ status, message }: AIFeedbackProps) => {
   if (status === "idle") return null;
 
   return (
@@ -56,4 +56,4 @@ export function AIFeedback({ status, message }: AIFeedbackProps) {
       </div>
     </div>
   );
-}
+};

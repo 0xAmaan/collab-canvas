@@ -7,7 +7,7 @@ interface BadgeProps {
   className?: string;
 }
 
-export function Badge({ variant = "online", className = "" }: BadgeProps) {
+export const Badge = ({ variant = "online", className = "" }: BadgeProps) => {
   const bgColor = variant === "online" ? "bg-green-500" : "bg-gray-400";
 
   return (
@@ -16,4 +16,4 @@ export function Badge({ variant = "online", className = "" }: BadgeProps) {
       aria-label={variant === "online" ? "Online" : "Offline"}
     />
   );
-}
+};

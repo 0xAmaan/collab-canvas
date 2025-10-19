@@ -14,10 +14,10 @@ interface KeyboardShortcutsHelpProps {
   onClose: () => void;
 }
 
-export function KeyboardShortcutsHelp({
+export const KeyboardShortcutsHelp = ({
   isOpen,
   onClose,
-}: KeyboardShortcutsHelpProps) {
+}: KeyboardShortcutsHelpProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
 
   // Get unique shortcuts (no duplicates like Delete/Backspace)
@@ -146,4 +146,4 @@ export function KeyboardShortcutsHelp({
       </div>
     </div>
   );
-}
+};

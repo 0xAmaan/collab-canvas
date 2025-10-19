@@ -8,46 +8,46 @@ import type { ViewportState, ViewportBounds, Point } from "@/types/viewport";
 /**
  * Clamp a zoom level within allowed bounds
  */
-export function clampZoom(zoom: number): number {
+export const clampZoom = (zoom: number): number => {
   return Math.max(ZOOM.MIN, Math.min(ZOOM.MAX, zoom));
-}
+};
 
 /**
  * Get viewport bounds based on canvas dimensions
  */
-export function getViewportBounds(): ViewportBounds {
+export const getViewportBounds = (): ViewportBounds => {
   return {
     minZoom: ZOOM.MIN,
     maxZoom: ZOOM.MAX,
     width: CANVAS.VIRTUAL_WIDTH,
     height: CANVAS.VIRTUAL_HEIGHT,
   };
-}
+};
 
 /**
  * Calculate new zoom level from wheel delta
  */
-export function calculateZoomFromWheel(
+export const calculateZoomFromWheel = (
   currentZoom: number,
   deltaY: number,
-): number {
+): number => {
   const newZoom = currentZoom * Math.pow(ZOOM.WHEEL_SENSITIVITY, deltaY);
   return clampZoom(newZoom);
-}
+};
 
 /**
  * Format zoom as percentage string
  */
-export function formatZoomPercentage(zoom: number): string {
+export const formatZoomPercentage = (zoom: number): string => {
   return `${Math.round(zoom * 100)}%`;
-}
+};
 
 /**
  * Parse viewport state from localStorage
  */
-export function parseStoredViewport(
+export const parseStoredViewport = (
   stored: string | null,
-): ViewportState | null {
+): ViewportState | null => {
   if (!stored) return null;
 
   try {
@@ -68,29 +68,29 @@ export function parseStoredViewport(
   }
 
   return null;
-}
+};
 
 /**
  * Convert viewport state to storage format
  */
-export function serializeViewport(state: ViewportState): string {
+export const serializeViewport = (state: ViewportState): string => {
   return JSON.stringify(state);
-}
+};
 
 /**
  * Calculate distance between two points
  */
-export function distance(p1: Point, p2: Point): number {
+export const distance = (p1: Point, p2: Point): number => {
   const dx = p2.x - p1.x;
   const dy = p2.y - p1.y;
   return Math.sqrt(dx * dx + dy * dy);
-}
+};
 
 /**
  * Limit panning to keep canvas within bounds
  * This prevents infinite panning into empty space
  */
-export function constrainPan(
+export const constrainPan = (
   panX: number,
   panY: number,
   zoom: number,
@@ -98,7 +98,7 @@ export function constrainPan(
   canvasHeight: number,
   virtualWidth: number = CANVAS.VIRTUAL_WIDTH,
   virtualHeight: number = CANVAS.VIRTUAL_HEIGHT,
-): { x: number; y: number } {
+): { x: number; y: number } => {
   // If zoomed out enough to see the whole canvas, center it
   const minZoomToFit = Math.max(
     canvasWidth / virtualWidth,
@@ -128,4 +128,4 @@ export function constrainPan(
   if (y < maxY) y = maxY;
 
   return { x, y };
-}
+};

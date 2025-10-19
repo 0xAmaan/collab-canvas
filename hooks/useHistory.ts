@@ -8,7 +8,7 @@ import type { Command } from "@/lib/commands/types";
 
 const MAX_HISTORY_SIZE = 25;
 
-export function useHistory() {
+export const useHistory = () => {
   const [undoStack, setUndoStack] = useState<Command[]>([]);
   const [redoStack, setRedoStack] = useState<Command[]>([]);
   const isExecutingRef = useRef(false);
@@ -137,4 +137,4 @@ export function useHistory() {
     }),
     [execute, undo, redo, undoStack.length, redoStack.length, clear],
   );
-}
+};

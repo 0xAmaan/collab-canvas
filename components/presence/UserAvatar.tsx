@@ -17,13 +17,13 @@ interface UserAvatarProps {
   size?: number;
 }
 
-export function UserAvatar({
+export const UserAvatar = ({
   userName,
   userColor,
   imageUrl,
   isCurrentUser = false,
   size = 40,
-}: UserAvatarProps) {
+}: UserAvatarProps) => {
   const [showTooltip, setShowTooltip] = useState(false);
   // Get first letter of username for fallback
   const initial = userName.charAt(0) || "U";
@@ -56,4 +56,4 @@ export function UserAvatar({
       )}
     </div>
   );
-}
+};
