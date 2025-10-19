@@ -1,209 +1,245 @@
-# CollabCanvas MVP
+# CollabCanvas
 
-A real-time collaborative canvas with multiplayer features built with Next.js, Convex, and Clerk.
+A real-time collaborative canvas application for creative teams. Built with Next.js 15, Convex, and Fabric.js.
 
-## Features
+<div align="center">
 
-### ✅ Implemented (PR #1-4)
-- 🔐 Authentication with Clerk
-- 🗄️ Convex database with shapes and presence schemas
-- 🎨 Canvas with pan/zoom (5000x5000px workspace)
-- ⚡ Built with Fabric.js for high-performance rendering
-- 🔍 Zoom controls (10% - 400%)
-- 💾 Viewport persistence
+[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![React](https://img.shields.io/badge/React-19-blue?style=flat&logo=react)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![Convex](https://img.shields.io/badge/Convex-Real--time-orange?style=flat)](https://convex.dev/)
 
-### 🚧 Coming Soon (PR #5-8)
-- 📦 Rectangle shape creation and manipulation
-- 🔄 Real-time synchronization between users (<100ms)
-- 👥 Multiplayer cursors with name labels
-- 👤 User presence awareness
+</div>
 
-## Tech Stack
+## ✨ Features
 
-- **Frontend**: Next.js 14+ (App Router), React 18, TypeScript
-- **Backend**: Convex (real-time database + backend functions)
-- **Auth**: Clerk
-- **Canvas**: Fabric.js
-- **Styling**: Tailwind CSS
-- **Package Manager**: Bun
+### 🎨 Canvas Tools
+- **Selection Tool** - Select, move, resize, and rotate shapes
+- **Shape Creation** - Rectangles, circles, ellipses, lines, polygons
+- **Text Tool** - Add and edit text with auto-save
+- **Pencil Tool** - Free-form drawing
+- **Hand Tool** - Pan around the canvas
 
-## Setup Instructions
+### 👥 Multiplayer
+- **Real-time Cursors** - See where others are working
+- **Live Presence** - Know who's online
+- **Instant Sync** - Changes propagate in <100ms
+- **Cursor Throttling** - Optimized for performance
+
+### 🛠️ Advanced Features
+- **Undo/Redo** - Full command history (Cmd+Z / Cmd+Shift+Z)
+- **Copy/Paste** - Duplicate shapes (Cmd+C / Cmd+V)
+- **Alt+Drag** - Quick duplicate or pan
+- **Multi-Select** - Select and manipulate multiple shapes
+- **Layer Management** - Reorder shapes (Cmd+[ / Cmd+])
+- **Export** - Save as PNG or SVG
+- **Keyboard Shortcuts** - Efficient workflows
+- **Project Management** - Organize multiple canvases
+- **AI Assistant** - Natural language canvas commands
+
+### 🎯 UI/UX
+- **Zoom Controls** - 10% to 400% with smooth transitions
+- **Viewport Persistence** - Remember your position
+- **Color Picker** - Full HSL/RGB with recent colors
+- **Properties Panel** - Fine-tune shape attributes
+- **Layers Panel** - Visual hierarchy management
+- **Responsive Design** - Works on desktop and tablet
+
+## 🚀 Quick Start
 
 ### Prerequisites
-
-- Node.js 18+
-- [Bun](https://bun.sh) package manager
-- [Convex](https://convex.dev) account (free tier)
-- [Clerk](https://clerk.com) account (free tier)
+- **Node.js** 18+
+- **Bun** ([install here](https://bun.sh))
+- **Convex** account ([sign up](https://convex.dev))
+- **Clerk** account ([sign up](https://clerk.com))
 
 ### Installation
 
-1. **Install dependencies** (if not already done):
+1. **Clone and install dependencies:**
    ```bash
+   git clone <your-repo-url>
+   cd collab-canvas
    bun install
    ```
 
-2. **Set up Convex**:
+2. **Set up Convex:**
    ```bash
    bunx convex dev
    ```
-   - This will open your browser to create/link a Convex project
-   - Copy the `NEXT_PUBLIC_CONVEX_URL` to `.env.local`
+   Follow the prompts to create a project and copy the `NEXT_PUBLIC_CONVEX_URL`.
 
-3. **Set up Clerk**:
-   - Go to [dashboard.clerk.com](https://dashboard.clerk.com)
-   - Create a new application
-   - Copy the API keys to `.env.local`:
-     - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`
-     - `CLERK_SECRET_KEY`
+3. **Set up Clerk:**
+   - Create an application at [dashboard.clerk.com](https://dashboard.clerk.com)
+   - Copy your publishable key and secret key
 
-4. **Configure environment variables**:
+4. **Configure environment variables:**
    ```bash
    cp .env.example .env.local
-   # Edit .env.local with your actual keys
+   ```
+   
+   Edit `.env.local`:
+   ```env
+   NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
+   CLERK_SECRET_KEY=sk_test_xxxxx
+   OPENAI_API_KEY=sk-xxxxx  # Optional: for AI assistant
    ```
 
-5. **Run the development server**:
+5. **Start development:**
    ```bash
    bun run dev
    ```
+   Open [http://localhost:3000](http://localhost:3000)
 
-6. **In a separate terminal, run Convex dev**:
-   ```bash
-   bunx convex dev
-   ```
+## 🎮 Usage
 
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
+### Keyboard Shortcuts
 
-## AI Canvas Agent Setup
+| Key | Action |
+|-----|--------|
+| `V` | Select tool |
+| `H` | Hand tool (pan) |
+| `R` | Rectangle |
+| `C` | Circle |
+| `L` | Line |
+| `P` | Polygon |
+| `T` | Text |
+| `D` | Pencil |
+| `Cmd+Z` | Undo |
+| `Cmd+Shift+Z` | Redo |
+| `Cmd+C` | Copy |
+| `Cmd+V` | Paste |
+| `Cmd+D` | Duplicate |
+| `Delete` | Delete selected |
+| `Cmd+[` | Send backward |
+| `Cmd+]` | Bring forward |
+| `Cmd+Shift+[` | Send to back |
+| `Cmd+Shift+]` | Bring to front |
+| `Alt+Drag` | Duplicate shape or pan |
+| `Space+Drag` | Pan canvas |
+| `Cmd+/` | Show shortcuts |
 
-The AI Canvas Agent allows you to create and manipulate shapes using natural language commands.
+### AI Assistant (Optional)
 
-1. **Get an OpenAI API key**:
-   - Go to [platform.openai.com](https://platform.openai.com)
-   - Create an API key
+If you've set up an OpenAI API key, you can use natural language commands:
 
-2. **Add to environment variables**:
-   ```bash
-   # Add to .env.local
-   OPENAI_API_KEY=sk-xxxxx
-   ```
+- "Create a red circle at 500, 500"
+- "Add a blue rectangle"
+- "Change the color to green"
+- "Arrange all shapes in a row"
 
-3. **Restart the development server** for changes to take effect.
+## 🏗️ Tech Stack
 
-### Test Commands
+- **Frontend:** Next.js 15 (App Router), React 19, TypeScript
+- **Canvas:** Fabric.js 6 - High-performance 2D rendering
+- **Backend:** Convex - Real-time database with automatic subscriptions
+- **Auth:** Clerk - User authentication and management
+- **Styling:** Tailwind CSS v4
+- **AI:** OpenAI GPT-4o-mini (optional)
+- **Package Manager:** Bun
 
-Try these natural language commands in the AI input at the bottom of the canvas:
+## 📁 Project Structure
 
-1. "Create a red circle at position 500, 500"
-2. "Add a blue rectangle at 700, 500"
-3. "Create text that says Hello World at 600, 400"
-4. "Change the color of the red circle to green"
-5. "Arrange all shapes in a horizontal row"
+```
+app/                      # Next.js App Router
+├── dashboard/           # Main canvas page
+├── projects/            # Project management
+└── api/ai/             # AI assistant endpoints
 
-The AI agent uses GPT-4o-mini for fast responses and supports:
-- Creating rectangles, circles, and text
-- Updating shape properties (color, position, size)
-- Arranging shapes in layouts (horizontal row, vertical column)
+components/
+├── canvas/             # Canvas and tools
+│   ├── tools/         # Tool strategy pattern
+│   ├── shapes/        # Shape creation system
+│   └── state/         # Centralized state
+├── toolbar/           # Bottom toolbar
+├── properties/        # Right sidebar panels
+├── layers/            # Layer management
+├── presence/          # Multiplayer presence
+└── ui/                # Reusable UI components
 
-## Environment Variables
+convex/                # Backend (Convex)
+├── schema.ts          # Database schema
+├── shapes.ts          # Shape operations
+├── presence.ts        # Presence management
+├── projects.ts        # Project CRUD
+└── crons.ts           # Background jobs
 
-Create a `.env.local` file with the following variables:
+hooks/                 # React hooks
+├── useShapes.ts       # Real-time shape sync
+├── usePresence.ts     # Multiplayer presence
+├── useKeyboard.ts     # Keyboard shortcuts
+├── useHistory.ts      # Undo/redo
+└── useClipboard.ts    # Copy/paste
 
-```env
-# Convex
-NEXT_PUBLIC_CONVEX_URL=https://your-project.convex.cloud
+lib/                   # Utilities
+├── canvas/            # Canvas utilities
+├── commands/          # Command pattern (undo/redo)
+└── ai/                # AI integration
 
-# Clerk
-NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_xxxxx
-CLERK_SECRET_KEY=sk_test_xxxxx
-
-# OpenAI (for AI Canvas Agent)
-OPENAI_API_KEY=sk-xxxxx
+types/                 # TypeScript types
+constants/             # Configuration
 ```
 
-## Development
+## 🧪 Testing
 
-- `bun run dev` - Start Next.js development server
-- `bunx convex dev` - Start Convex backend in development mode
-- `bun run build` - Build for production
-- `bun run start` - Start production server
-- `bun run lint` - Run ESLint
-
-## Testing
-
-### Automated Database Tests
-
-Run the test script to verify Convex mutations and queries:
-
+### Convex Database Tests
 ```bash
 bun run test:convex
 ```
 
-> **Note:** Make sure your `.env.local` file has `NEXT_PUBLIC_CONVEX_URL` set. The test file may show TypeScript linter warnings, but the script will run correctly. These warnings are expected for string-based API calls.
-
-This will test:
-- ✅ Shape queries and mutations
-- ✅ Presence queries and mutations
-- ✅ Authentication requirements
-- ✅ Schema validation
-- ✅ Cron job configuration
-
-### Manual Testing in Convex Dashboard
-
-1. Go to [dashboard.convex.dev](https://dashboard.convex.dev)
-2. Navigate to your project → **Functions** tab
-3. Test individual mutations:
-   - `shapes:createShape` - Create rectangles
-   - `shapes:moveShape` - Move shapes
-   - `shapes:updateShape` - Update properties
-   - `shapes:deleteShape` - Delete shapes
-   - `presence:joinCanvas` - Join canvas
-   - `presence:updatePresence` - Update cursor
-   - `presence:heartbeat` - Heartbeat ping
-   - `presence:leaveCanvas` - Leave canvas
-
-4. Check **Logs** tab to verify:
-   - Cron job runs every 10 seconds
-   - Look for "Cleaned up X stale presence record(s)" messages
-
-### Real-Time Sync Testing
-
-1. Open two browser windows at `http://localhost:3000/dashboard`
-2. Sign in with different accounts in each window
+### Manual Testing
+1. Open two browser windows
+2. Sign in with different accounts
 3. Create/move shapes in one window
-4. Verify they appear in the other window (<100ms latency)
-5. Move your cursor and verify it appears in the other window
+4. Verify real-time sync in the other window
 
-## Current Implementation Status
+## 🔧 Development
 
-**Completed Pull Requests:**
-- ✅ **PR #1**: Project Setup & Configuration
-- ✅ **PR #2**: Authentication & Route Structure
-- ✅ **PR #3**: Database Schema & Convex Setup
-- ✅ **PR #4**: Canvas Infrastructure - Viewport & Rendering
+### Available Scripts
 
-**Next Up:**
-- 🔜 **PR #5**: Shape Creation & Local Manipulation
-- 🔜 **PR #6**: Real-Time Shape Synchronization
-- 🔜 **PR #7**: Multiplayer Cursors
-- 🔜 **PR #8**: Presence Panel & User List
+```bash
+bun run dev              # Start Next.js dev server
+bunx convex dev          # Start Convex backend (separate terminal)
+bun run build            # Build for production
+bun run start            # Start production server
+bun run test:convex      # Run database tests
+```
 
-See [CANVAS_IMPLEMENTATION.md](./CANVAS_IMPLEMENTATION.md) for detailed PR #4 documentation.
+### Architecture Highlights
 
-## Canvas Features (PR #4)
+#### Tool Strategy Pattern
+Each canvas tool is isolated in its own hook, making the codebase maintainable:
+- `useSelectTool` - Selection and manipulation
+- `useHandTool` - Canvas panning
+- `useShapeCreationTool` - Generic shape creation
+- `useTextTool` - Text editing
+- `usePolygonTool` - Multi-click polygons
+- `usePencilTool` - Free drawing
 
-### Pan
-- Hold `Alt` key and drag
-- Or click empty canvas space and drag
+#### Real-Time Sync
+Convex provides automatic real-time subscriptions:
+```typescript
+const shapes = useQuery(api.shapes.getShapes); // Auto-updates
+const createShape = useMutation(api.shapes.createShape);
+```
 
-### Zoom
-- Use mouse wheel (10% - 400% range)
-- Click zoom in/out buttons in toolbar
-- Click percentage to reset to 100%
+#### Performance Optimizations
+- Throttled cursor updates (50ms)
+- Batch rendering for bulk updates
+- Viewport culling via Fabric.js
+- Optimistic UI updates
+- Mutable state for internal tracking
 
-### Persistence
-- Viewport position and zoom level persist across page refreshes
-- Stored in browser localStorage
+## 📝 Documentation
 
-## Project Structure
+- [CLAUDE.md](./CLAUDE.md) - Detailed architecture and development guide
+- [CollabCanvas Rubric.md](./CollabCanvas%20Rubric.md) - Feature requirements
+- [discussions-and-future-features/](./discussions-and-future-features/) - Future plans and technical discussions
+
+## 📄 License
+
+MIT
+
+---
+
+Built with ❤️ using Next.js, Convex, and Fabric.js
