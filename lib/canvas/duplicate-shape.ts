@@ -89,7 +89,7 @@ export const duplicateShape = (
       y: shape.y + offset,
       width: shape.width,
       height: shape.height,
-    };
+    } as Omit<Shape, "_id">;
   }
 
   // This should never happen, but TypeScript needs it

@@ -67,7 +67,7 @@ export const useHistory = () => {
     }
   }, []);
 
-  const undo = useCallback(() => {
+  const undo = useCallback(async () => {
     setUndoStack((prevUndo) => {
       if (prevUndo.length === 0) return prevUndo;
 
@@ -84,7 +84,7 @@ export const useHistory = () => {
     });
   }, []);
 
-  const redo = useCallback(() => {
+  const redo = useCallback(async () => {
     setRedoStack((prevRedo) => {
       if (prevRedo.length === 0) return prevRedo;
 
