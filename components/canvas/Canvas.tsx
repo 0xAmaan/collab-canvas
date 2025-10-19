@@ -84,8 +84,10 @@ export const Canvas = ({
   // Track hovered object for selection preview
   const hoveredObjectRef = useRef<FabricObject | null>(null);
 
-  // Track current selected color for drawing tools
-  const [selectedColor, setSelectedColor] = useState(DEFAULT_SHAPE.FILL_COLOR);
+  // Track current selected color for drawing tools (undefined = use tool defaults)
+  const [selectedColor, setSelectedColor] = useState<string | undefined>(
+    undefined,
+  );
 
   // NEW: Centralized canvas state (replaces 16+ refs)
   const canvasState = useRef(new CanvasState()).current;
@@ -795,6 +797,55 @@ export const Canvas = ({
   // Update canvas selection mode when tool changes
   useEffect(() => {
     if (fabricCanvasRef.current) {
+      // IMPORTANT: Deactivate the previous tool before activating the new one
+      const previousTool = activeToolRef.current;
+      if (previousTool !== activeTool) {
+        // Deactivate previous tool
+        if (previousTool === "select" && selectToolRef.current?.onDeactivate) {
+          selectToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "hand" &&
+          handToolRef.current?.onDeactivate
+        ) {
+          handToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "rectangle" &&
+          rectangleToolRef.current?.onDeactivate
+        ) {
+          rectangleToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "circle" &&
+          circleToolRef.current?.onDeactivate
+        ) {
+          circleToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "ellipse" &&
+          ellipseToolRef.current?.onDeactivate
+        ) {
+          ellipseToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "line" &&
+          lineToolRef.current?.onDeactivate
+        ) {
+          lineToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "text" &&
+          textToolRef.current?.onDeactivate
+        ) {
+          textToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "polygon" &&
+          polygonToolRef.current?.onDeactivate
+        ) {
+          polygonToolRef.current.onDeactivate();
+        } else if (
+          previousTool === "pencil" &&
+          pencilToolRef.current?.onDeactivate
+        ) {
+          pencilToolRef.current.onDeactivate();
+        }
+      }
+
       // Update the ref so event handlers have the latest value
       activeToolRef.current = activeTool;
 

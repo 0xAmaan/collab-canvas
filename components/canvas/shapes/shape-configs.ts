@@ -168,7 +168,7 @@ export const SHAPE_CONFIGS: Record<ShapeType, ShapeConfig> = {
   line: {
     defaultProps: {
       fill: undefined,
-      stroke: DEFAULT_SHAPE.FILL_COLOR,
+      stroke: "#000000", // Black stroke for lines
       strokeWidth: 2,
       ...BASE_SELECTION_STYLE,
     },
@@ -181,7 +181,7 @@ export const SHAPE_CONFIGS: Record<ShapeType, ShapeConfig> = {
       y1: line.y1 || 0,
       x2: line.x2 || 0,
       y2: line.y2 || 0,
-      fill: DEFAULT_SHAPE.FILL_COLOR,
+      fill: "#000000", // Black for lines
       createdBy: userId,
       createdAt: Date.now(),
       lastModified: Date.now(),
@@ -255,7 +255,7 @@ export const SHAPE_CONFIGS: Record<ShapeType, ShapeConfig> = {
   path: {
     defaultProps: {
       fill: null, // Paths are stroke-only
-      stroke: DEFAULT_SHAPE.FILL_COLOR,
+      stroke: "#000000", // Black stroke for pencil paths
       strokeWidth: 2,
       selectable: true,
       evented: true,
@@ -268,13 +268,13 @@ export const SHAPE_CONFIGS: Record<ShapeType, ShapeConfig> = {
       return {
         type: "path" as const,
         pathData,
-        stroke: (path.stroke as string) || DEFAULT_SHAPE.FILL_COLOR,
+        stroke: (path.stroke as string) || "#000000", // Black for pencil paths
         strokeWidth: (path.strokeWidth as number) || 2,
         x: path.left || 0,
         y: path.top || 0,
         width: path.width || 0,
         height: path.height || 0,
-        fill: (path.stroke as string) || DEFAULT_SHAPE.FILL_COLOR, // Store stroke as fill for metadata
+        fill: (path.stroke as string) || "#000000", // Store stroke as fill for metadata
         createdBy: userId,
         createdAt: Date.now(),
         lastModified: Date.now(),

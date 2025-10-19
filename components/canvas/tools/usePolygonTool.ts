@@ -55,7 +55,7 @@ export const createPolygonTool = (context: ToolContext): ToolHandlers => {
       // Create new preview polygon (dashed outline)
       const poly = new Polygon(state.creation.points, {
         fill: "transparent",
-        stroke: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+        stroke: "#000000", // Black preview lines
         strokeWidth: 2,
         strokeDashArray: [5, 5],
         selectable: false,
@@ -81,7 +81,7 @@ export const createPolygonTool = (context: ToolContext): ToolHandlers => {
 
       // Create new preview line
       const line = new Line([lastPoint.x, lastPoint.y, pointer.x, pointer.y], {
-        stroke: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+        stroke: "#000000", // Black preview line
         strokeWidth: 1,
         strokeDashArray: [5, 5],
         selectable: false,

@@ -6,7 +6,7 @@
 export const DEFAULT_SHAPE = {
   WIDTH: 100,
   HEIGHT: 100,
-  FILL_COLOR: "#3b82f6", // Tailwind blue-500 (default color for all shapes)
+  FILL_COLOR: "#A0A0A0", // Darker gray (default color for all shapes)
 } as const;
 
 // Default text properties

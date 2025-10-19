@@ -1,6 +1,7 @@
 import type { Point, ShapeType } from "../state/CanvasState";
 import type { ToolContext, ToolHandlers } from "./types";
 import { ShapeFactory } from "../shapes/ShapeFactory";
+import { DEFAULT_SHAPE } from "@/constants/shapes";
 
 /**
  * Shape Creation Tool Factory
@@ -30,7 +31,11 @@ export const createShapeCreationTool = (
     state.creation.startPoint = pointer;
 
     // Create temporary shape object using factory
-    const tempObject = factory.createShape(shapeType, pointer, "#3b82f6");
+    const tempObject = factory.createShape(
+      shapeType,
+      pointer,
+      DEFAULT_SHAPE.FILL_COLOR,
+    );
 
     if (tempObject) {
       state.creation.tempObject = tempObject;

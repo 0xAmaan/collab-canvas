@@ -31,8 +31,8 @@
   --color-toolbar: #383838; /* Toolbars, dropdowns */
 
   /* Primary Action Colors - Purple accent */
-  --color-primary: #8a63d2; /* Primary buttons, focus states */
-  --color-primary-hover: #7a53c2; /* Hover state for primary buttons */
+  --color-primary: #0c8ce9; /* Primary buttons, focus states */
+  --color-primary-hover: #0a73be; /* Hover state for primary buttons */
 
   /* Gradient Colors - Active tool states */
   --color-active-from: #3b82f6; /* Gradient start (blue-500) */

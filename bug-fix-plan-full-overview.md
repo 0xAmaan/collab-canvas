@@ -22,38 +22,6 @@
 
 ---
 
-### TIER 7: Advanced Issues (1.5 hours) 🔬
-
-**High complexity, deep investigation needed**
-
-#### 7.1 Delete Shape UI Error ✅ FIXED
-
-**Error:** "Update on nonexistent document ID" after delete
-
-**Root cause (CONFIRMED):**
-
-Race condition: When shapes are deleted while async update operations are in-flight (from `object:moving`, `object:modified`, `selection:cleared` events), the pending updates attempt to modify non-existent documents.
-
-**Solution implemented:**
-
-**Server-side fix (convex/shapes.ts):**
-- Added `ctx.db.get()` check before `ctx.db.patch()` in both `updateShape` and `moveShape` mutations
-- If shape doesn't exist, gracefully return instead of throwing error
-- This prevents Convex server errors entirely
-
-**Client-side fix (Canvas.tsx):**
-- Updated `handleDeleteSelected` to immediately remove Fabric.js objects and clear selection
-- Provides instant UI feedback for multi-select deletion (Test C)
-- Prevents deleted shapes from remaining visible until deselection
-
-**Files modified:**
-- `convex/shapes.ts`: Added existence checks in updateShape and moveShape
-- `Canvas.tsx`: Enhanced handleDeleteSelected with immediate canvas cleanup
-
-**Complexity:** 7/10
-
-**Depth:** High (race condition in reactive state + canvas sync)
-
 
 
 
