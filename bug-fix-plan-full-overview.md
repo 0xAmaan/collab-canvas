@@ -72,15 +72,28 @@ High Level Overview
 
 **Depth:** Medium-high (external dependency on Convex behavior)
 
-#### 7.3 Left Sidebar Resize Issue
+#### 7.3 Left Sidebar Resize Issue ✅ FIXED
 
-**Likely file:** Layout component or CSS
+**Problem:** When closing and reopening the left sidebar, it would only expand to ~132px instead of the full 280px width.
 
-**Investigation needed:**
+**Root Cause:** 
+- The sidebar used Tailwind classes `w-[280px]` and `w-0` for open/closed states
+- When closed, all child elements collapsed to minimal width due to `overflow-hidden`
+- On reopening, the CSS transition was constrained by the collapsed children's widths
+- Flexbox layout caused the right sidebar to be pushed out of viewport
 
-1. Find sidebar component
-2. Check if width is stored/restored correctly
-3. Verify CSS transitions don't affect dimensions
+**Files Changed:**
+1. `components/ai/AIChatSidebar.tsx`
+2. `components/properties/PropertiesSidebar.tsx`
+3. `app/dashboard/DashboardClient.tsx`
+
+**Solution:**
+1. Changed sidebar to use inline styles with both `width` and `minWidth` properties
+2. Added `flexShrink: 0` to left sidebar to prevent flexbox compression
+3. Added `flex-shrink-0` to right sidebar to keep it at fixed 300px width
+4. Added `min-w-0` to canvas area to allow it to shrink properly in flexbox
+
+**Result:** Sidebar now correctly animates to full 280px width when reopening, and right sidebar stays in viewport.
 
 **Complexity:** 5/10
 
