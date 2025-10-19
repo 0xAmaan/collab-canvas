@@ -1,38 +1,4 @@
-# CollabCanvas Bug Fix Plan
-
-
-
-
-
-
-
-### TIER 4: Canvas Functionality Fix
-
-#### Text Tool: Exit to Select Mode
-
-**File:** `components/canvas/tools/useTextTool.ts`
-
-**Current behavior (line 44-78):** Clicking out creates new text
-
-**Desired:** Switch to select tool after editing
-
-**Change:** In `onMouseDown`, check if clicking out of active text → call tool change callback
-
-**Complexity:** 5/10 — Requires proper planning to identify the actual issue & clean solution
-
----
-
-
-
-
-
-
-
----
-
-## Future Considerations: Schema Rearchitecture 🏗️
-
-**Note:** This should be done AFTER all current bugs are fixed.
+# CollabCanvas Schema Rearchitecture Plan
 
 ### Current Schema Issues
 
@@ -122,20 +88,3 @@ Any schema change would require:
 **Priority:** Low (current schema works, just not elegant)
 
 **Effort:** 4-6 hours (planning + implementation + testing + migration)
-
----
-
-## Execution Notes
-
-**IMPORTANT:** Execute each fix step-by-step, waiting for user confirmation before proceeding to the next item. This ensures:
-
-- Each fix is verified independently
-- We can catch issues early
-- No cascading problems from multiple changes
-
-**Process:**
-
-1. Implement fix X.X
-2. Test and verify
-3. Wait for user confirmation "✅ looks good, move to next"
-4. Proceed to next fix

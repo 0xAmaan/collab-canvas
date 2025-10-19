@@ -581,6 +581,7 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
           <Canvas
             onCanvasReady={handleCanvasReady}
             activeTool={activeTool}
+            setActiveTool={setActiveTool}
             userId={userId}
             userName={userName}
             onDeleteSelected={registerDeleteHandler}

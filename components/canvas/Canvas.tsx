@@ -35,6 +35,7 @@ import type {
 interface CanvasProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
   activeTool: Tool;
+  setActiveTool?: (tool: Tool) => void;
   userId?: string;
   userName?: string;
   onDeleteSelected?: (handler: () => void) => void;
@@ -53,6 +54,7 @@ interface CanvasProps {
 export const Canvas = ({
   onCanvasReady,
   activeTool,
+  setActiveTool,
   userId = "anonymous",
   userName = "Anonymous",
   onDeleteSelected,
@@ -234,6 +236,7 @@ export const Canvas = ({
       history,
       updateCursorPosition,
       selectedColor,
+      setActiveTool,
     };
     selectToolRef.current = createSelectTool(toolContext);
     handToolRef.current = createHandTool(toolContext);

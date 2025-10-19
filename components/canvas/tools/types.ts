@@ -42,6 +42,9 @@ export interface ToolContext {
 
   // Selected color for drawing tools
   selectedColor?: string;
+
+  // Tool switching callback
+  setActiveTool?: (tool: Tool) => void;
 }
 
 /**

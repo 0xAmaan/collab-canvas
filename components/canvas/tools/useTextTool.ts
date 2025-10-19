@@ -25,10 +25,14 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
     deleteShape,
     history,
     updateShape,
+    setActiveTool,
   } = context;
 
   // Track text editing state locally in tool
   let textUpdateTimer: NodeJS.Timeout | null = null;
+
+  // Track when text editing exits to prevent immediate new text creation
+  let textExitedTimestamp: number = 0;
 
   const onMouseDown = (_e: MouseEvent, pointer: Point, target: any) => {
     // Double-click existing text to edit
@@ -43,6 +47,21 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
 
     // Click empty space to create new text
     if (!target) {
+      const now = Date.now();
+
+      // If we're currently editing text, don't create a new one
+      // Let the text:editing:exited event handle the cleanup
+      if (state.textEditing.isActive) {
+        return;
+      }
+
+      // Check if we just exited text editing (within 100ms window)
+      // This prevents creating new text when clicking outside to exit editing
+      const timeSinceExit = now - textExitedTimestamp;
+      if (textExitedTimestamp > 0 && timeSinceExit < 100) {
+        return;
+      }
+
       const text = new IText(DEFAULT_TEXT.TEXT, {
         left: pointer.x,
         top: pointer.y,
@@ -74,6 +93,9 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
       state.textEditing.isActive = true;
       state.textEditing.textObject = text;
 
+      // Reset exit timestamp since we're creating new text
+      textExitedTimestamp = 0;
+
       canvas.renderAll();
     }
   };
@@ -87,6 +109,9 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
   };
 
   const onActivate = () => {
+    // Reset exit timestamp when activating tool
+    textExitedTimestamp = 0;
+
     // Set text cursor
     canvas.defaultCursor = "text";
     canvas.hoverCursor = "text";
@@ -119,6 +144,9 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
       clearTimeout(textUpdateTimer);
       textUpdateTimer = null;
     }
+
+    // Reset exit timestamp
+    textExitedTimestamp = 0;
 
     // Remove text editing events
     cleanupTextEvents();
@@ -192,13 +220,25 @@ export const createTextTool = (context: ToolContext): ToolHandlers => {
       const text = opt.target as IText;
       const data = text.get("data") as { shapeId?: string } | undefined;
 
+      // Mark when text editing exited (for preventing immediate new text creation)
+      textExitedTimestamp = Date.now();
+
+      // Clear text editing state IMMEDIATELY (before async operations)
+      // This prevents race conditions with mouse:down events
+      state.textEditing.isActive = false;
+      state.textEditing.textObject = null;
+
+      // Switch to select tool IMMEDIATELY for snappy feel
+      // Don't wait for async finalization to complete
+      if (setActiveTool) {
+        setActiveTool("select");
+      }
+
       // If text has no shapeId, it's a new text that needs to be finalized
+      // This happens async in the background after we've already switched tools
       if (!data?.shapeId) {
         await finalizeText(text);
       }
-
-      state.textEditing.isActive = false;
-      state.textEditing.textObject = null;
     };
 
     canvas.on("text:changed", handleTextChanged);
