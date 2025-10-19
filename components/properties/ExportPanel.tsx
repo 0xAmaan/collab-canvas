@@ -5,7 +5,7 @@
  * Allows exporting selected objects as PNG or SVG
  */
 
-import { Share, FileImage } from "lucide-react";
+import { Download, FileImage } from "lucide-react";
 import { PropertySection } from "@/components/ui/PropertySection";
 import type { Canvas as FabricCanvas } from "fabric";
 import type { Shape } from "@/types/shapes";
@@ -84,7 +84,7 @@ export const ExportPanel = ({
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-white/70 hover:text-white transition-colors cursor-pointer"
           title="Export as PNG"
         >
-          <Share className="w-4 h-4" />
+          <Download className="w-4 h-4" />
           <span className="text-sm font-medium">PNG</span>
         </button>
 

@@ -12,7 +12,7 @@ import type { Presence } from "@/types/presence";
 import { UserButton } from "@clerk/nextjs";
 import type { Canvas as FabricCanvas } from "fabric";
 import { useRef, useState } from "react";
-import { Download } from "lucide-react";
+import { Share } from "lucide-react";
 import {
   exportCanvasAsPNG,
   generateTimestampFilename,
@@ -101,10 +101,10 @@ export const AccountSection = ({
               onClick={handleExportCanvas}
               onMouseEnter={() => setIsExportHovered(true)}
               onMouseLeave={() => setIsExportHovered(false)}
-              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-white/70 hover:text-white transition-colors cursor-pointer"
               title="Export Canvas"
             >
-              <Download className="w-4 h-4" />
+              <Share className="w-4 h-4" />
             </button>
 
             {/* Custom Tooltip */}
