@@ -4,6 +4,8 @@
 > **Approach**: Hook-based tools + Mutable CanvasState
 > **Goal**: Reduce Canvas.tsx from 1,920 lines → ~400 lines while maintaining 100% functionality
 
+- NOTE — For imports, use the "@" approach for our own files
+
 ---
 
 ## 📊 Current State
