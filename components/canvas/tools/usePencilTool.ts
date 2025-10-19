@@ -50,91 +50,7 @@ export const createPencilTool = (context: ToolContext): ToolHandlers => {
     canvas.defaultCursor = "crosshair";
     canvas.hoverCursor = "crosshair";
 
-    // Override _finalizeAndAddPath to skip closePath() and arc() which cause flash
-    const originalFinalize = (brush as any)._finalizeAndAddPath?.bind(brush);
-    if (originalFinalize) {
-      // Override onMouseDown to detect when drawing starts
-      const originalOnMouseDown = brush.onMouseDown.bind(brush);
-      brush.onMouseDown = function (pointer: any, options: any) {
-        originalOnMouseDown(pointer, options);
-      };
-
-      const boundBrush = brush; // Capture brush in closure
-      (brush as any)._finalizeAndAddPath = function () {
-        const ctx = canvas.contextTop;
-        if (!ctx) {
-          console.warn("⚠️ [FINALIZE] No contextTop - returning early");
-          return;
-        }
-
-        // Get path data - need to compute box first
-        const points = (this as any)._points || [];
-        if (points.length === 0) {
-          console.warn("⚠️ [FINALIZE] No points - returning early");
-          return;
-        }
-
-        // Call getPathBoundingBox to set this.box
-        const boundingBox = (this as any).getPathBoundingBox?.(points);
-        if (!boundingBox) {
-          console.warn(
-            "⚠️ [FINALIZE] Failed to get bounding box - returning early",
-          );
-          return;
-        }
-        (this as any).box = boundingBox;
-
-        // Now get the path data
-        const pathData =
-          (this as any)
-            .convertPointsToSVGPath?.(
-              points,
-              boundingBox.minx,
-              boundingBox.maxx,
-              boundingBox.miny,
-              boundingBox.maxy,
-            )
-            ?.join("") || "";
-
-        if (!pathData || pathData === "M 0 0 Q 0 0 0 0 L 0 0") {
-          console.warn("⚠️ [FINALIZE] Invalid path data - returning early");
-          canvas.renderAll();
-          return;
-        }
-
-        // Create path WITHOUT calling closePath() or arc()
-        const path = (this as any).createPath?.(pathData);
-        if (!path) {
-          console.warn("⚠️ [FINALIZE] Failed to create path - returning early");
-          return;
-        }
-
-        // Set position
-        const box = (this as any).box;
-        if (box) {
-          const originLeft = box.minx + (box.maxx - box.minx) / 2;
-          const originTop = box.miny + (box.maxy - box.miny) / 2;
-          path.set({ left: originLeft, top: originTop });
-          path.setCoords();
-        }
-
-        // Add to canvas
-        canvas.add(path);
-
-        // Clear preview and render
-        canvas.clearContext(ctx);
-        canvas.renderAll();
-
-        // Fire event
-        canvas.fire("path:created", { path: path });
-      };
-    } else {
-      console.warn(
-        "⚠️ [PENCIL SETUP] _finalizeAndAddPath method not found on brush!",
-      );
-    }
-
-    // Setup path creation events
+    // Setup path creation events (handles fill fix)
     setupPathEvents();
 
     canvas.requestRenderAll();
@@ -157,10 +73,13 @@ export const createPencilTool = (context: ToolContext): ToolHandlers => {
 
   // Setup path creation event listeners
   const setupPathEvents = () => {
-    // Fix fill BEFORE path is added to canvas
+    // Ensure fill is disabled before path is added to canvas
     beforePathCreatedHandler = (e: any) => {
       if (e.path) {
         e.path.fill = null;
+        e.path.set({ fill: null });
+        // Override _renderFill to prevent any fill rendering
+        (e.path as any)._renderFill = function () {};
       }
     };
 
@@ -173,6 +92,7 @@ export const createPencilTool = (context: ToolContext): ToolHandlers => {
       }
 
       // Ensure path is stroke-only (no fill)
+      path.fill = null;
       path.set({ fill: null });
       path.dirty = true;
 
@@ -237,10 +157,6 @@ export const createPencilTool = (context: ToolContext): ToolHandlers => {
         canvas.renderAll();
       } catch (error) {
         console.error("❌ [PATH CREATED] Failed to create path:", error);
-        console.error("❌ [PATH CREATED] Error details:", {
-          message: (error as Error).message,
-          stack: (error as Error).stack,
-        });
         // Remove from saving set on error
         state.savingShapeIds.delete(tempId);
       }

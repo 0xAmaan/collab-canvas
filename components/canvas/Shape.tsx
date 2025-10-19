@@ -102,17 +102,22 @@ export const createFabricShape = (shape: Shape): FabricObject => {
       try {
         const pathData = JSON.parse(shape.pathData);
 
-        // baseConfig already has fill: undefined for paths, so we can use it directly
         const pathObj = new Path(pathData, {
           ...baseConfig,
+          fill: null,
           left: shape.x,
           top: shape.y,
           stroke: shape.stroke,
           strokeWidth: shape.strokeWidth,
         });
 
+        // Critical: Override _renderFill to completely prevent fill rendering
+        // This prevents Fabric.js from rendering a fill even when fill is null
+        (pathObj as any)._renderFill = function () {};
+
         return pathObj;
       } catch (error) {
+        console.error("Failed to create path from DB:", error);
         // Fallback to a simple line if path data is invalid
         return new Line([0, 0, 100, 100], {
           ...baseConfig,
@@ -211,10 +216,12 @@ export const updateFabricShape = (
           top: shape.y,
           stroke: shape.stroke,
           strokeWidth: shape.strokeWidth,
-          fill: undefined, // Remove fill completely for paths
+          fill: null,
         });
+        // Critical: Override _renderFill to completely prevent fill rendering
+        (path as any)._renderFill = function () {};
       } catch (error) {
-        console.error("Failed to update path data:", error);
+        console.error("Failed to update path:", error);
       }
       break;
 
