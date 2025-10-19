@@ -400,19 +400,45 @@ export const Canvas = ({
     fabricCanvas.on("object:moving", async (opt) => {
       if (!opt.target) return;
 
-      // Skip ActiveSelection - we'll handle multi-select moves in object:modified
-      if (opt.target.type === "activeSelection") return;
+      // Throttle to 100ms (10 updates per second)
+      const now = Date.now();
+      if (now - lastMoveUpdateRef.current < 100) return;
+      lastMoveUpdateRef.current = now;
 
+      // Handle ActiveSelection (multi-select) movement
+      if (opt.target.type === "activeselection") {
+        const objects =
+          (opt.target as { _objects?: FabricObject[] })._objects || [];
+        const groupLeft = opt.target.left || 0;
+        const groupTop = opt.target.top || 0;
+
+        // Update each object's position in real-time
+        objects.forEach(async (obj: FabricObject) => {
+          const data = obj.get("data") as { shapeId?: string } | undefined;
+          const shapeId = data?.shapeId;
+
+          if (!shapeId || shapeId.startsWith("temp_")) return;
+
+          // Calculate absolute position: group position + relative position
+          const absoluteLeft = groupLeft + (obj.left || 0);
+          const absoluteTop = groupTop + (obj.top || 0);
+
+          try {
+            await moveShapeInConvex(shapeId, absoluteLeft, absoluteTop);
+          } catch (error) {
+            console.error("Failed to sync ActiveSelection movement:", error);
+          }
+        });
+
+        return;
+      }
+
+      // Handle single object movement
       const data = opt.target.get("data") as { shapeId?: string } | undefined;
       const shapeId = data?.shapeId;
 
       // Skip if no shapeId or it's a temporary shape still being created
       if (!shapeId || shapeId.startsWith("temp_")) return;
-
-      // Throttle to 100ms (10 updates per second)
-      const now = Date.now();
-      if (now - lastMoveUpdateRef.current < 100) return;
-      lastMoveUpdateRef.current = now;
 
       try {
         // Only sync position during drag - not size/rotation
@@ -464,7 +490,7 @@ export const Canvas = ({
     // Helper: Capture state for target (handles both single and multi-select)
     const captureShapeState = (target: FabricObject) => {
       // Handle ActiveSelection (multi-select)
-      if (target.type === "activeSelection") {
+      if (target.type === "activeselection") {
         // Access _objects through property access
         const objects =
           (target as { _objects?: FabricObject[] })._objects || [];
@@ -489,11 +515,9 @@ export const Canvas = ({
     fabricCanvas.on("object:modified", async (opt) => {
       if (!opt.target) return;
 
-      // Handle ActiveSelection (multi-select) - DO NOT save during group modification
-      // Fabric.js mutates object coordinates to be relative during grouping
-      // Instead, we'll handle this in the selection:cleared event
-      if (opt.target.type === "activeSelection") {
-        // Store the selection for later processing when cleared
+      // Handle ActiveSelection (multi-select) - Mark objects but don't save yet
+      // We'll save after Fabric.js restores them to absolute coordinates in selection:cleared
+      if (opt.target.type === "activeselection") {
         const objects =
           (opt.target as { _objects?: FabricObject[] })._objects || [];
 
@@ -505,8 +529,6 @@ export const Canvas = ({
           }
         });
 
-        // We'll handle the actual saving when the selection is cleared
-        // and objects are restored to their absolute positions
         return;
       }
 
@@ -617,8 +639,7 @@ export const Canvas = ({
     });
 
     fabricCanvas.on("selection:cleared", (e) => {
-      // When selection is cleared, save the absolute positions of previously selected objects
-      // This handles the case where ActiveSelection modified object coordinates
+      // Save positions after Fabric.js has restored objects to absolute coordinates
       const deselected =
         (e as { deselected?: FabricObject[] }).deselected || [];
 
@@ -628,9 +649,14 @@ export const Canvas = ({
 
         if (!shapeId) return;
 
+        // Only save if this was part of a multi-select that was modified
+        if (!savingShapesRef.current.has(shapeId)) {
+          return;
+        }
+
         try {
-          // Now the object has been restored to absolute coordinates by Fabric
-          // Save the current position to Convex
+          // Fabric.js has now restored the object to its absolute position
+          // This is the correct position to save
           const newValues = {
             x: obj.left || 0,
             y: obj.top || 0,
@@ -646,12 +672,9 @@ export const Canvas = ({
           // Save to Convex
           await updateShapeInConvex(shapeId, newValues);
         } catch (error) {
-          console.error(
-            "Failed to save shape position after selection cleared:",
-            error,
-          );
+          console.error("Failed to save after selection cleared:", error);
         } finally {
-          // Remove from saving set
+          // Remove from saving set to allow future updates
           setTimeout(() => {
             savingShapesRef.current.delete(shapeId);
           }, 100);
@@ -839,7 +862,7 @@ export const Canvas = ({
         // Check if this object is the active object OR part of an active selection
         const isActiveObject = activeObject === fabricObj;
         const isInActiveSelection =
-          activeObject?.type === "activeSelection" &&
+          activeObject?.type === "activeselection" &&
           (activeObject as { _objects?: FabricObject[] })._objects?.includes(
             fabricObj,
           );

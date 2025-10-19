@@ -13,7 +13,7 @@ export const getSelectedShapeIds = (
   const shapeIds: string[] = [];
 
   // Multi-select
-  if (activeObject.type === "activeSelection") {
+  if (activeObject.type === "activeselection") {
     const objects = (activeObject as any)._objects || [];
     for (const obj of objects) {
       const data = obj.get("data") as { shapeId?: string } | undefined;
