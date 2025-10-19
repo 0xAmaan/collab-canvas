@@ -2,5 +2,5 @@
  * AI Canvas Agent Library
  */
 
-export * from "./types";
-export { executeAICommands } from "./client-executor";
+export * from "@/lib/ai/types";
+export { executeAICommands } from "@/lib/ai/client-executor";

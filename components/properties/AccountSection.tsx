@@ -5,12 +5,12 @@
  * Top section with user account, connection status, presence, and zoom controls
  */
 
-import { useState, useEffect, useRef } from "react";
-import { UserButton } from "@clerk/nextjs";
 import { PresencePanel } from "@/components/presence/PresencePanel";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
-import type { Canvas as FabricCanvas } from "fabric";
 import type { Presence } from "@/types/presence";
+import { UserButton } from "@clerk/nextjs";
+import type { Canvas as FabricCanvas } from "fabric";
+import { useRef } from "react";
 
 interface AccountSectionProps {
   canvas: FabricCanvas | null;

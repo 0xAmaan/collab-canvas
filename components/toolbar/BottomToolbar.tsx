@@ -6,9 +6,12 @@
  */
 
 import { memo } from "react";
-import { ToolDropdown, type ToolConfig } from "./ToolDropdown";
-import { ToolSingleButton } from "./ToolSingleButton";
-import { ColorPicker } from "./ColorPicker";
+import {
+  ToolDropdown,
+  type ToolConfig,
+} from "@/components/toolbar/ToolDropdown";
+import { ToolSingleButton } from "@/components/toolbar/ToolSingleButton";
+import { ColorPicker } from "@/components/toolbar/ColorPicker";
 
 export type Tool =
   | "select"

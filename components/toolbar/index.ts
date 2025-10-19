@@ -1,7 +1,7 @@
-export { ZoomControls } from "./ZoomControls";
-export { ToolButton } from "./ToolButton";
-export { BottomToolbar } from "./BottomToolbar";
-export { ToolDropdown } from "./ToolDropdown";
-export { ToolSingleButton } from "./ToolSingleButton";
-export type { Tool } from "./BottomToolbar";
-export type { ToolConfig } from "./ToolDropdown";
+export { ZoomControls } from "@/components/toolbar/ZoomControls";
+export { ToolButton } from "@/components/toolbar/ToolButton";
+export { BottomToolbar } from "@/components/toolbar/BottomToolbar";
+export { ToolDropdown } from "@/components/toolbar/ToolDropdown";
+export { ToolSingleButton } from "@/components/toolbar/ToolSingleButton";
+export type { Tool } from "@/components/toolbar/BottomToolbar";
+export type { ToolConfig } from "@/components/toolbar/ToolDropdown";

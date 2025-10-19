@@ -9,11 +9,11 @@ import { useState } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
 import type { Presence } from "@/types/presence";
 import type { Shape } from "@/types/shapes";
-import { AccountSection } from "./AccountSection";
-import { EmptyState } from "./EmptyState";
-import { PositionPanel } from "./PositionPanel";
-import { StylePanel } from "./StylePanel";
-import { TransformPanel } from "./TransformPanel";
+import { AccountSection } from "@/components/properties/AccountSection";
+import { EmptyState } from "@/components/properties/EmptyState";
+import { PositionPanel } from "@/components/properties/PositionPanel";
+import { StylePanel } from "@/components/properties/StylePanel";
+import { TransformPanel } from "@/components/properties/TransformPanel";
 
 interface PropertiesSidebarProps {
   canvas: FabricCanvas | null;

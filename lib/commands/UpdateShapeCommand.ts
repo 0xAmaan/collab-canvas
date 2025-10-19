@@ -3,7 +3,7 @@
  * Supports undo (restore old values) and redo (apply new values)
  */
 
-import type { Command } from "./types";
+import type { Command } from "@/lib/commands/types";
 
 interface ShapeUpdates {
   x?: number;

@@ -5,37 +5,36 @@
  * Handles pan/zoom functionality, shape creation, selection, and dragging
  */
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { SELECTION_COLORS } from "@/constants/colors";
+import { CANVAS, DEFAULT_SHAPE, DEFAULT_TEXT } from "@/constants/shapes";
+import { useShapes } from "@/hooks/useShapes";
+import { zoomToPoint } from "@/lib/canvas-utils";
+import { duplicateShapes } from "@/lib/canvas/duplicate-shape";
+import { getSelectedShapes } from "@/lib/canvas/selection-utils";
+import { finalizeShape } from "@/lib/canvas/shape-finalizers";
+import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import { DeleteShapeCommand } from "@/lib/commands/DeleteShapeCommand";
+import type { Command } from "@/lib/commands/types";
+import { UpdateShapeCommand } from "@/lib/commands/UpdateShapeCommand";
+import { calculateZoomFromWheel } from "@/lib/viewport-utils";
+import type { Shape } from "@/types/shapes";
 import {
-  Canvas as FabricCanvas,
-  FabricObject,
-  Rect,
   Circle,
   Ellipse,
-  Line,
+  Canvas as FabricCanvas,
+  FabricObject,
   IText,
-  Polygon,
-  PencilBrush,
+  Line,
   Path,
-  type TPointerEvent,
+  PencilBrush,
+  Polygon,
+  Rect,
   type BasicTransformEvent,
 } from "fabric";
-import { CANVAS, ZOOM, DEFAULT_SHAPE, DEFAULT_TEXT } from "@/constants/shapes";
-import { calculateZoomFromWheel } from "@/lib/viewport-utils";
-import { zoomToPoint } from "@/lib/canvas-utils";
-import { createFabricRect, updateFabricRect } from "./Shape";
-import { configureSelectionStyle } from "./SelectionBox";
-import { SELECTION_COLORS } from "@/constants/colors";
-import { useShapes } from "@/hooks/useShapes";
-import type { Shape } from "@/types/shapes";
-import type { Tool } from "../toolbar/BottomToolbar";
-import type { Command } from "@/lib/commands/types";
-import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
-import { duplicateShapes } from "@/lib/canvas/duplicate-shape";
-import { finalizeShape } from "@/lib/canvas/shape-finalizers";
-import { getSelectedShapes } from "@/lib/canvas/selection-utils";
-import { UpdateShapeCommand } from "@/lib/commands/UpdateShapeCommand";
-import { DeleteShapeCommand } from "@/lib/commands/DeleteShapeCommand";
+import { useCallback, useEffect, useRef, useState } from "react";
+import type { Tool } from "@/components/toolbar/BottomToolbar";
+import { configureSelectionStyle } from "@/components/canvas/SelectionBox";
+import { createFabricRect, updateFabricRect } from "@/components/canvas/Shape";
 
 interface CanvasProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;

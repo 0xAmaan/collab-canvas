@@ -3,7 +3,7 @@
  * Supports undo (delete) and redo (create again)
  */
 
-import type { Command } from "./types";
+import type { Command } from "@/lib/commands/types";
 import type { Shape } from "@/types/shapes";
 
 interface ShapeData {

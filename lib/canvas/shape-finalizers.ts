@@ -1,7 +1,7 @@
 import type { FabricObject, Canvas as FabricCanvas } from "fabric";
 import type { Shape } from "@/types/shapes";
-import { shapeValidators } from "./shape-validators";
-import { CreateShapeCommand } from "../commands/CreateShapeCommand";
+import { shapeValidators } from "@/lib/canvas/shape-validators";
+import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
 
 interface FinalizeOptions {
   canvas: FabricCanvas;

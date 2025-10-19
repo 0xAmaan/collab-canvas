@@ -6,9 +6,9 @@
 
 "use client";
 
-import { memo, useMemo } from "react";
-import { UserAvatar } from "./UserAvatar";
+import { UserAvatar } from "@/components/presence/UserAvatar";
 import type { Presence } from "@/types/presence";
+import { memo, useMemo } from "react";
 
 interface PresencePanelProps {
   activeUsers: Presence[];

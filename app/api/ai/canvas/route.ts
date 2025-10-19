@@ -3,15 +3,15 @@
  * Server-side execution of natural language commands
  */
 
-import { generateText, tool } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { z } from "zod";
-import { NextResponse } from "next/server";
 import type {
   AICommandRequest,
   AICommandResponse,
   ShapeCommand,
 } from "@/lib/ai/types";
+import { openai } from "@ai-sdk/openai";
+import { generateText, tool } from "ai";
+import { NextResponse } from "next/server";
+import { z } from "zod";
 
 // System prompt for the AI assistant
 const SYSTEM_PROMPT = `You are a canvas design assistant. You can create and manipulate shapes on a collaborative canvas.

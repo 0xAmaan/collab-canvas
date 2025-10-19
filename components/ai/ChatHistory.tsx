@@ -6,7 +6,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { ChatMessage } from "./ChatMessage";
+import { ChatMessage } from "@/components/ai/ChatMessage";
 
 export interface ChatMessageType {
   id: string;

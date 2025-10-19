@@ -3,7 +3,6 @@
  * Works with Fabric.js selection system
  */
 
-import { FabricObject } from "fabric";
 import { SELECTION_COLORS } from "@/constants/colors";
 
 /**
@@ -18,4 +17,3 @@ export function configureSelectionStyle() {
     selectionDashArray: [5, 5],
   };
 }
-

@@ -5,10 +5,10 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from "react";
 import { PanelRight } from "lucide-react";
-import { ChatHistory, type ChatMessageType } from "./ChatHistory";
-import { ChatInput } from "./ChatInput";
+import { useEffect, useRef, useState } from "react";
+import { ChatHistory, type ChatMessageType } from "@/components/ai/ChatHistory";
+import { ChatInput } from "@/components/ai/ChatInput";
 
 interface AIChatSidebarProps {
   isOpen: boolean;

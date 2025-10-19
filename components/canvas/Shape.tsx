@@ -3,19 +3,19 @@
  * This is not a React component but a module for shape operations with Fabric.js
  */
 
-import {
-  Rect,
-  Circle,
-  Ellipse,
-  Line,
-  IText,
-  Polygon,
-  FabricObject,
-  Path,
-} from "fabric";
-import type { Shape } from "@/types/shapes";
 import { SELECTION_COLORS } from "@/constants/colors";
 import { DEFAULT_TEXT } from "@/constants/shapes";
+import type { Shape } from "@/types/shapes";
+import {
+  Circle,
+  Ellipse,
+  FabricObject,
+  IText,
+  Line,
+  Path,
+  Polygon,
+  Rect,
+} from "fabric";
 
 // Common styling configuration for all shapes
 const commonShapeConfig = {

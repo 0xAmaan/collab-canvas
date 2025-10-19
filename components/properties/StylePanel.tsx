@@ -5,10 +5,9 @@
  * Controls for fill color, stroke color, stroke width, and opacity
  */
 
-import { useState } from "react";
-import { Slider } from "@/components/ui/Slider";
 import { PRESET_COLORS } from "@/constants/colors";
 import type { Shape } from "@/types/shapes";
+import { useState } from "react";
 
 interface StylePanelProps {
   shapes: Shape[];

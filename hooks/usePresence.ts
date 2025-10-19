@@ -6,7 +6,7 @@
 import { useEffect, useCallback, useRef, useMemo, useState } from "react";
 import { useMutation, useQuery } from "convex/react";
 import { api } from "@/convex/_generated/api";
-import { useThrottle } from "./useThrottle";
+import { useThrottle } from "@/hooks/useThrottle";
 import type { Presence } from "@/types/presence";
 
 interface UsePresenceOptions {

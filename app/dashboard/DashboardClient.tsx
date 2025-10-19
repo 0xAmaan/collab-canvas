@@ -4,35 +4,32 @@
  * Client-side dashboard component with Canvas and Toolbar
  */
 
-import { useState, useCallback, useRef, useEffect } from "react";
-import type { Canvas as FabricCanvas } from "fabric";
+import { AIChatSidebar, type ChatMessageType } from "@/components/ai";
+import { AIFeedback } from "@/components/ai/AIFeedback";
 import { Canvas } from "@/components/canvas/Canvas";
-import { BottomToolbar, type Tool } from "@/components/toolbar/BottomToolbar";
-import { ZoomControls } from "@/components/toolbar/ZoomControls";
-import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
 import { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";
 import { PropertiesSidebar } from "@/components/properties/PropertiesSidebar";
-import { PresencePanel } from "@/components/presence/PresencePanel";
-import { useUser, UserButton } from "@clerk/nextjs";
+import { BottomToolbar, type Tool } from "@/components/toolbar/BottomToolbar";
+import { KeyboardShortcutsHelp } from "@/components/ui/KeyboardShortcutsHelp";
+import { useClipboard } from "@/hooks/useClipboard";
+import { useConnectionStatus } from "@/hooks/useConnectionStatus";
+import { useHistory } from "@/hooks/useHistory";
 import { useKeyboard } from "@/hooks/useKeyboard";
 import { usePresence } from "@/hooks/usePresence";
-import { useConnectionStatus } from "@/hooks/useConnectionStatus";
 import { useShapes } from "@/hooks/useShapes";
-import { useHistory } from "@/hooks/useHistory";
-import { useClipboard } from "@/hooks/useClipboard";
-import { getUserColor } from "@/lib/color-utils";
-import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
-import { getSelectedShapes } from "@/lib/canvas/selection-utils";
-import { AIInput } from "@/components/ai/AIInput";
-import { AIFeedback } from "@/components/ai/AIFeedback";
-import { AIChatSidebar, type ChatMessageType } from "@/components/ai";
-import { PanelLeft } from "lucide-react";
 import { executeAICommands } from "@/lib/ai/client-executor";
 import type {
-  AIStatus,
   AICommandRequest,
   AICommandResponse,
+  AIStatus,
 } from "@/lib/ai/types";
+import { getSelectedShapes } from "@/lib/canvas/selection-utils";
+import { getUserColor } from "@/lib/color-utils";
+import { CreateShapeCommand } from "@/lib/commands/CreateShapeCommand";
+import { useUser } from "@clerk/nextjs";
+import type { Canvas as FabricCanvas } from "fabric";
+import { PanelLeft } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface DashboardClientProps {
   userName: string;

@@ -1,6 +1,6 @@
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { DashboardClient } from "./DashboardClient";
+import { DashboardClient } from "@/app/dashboard/DashboardClient";
 
 export default async function DashboardPage() {
   // Protect this route - only authenticated users

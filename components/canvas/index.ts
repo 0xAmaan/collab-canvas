@@ -1,2 +1,2 @@
-export { Canvas } from "./Canvas";
-export { MultiplayerCursor } from "./MultiplayerCursor";
+export { Canvas } from "@/components/canvas/Canvas";
+export { MultiplayerCursor } from "@/components/canvas/MultiplayerCursor";

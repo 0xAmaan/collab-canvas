@@ -1,6 +1,6 @@
-export { PropertiesSidebar } from "./PropertiesSidebar";
-export { AccountSection } from "./AccountSection";
-export { EmptyState } from "./EmptyState";
-export { PositionPanel } from "./PositionPanel";
-export { StylePanel } from "./StylePanel";
-export { TransformPanel } from "./TransformPanel";
+export { PropertiesSidebar } from "@/components/properties/PropertiesSidebar";
+export { AccountSection } from "@/components/properties/AccountSection";
+export { EmptyState } from "@/components/properties/EmptyState";
+export { PositionPanel } from "@/components/properties/PositionPanel";
+export { StylePanel } from "@/components/properties/StylePanel";
+export { TransformPanel } from "@/components/properties/TransformPanel";

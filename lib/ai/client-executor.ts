@@ -11,7 +11,7 @@ import type {
   CreateTextCommand,
   UpdateShapeCommand,
   ArrangeShapesCommand,
-} from "./types";
+} from "@/lib/ai/types";
 
 interface ExecutorContext {
   shapes: Shape[];

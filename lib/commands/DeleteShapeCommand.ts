@@ -3,7 +3,7 @@
  * Supports undo (restore shape) and redo (delete again)
  */
 
-import type { Command } from "./types";
+import type { Command } from "@/lib/commands/types";
 import type { Shape } from "@/types/shapes";
 
 export class DeleteShapeCommand implements Command {

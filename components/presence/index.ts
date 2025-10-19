@@ -1,2 +1,2 @@
-export { PresencePanel } from "./PresencePanel";
-export { UserAvatar } from "./UserAvatar";
+export { PresencePanel } from "@/components/presence/PresencePanel";
+export { UserAvatar } from "@/components/presence/UserAvatar";
