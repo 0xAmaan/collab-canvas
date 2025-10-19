@@ -16,6 +16,7 @@ interface ShapeBase {
   _id: string;
   fill: string;
   angle?: number;
+  zIndex?: number; // Rendering order (higher = front)
   createdBy: string;
   createdAt: number;
   lastModified: number;

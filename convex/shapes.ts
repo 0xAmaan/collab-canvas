@@ -55,6 +55,14 @@ export const createShape = mutation({
       throw new Error("Not authenticated");
     }
 
+    // Get max zIndex to assign new shape to front
+    const allShapes = await ctx.db.query("shapes").collect();
+    const maxZIndex = allShapes.reduce(
+      (max, shape) => Math.max(max, shape.zIndex ?? -1),
+      -1,
+    );
+    const newZIndex = maxZIndex + 1;
+
     // Insert new shape into database
     const shapeId = await ctx.db.insert("shapes", {
       type: args.type,
@@ -74,6 +82,7 @@ export const createShape = mutation({
       strokeWidth: args.strokeWidth,
       points: args.points,
       fill: args.fill,
+      zIndex: newZIndex,
       createdBy: user.subject, // Clerk user ID
       createdAt: Date.now(),
       lastModified: Date.now(),
@@ -214,15 +223,15 @@ export const deleteShape = mutation({
 /**
  * Get all shapes on the canvas
  * This is the main subscription point - Convex will push updates to all clients
- * Shapes are ordered by creation time (rendering order)
+ * Shapes are ordered by z-index (rendering order)
  */
 export const getShapes = query({
   handler: async (ctx) => {
-    // Get all shapes ordered by creation time
-    const shapes = await ctx.db
-      .query("shapes")
-      .withIndex("by_created_at", (q) => q)
-      .collect();
+    // Get all shapes ordered by z-index
+    const shapes = await ctx.db.query("shapes").collect();
+
+    // Sort by zIndex (handle undefined as 0, ascending order)
+    shapes.sort((a, b) => (a.zIndex ?? 0) - (b.zIndex ?? 0));
 
     return shapes;
   },
@@ -239,5 +248,72 @@ export const getShape = query({
   handler: async (ctx, args) => {
     const shape = await ctx.db.get(args.shapeId);
     return shape;
+  },
+});
+
+/**
+ * Update z-index of a single shape
+ * Used for layer reordering operations
+ */
+export const updateZIndex = mutation({
+  args: {
+    shapeId: v.id("shapes"),
+    zIndex: v.number(),
+  },
+  handler: async (ctx, args) => {
+    // Verify user is authenticated
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
+    // Check if shape exists
+    const shape = await ctx.db.get(args.shapeId);
+    if (!shape) {
+      return args.shapeId;
+    }
+
+    // Update z-index
+    await ctx.db.patch(args.shapeId, {
+      zIndex: args.zIndex,
+      lastModified: Date.now(),
+    });
+
+    return args.shapeId;
+  },
+});
+
+/**
+ * Batch update z-indices for multiple shapes
+ * Used for efficient layer reordering (drag-and-drop)
+ */
+export const reorderShapes = mutation({
+  args: {
+    updates: v.array(
+      v.object({
+        id: v.id("shapes"),
+        zIndex: v.number(),
+      }),
+    ),
+  },
+  handler: async (ctx, args) => {
+    // Verify user is authenticated
+    const user = await ctx.auth.getUserIdentity();
+    if (!user) {
+      throw new Error("Not authenticated");
+    }
+
+    // Update all shapes in batch
+    for (const update of args.updates) {
+      const shape = await ctx.db.get(update.id);
+      if (shape) {
+        await ctx.db.patch(update.id, {
+          zIndex: update.zIndex,
+          lastModified: Date.now(),
+        });
+      }
+    }
+
+    return true;
   },
 });

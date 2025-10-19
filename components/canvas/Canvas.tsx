@@ -961,6 +961,92 @@ export const Canvas = ({
       }
     });
 
+    // After all updates, reorder objects to match zIndex
+    // Only reorder if the order has actually changed to avoid unnecessary operations
+    const currentObjects = fabricCanvas.getObjects();
+    const desiredOrder = new Map(
+      shapes.map((shape, index) => [shape._id, index]),
+    );
+
+    // Check if reordering is needed
+    let needsReorder = false;
+    for (let i = 0; i < currentObjects.length; i++) {
+      const obj = currentObjects[i];
+      const data = obj.get("data") as { shapeId?: string } | undefined;
+      if (data?.shapeId) {
+        const desiredIndex = desiredOrder.get(data.shapeId);
+        if (desiredIndex !== undefined && desiredIndex !== i) {
+          needsReorder = true;
+          break;
+        }
+      }
+    }
+
+    // Only reorder if necessary
+    if (needsReorder) {
+      // Preserve active selection
+      const activeObject = fabricCanvas.getActiveObject();
+      const selectedIds = new Set<string>();
+      if (activeObject) {
+        if (activeObject.type === "activeselection") {
+          const objects =
+            (activeObject as { _objects?: FabricObject[] })._objects || [];
+          objects.forEach((obj) => {
+            const data = obj.get("data") as { shapeId?: string } | undefined;
+            if (data?.shapeId) selectedIds.add(data.shapeId);
+          });
+        } else {
+          const data = activeObject.get("data") as
+            | { shapeId?: string }
+            | undefined;
+          if (data?.shapeId) selectedIds.add(data.shapeId);
+        }
+      }
+
+      // Sort objects by desired index
+      const reorderedObjects = [...currentObjects].sort((a, b) => {
+        const aData = a.get("data") as { shapeId?: string } | undefined;
+        const bData = b.get("data") as { shapeId?: string } | undefined;
+
+        const aIndex = aData?.shapeId
+          ? (desiredOrder.get(aData.shapeId) ?? 999)
+          : 999;
+        const bIndex = bData?.shapeId
+          ? (desiredOrder.get(bData.shapeId) ?? 999)
+          : 999;
+
+        return aIndex - bIndex;
+      });
+
+      // Temporarily disable rendering
+      fabricCanvas.renderOnAddRemove = false;
+
+      // Clear and re-add in correct order
+      fabricCanvas.remove(...currentObjects);
+      fabricCanvas.add(...reorderedObjects);
+
+      // Restore selection
+      if (selectedIds.size > 0) {
+        const objectsToSelect = fabricCanvas.getObjects().filter((obj) => {
+          const data = obj.get("data") as { shapeId?: string } | undefined;
+          return data?.shapeId && selectedIds.has(data.shapeId);
+        });
+
+        if (objectsToSelect.length === 1) {
+          fabricCanvas.setActiveObject(objectsToSelect[0]);
+        } else if (objectsToSelect.length > 1) {
+          const selection = new (fabricCanvas as any).ActiveSelection(
+            objectsToSelect,
+            { canvas: fabricCanvas },
+          );
+          fabricCanvas.setActiveObject(selection);
+        }
+      }
+
+      // Re-enable rendering
+      fabricCanvas.renderOnAddRemove = true;
+    }
+
     // Remove shapes that no longer exist in database
     fabricCanvas.getObjects().forEach((obj) => {
       const data = obj.get("data") as { shapeId?: string } | undefined;

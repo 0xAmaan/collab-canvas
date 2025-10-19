@@ -14,6 +14,7 @@ import { AccountSection } from "@/components/properties/AccountSection";
 import { PositionPanel } from "@/components/properties/PositionPanel";
 import { StylePanel } from "@/components/properties/StylePanel";
 import { TransformPanel } from "@/components/properties/TransformPanel";
+import { ExportPanel } from "@/components/properties/ExportPanel";
 
 interface PropertiesSidebarProps {
   canvas: FabricCanvas | null;
@@ -73,9 +74,15 @@ export const PropertiesSidebar = ({
               onUpdate={onUpdateShape}
             />
             <StylePanel
+              canvas={canvas}
               shapes={shapes}
               selectedShapeIds={selectedShapeIds}
               onUpdate={onUpdateShape}
+            />
+            <ExportPanel
+              canvas={canvas}
+              shapes={shapes}
+              selectedShapeIds={selectedShapeIds}
             />
           </div>
         ) : (

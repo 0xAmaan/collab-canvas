@@ -5,47 +5,138 @@
  * Controls for fill color, stroke color, stroke width, and opacity
  */
 
-import { useState } from "react";
-import { PRESET_COLORS } from "@/constants/colors";
+import { useState, useRef, useCallback } from "react";
+import type { Canvas as FabricCanvas } from "fabric";
 import { PropertySection } from "@/components/ui/PropertySection";
+import { EnhancedColorPicker } from "@/components/ui/EnhancedColorPicker";
+import { useRecentColors } from "@/hooks/useRecentColors";
 import type { Shape } from "@/types/shapes";
 
 interface StylePanelProps {
+  canvas: FabricCanvas | null;
   shapes: Shape[];
   selectedShapeIds: string[];
   onUpdate: (shapeId: string, updates: Partial<Shape>) => Promise<void>;
 }
 
 export const StylePanel = ({
+  canvas,
   shapes,
   selectedShapeIds,
   onUpdate,
 }: StylePanelProps) => {
   const [showFillPicker, setShowFillPicker] = useState(false);
-  const [fillHexInput, setFillHexInput] = useState("");
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, right: 0 });
+  const [localFillColor, setLocalFillColor] = useState<string | null>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const rafIdRef = useRef<number | null>(null);
+  const pendingColorRef = useRef<string | null>(null);
+  const { recentColors, addRecentColor } = useRecentColors();
 
   const selectedShapes = shapes.filter((s) => selectedShapeIds.includes(s._id));
 
   if (selectedShapes.length === 0) return null;
 
   const firstShape = selectedShapes[0];
-  const fillColor = firstShape.fill;
+  const dbFillColor = firstShape.fill;
+  // Show local color if we're actively picking, otherwise show DB color
+  const fillColor = localFillColor ?? dbFillColor;
 
-  // Check if values are mixed
-  const isMixedFill = selectedShapes.some((s) => s.fill !== fillColor);
+  // Check if values are mixed (use DB color for comparison)
+  const isMixedFill = selectedShapes.some((s) => s.fill !== dbFillColor);
 
-  const handleFillChange = async (color: string) => {
-    for (const shapeId of selectedShapeIds) {
-      await onUpdate(shapeId, { fill: color });
+  // Update Fabric.js canvas immediately for instant visual feedback (no DB write)
+  const updateCanvasColor = useCallback(
+    (color: string) => {
+      if (!canvas) return;
+
+      const objects = canvas.getObjects();
+      selectedShapeIds.forEach((shapeId) => {
+        const fabricObj = objects.find((obj) => {
+          const data = obj.get("data") as { shapeId?: string } | undefined;
+          return data?.shapeId === shapeId;
+        });
+
+        if (fabricObj) {
+          fabricObj.set("fill", color);
+        }
+      });
+
+      canvas.renderOnAddRemove = false;
+      canvas.requestRenderAll();
+      canvas.renderOnAddRemove = true;
+    },
+    [canvas, selectedShapeIds],
+  );
+
+  // Fast visual-only update during dragging using requestAnimationFrame batching
+  const handleFillChange = (color: string) => {
+    setLocalFillColor(color); // Update UI immediately
+    pendingColorRef.current = color;
+
+    if (rafIdRef.current === null) {
+      rafIdRef.current = requestAnimationFrame(() => {
+        if (pendingColorRef.current) {
+          updateCanvasColor(pendingColorRef.current);
+        }
+        rafIdRef.current = null;
+      });
     }
   };
 
-  const handleHexChange = (hex: string) => {
-    setFillHexInput(hex);
-    const hexWithHash = hex.startsWith("#") ? hex : `#${hex}`;
-    if (/^#[0-9A-Fa-f]{6}$/.test(hexWithHash)) {
-      handleFillChange(hexWithHash);
+  // Immediate update for direct color clicks (no RAF delay)
+  const handleFillChangeImmediate = (color: string) => {
+    setLocalFillColor(color); // Update UI immediately
+    updateCanvasColor(color);
+  };
+
+  // Commit to database and recent colors ONLY when done dragging
+  const handleFillChangeComplete = async (color: string) => {
+    console.log("handleFillChangeComplete called with color:", color);
+
+    // Cancel any pending RAF updates
+    if (rafIdRef.current !== null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null;
     }
+
+    // Save to recent colors
+    addRecentColor(color);
+
+    console.log("Saving to database for shapes:", selectedShapeIds);
+
+    // Save to database - onUpdate (handleShapeUpdate) will update the visual
+    // No need to call updateCanvasColor here as it's redundant
+    for (const shapeId of selectedShapeIds) {
+      await onUpdate(shapeId, { fill: color });
+      console.log("Database update complete for shape:", shapeId);
+    }
+
+    // Clear local color state once DB save completes
+    setLocalFillColor(null);
+
+    console.log("Fill change complete - all done");
+  };
+
+  const handleTogglePicker = () => {
+    if (!showFillPicker && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const pickerHeight = 580; // Approximate height of the color picker
+      const pickerWidth = 280;
+
+      // Calculate top position, ensuring it doesn't go off-screen
+      let top = rect.top;
+      const bottomOverflow = top + pickerHeight - window.innerHeight;
+      if (bottomOverflow > 0) {
+        top = Math.max(8, top - bottomOverflow - 8); // 8px padding from bottom
+      }
+
+      setPickerPosition({
+        top,
+        right: window.innerWidth - rect.left + 8, // 8px margin
+      });
+    }
+    setShowFillPicker(!showFillPicker);
   };
 
   return (
@@ -55,7 +146,8 @@ export const StylePanel = ({
         <label className="text-xs text-[#B8B8B8] font-medium">Fill</label>
         <div className="relative">
           <button
-            onClick={() => setShowFillPicker(!showFillPicker)}
+            ref={buttonRef}
+            onClick={handleTogglePicker}
             className="w-full h-10 rounded-lg border-2 border-white/10 hover:border-white/20 transition-colors"
             style={{
               backgroundColor: isMixedFill ? "transparent" : fillColor,
@@ -72,44 +164,23 @@ export const StylePanel = ({
           {showFillPicker && (
             <>
               <div
-                className="fixed inset-0 z-30"
+                className="fixed inset-0 z-[100]"
                 onClick={() => setShowFillPicker(false)}
               />
-              <div className="absolute top-full mt-2 left-0 right-0 z-40 bg-[var(--color-sidebar)] border border-white/10 rounded-lg shadow-2xl p-4">
-                {/* Preset Colors */}
-                <div className="grid grid-cols-7 gap-2 mb-4">
-                  {PRESET_COLORS.map((color) => (
-                    <button
-                      key={color}
-                      onClick={() => {
-                        handleFillChange(color);
-                        // Don't close picker - allow multiple color changes
-                      }}
-                      className={`w-8 h-8 rounded-lg border-2 transition-all hover:scale-110 ${
-                        fillColor.toLowerCase() === color.toLowerCase()
-                          ? "border-white/80 ring-2 ring-[#8A63D2]"
-                          : "border-white/20 hover:border-white/40"
-                      }`}
-                      style={{ backgroundColor: color }}
-                      title={color}
-                    />
-                  ))}
-                </div>
-
-                {/* Hex Input */}
-                <div className="space-y-1">
-                  <label className="text-xs text-[#B8B8B8] font-medium">
-                    Hex Color
-                  </label>
-                  <input
-                    type="text"
-                    value={fillHexInput || fillColor}
-                    onChange={(e) => handleHexChange(e.target.value)}
-                    className="w-full px-3 py-2 bg-[var(--color-panel)] border border-white/10 rounded-lg text-white text-sm focus:outline-none focus:ring-1 focus:ring-[#8A63D2]/50 font-mono"
-                    placeholder="#3b82f6"
-                    maxLength={7}
-                  />
-                </div>
+              <div
+                className="fixed z-[110]"
+                style={{
+                  top: `${pickerPosition.top}px`,
+                  right: `${pickerPosition.right}px`,
+                }}
+              >
+                <EnhancedColorPicker
+                  color={fillColor}
+                  recentColors={recentColors}
+                  onColorChange={handleFillChange}
+                  onColorChangeImmediate={handleFillChangeImmediate}
+                  onColorChangeComplete={handleFillChangeComplete}
+                />
               </div>
             </>
           )}

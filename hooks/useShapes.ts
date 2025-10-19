@@ -27,6 +27,8 @@ export const useShapes = () => {
   const moveShapeMutation = useMutation(api.shapes.moveShape);
   const updateShapeMutation = useMutation(api.shapes.updateShape);
   const deleteShapeMutation = useMutation(api.shapes.deleteShape);
+  const updateZIndexMutation = useMutation(api.shapes.updateZIndex);
+  const reorderShapesMutation = useMutation(api.shapes.reorderShapes);
 
   // Convert Convex shapes to our Shape type
   const shapes: Shape[] = [
@@ -35,6 +37,7 @@ export const useShapes = () => {
         _id: s._id,
         fill: s.fill || "#3b82f6", // Fallback color if undefined
         angle: s.angle ?? 0,
+        zIndex: s.zIndex ?? 0,
         createdBy: s.createdBy,
         createdAt: s.createdAt,
         lastModified: s.lastModified,
@@ -282,12 +285,52 @@ export const useShapes = () => {
     [deleteShapeMutation],
   );
 
+  /**
+   * Update z-index of a single shape
+   */
+  const updateZIndex = useCallback(
+    async (shapeId: string, zIndex: number) => {
+      try {
+        await updateZIndexMutation({
+          shapeId: shapeId as Id<"shapes">,
+          zIndex,
+        });
+      } catch (error) {
+        console.error("Failed to update z-index:", error);
+        throw error;
+      }
+    },
+    [updateZIndexMutation],
+  );
+
+  /**
+   * Batch update z-indices for multiple shapes
+   */
+  const reorderShapes = useCallback(
+    async (updates: Array<{ id: string; zIndex: number }>) => {
+      try {
+        await reorderShapesMutation({
+          updates: updates.map((u) => ({
+            id: u.id as Id<"shapes">,
+            zIndex: u.zIndex,
+          })),
+        });
+      } catch (error) {
+        console.error("Failed to reorder shapes:", error);
+        throw error;
+      }
+    },
+    [reorderShapesMutation],
+  );
+
   return {
     shapes,
     createShape,
     moveShape,
     updateShape,
     deleteShape,
+    updateZIndex,
+    reorderShapes,
     isLoading: convexShapes === undefined,
   };
 };

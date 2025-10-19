@@ -41,7 +41,10 @@ export default defineSchema({
     createdBy: v.string(), // User ID (from Clerk)
     createdAt: v.number(), // Timestamp
     lastModified: v.number(), // Last modified timestamp
-  }).index("by_created_at", ["createdAt"]),
+    zIndex: v.optional(v.number()), // Rendering order (higher = front)
+  })
+    .index("by_created_at", ["createdAt"])
+    .index("by_zIndex", ["zIndex"]),
 
   // Presence table - tracks online users and their cursor positions
   presence: defineTable({

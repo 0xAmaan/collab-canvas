@@ -4,7 +4,7 @@
  * Client-side dashboard component with Canvas and Toolbar
  */
 
-import { AIChatSidebar } from "@/components/ai/AIChatSidebar";
+import { LeftSidebar } from "@/components/sidebar/LeftSidebar";
 import { AIFeedback } from "@/components/ai/AIFeedback";
 import type { ChatMessageType } from "@/components/ai/ChatHistory";
 import { Canvas } from "@/components/canvas/Canvas";
@@ -77,7 +77,8 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
   }, []);
 
   // Shapes management
-  const { shapes, updateShape, createShape, deleteShape } = useShapes();
+  const { shapes, updateShape, createShape, deleteShape, reorderShapes } =
+    useShapes();
 
   // User info and color
   const userId = user?.id || "anonymous";
@@ -301,6 +302,20 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
   }, []);
+
+  // Handle layer reordering
+  const handleReorderShapes = useCallback(
+    async (updates: Array<{ id: string; zIndex: number }>) => {
+      console.log("🔄 Dashboard: Reordering shapes", updates);
+      try {
+        await reorderShapes(updates);
+        console.log("✅ Dashboard: Reorder complete");
+      } catch (error) {
+        console.error("❌ Dashboard: Failed to reorder shapes:", error);
+      }
+    },
+    [reorderShapes],
+  );
 
   // Handle Spacebar temporary hand mode
   const handleSpacebarDown = useCallback(() => {
@@ -544,13 +559,17 @@ export const DashboardClient = ({ userName }: DashboardClientProps) => {
         }}
       ></div>
 
-      {/* Left Sidebar - AI Chat Panel */}
-      <AIChatSidebar
+      {/* Left Sidebar - AI Chat & Layers Panels */}
+      <LeftSidebar
         isOpen={isSidebarOpen}
         onToggle={handleToggleSidebar}
         messages={chatMessages}
         onSubmit={handleAICommand}
         isLoading={aiStatus === "thinking"}
+        shapes={shapes}
+        selectedShapeIds={selectedShapeIds}
+        canvas={fabricCanvas}
+        onReorderShapes={handleReorderShapes}
       />
 
       {/* Sidebar Toggle Button - show when closed */}

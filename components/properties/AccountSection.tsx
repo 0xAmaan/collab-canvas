@@ -11,7 +11,12 @@ import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import type { Presence } from "@/types/presence";
 import { UserButton } from "@clerk/nextjs";
 import type { Canvas as FabricCanvas } from "fabric";
-import { useRef } from "react";
+import { useRef, useState } from "react";
+import { Download } from "lucide-react";
+import {
+  exportCanvasAsPNG,
+  generateTimestampFilename,
+} from "@/lib/canvas/export-utils";
 
 interface AccountSectionProps {
   canvas: FabricCanvas | null;
@@ -31,46 +36,83 @@ export const AccountSection = ({
   isMounted,
 }: AccountSectionProps) => {
   const userButtonRef = useRef<HTMLDivElement>(null);
+  const [isExportHovered, setIsExportHovered] = useState(false);
 
   // Find current user's name
   const currentUser = allUsers.find((user) => user.userId === currentUserId);
   const userName = currentUser?.userName || "User";
 
+  const handleExportCanvas = () => {
+    if (!canvas) {
+      console.warn("Canvas not available for export");
+      return;
+    }
+
+    try {
+      const filename = generateTimestampFilename("canvas", "png");
+      exportCanvasAsPNG(canvas, filename);
+    } catch (error) {
+      console.error("Failed to export canvas:", error);
+    }
+  };
+
   return (
     <div>
       {/* User Account */}
       <div className="mb-6">
-        <div
-          className="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors"
-          onClick={(e) => {
-            if (
-              e.target === e.currentTarget ||
-              !(e.target as HTMLElement).closest("[data-clerk-user-button]")
-            ) {
-              const button = userButtonRef.current?.querySelector("button");
-              button?.click();
-            }
-          }}
-        >
+        <div className="flex items-center justify-between gap-2">
           <div
-            ref={userButtonRef}
-            data-clerk-user-button
-            className="flex items-center"
+            className="flex items-center gap-3 py-2 cursor-pointer hover:bg-white/5 rounded-lg transition-colors flex-1"
+            onClick={(e) => {
+              if (
+                e.target === e.currentTarget ||
+                !(e.target as HTMLElement).closest("[data-clerk-user-button]")
+              ) {
+                const button = userButtonRef.current?.querySelector("button");
+                button?.click();
+              }
+            }}
           >
-            <UserButton
-              afterSignOutUrl="/"
-              appearance={{
-                elements: {
-                  avatarBox: "ring-2 ring-green-500",
-                },
-              }}
-            />
+            <div
+              ref={userButtonRef}
+              data-clerk-user-button
+              className="flex items-center"
+            >
+              <UserButton
+                afterSignOutUrl="/"
+                appearance={{
+                  elements: {
+                    avatarBox: "ring-2 ring-green-500",
+                  },
+                }}
+              />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm text-white/70 font-medium">
+                {userName}
+              </span>
+              <span className="text-xs text-white/40">(you)</span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm text-white/70 font-medium">
-              {userName}
-            </span>
-            <span className="text-xs text-white/40">(you)</span>
+
+          {/* Export Canvas Button */}
+          <div className="relative">
+            <button
+              onClick={handleExportCanvas}
+              onMouseEnter={() => setIsExportHovered(true)}
+              onMouseLeave={() => setIsExportHovered(false)}
+              className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-white/20 rounded-lg text-white/70 hover:text-white transition-colors"
+              title="Export Canvas"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+
+            {/* Custom Tooltip */}
+            {isExportHovered && (
+              <div className="absolute top-full mt-2 right-0 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap z-50 pointer-events-none">
+                Export Canvas
+              </div>
+            )}
           </div>
         </div>
       </div>
