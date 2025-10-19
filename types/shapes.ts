@@ -2,7 +2,14 @@
  * Shape types matching Convex schema
  */
 
-export type ShapeType = "rectangle" | "circle" | "ellipse" | "line" | "text";
+export type ShapeType =
+  | "rectangle"
+  | "circle"
+  | "ellipse"
+  | "line"
+  | "text"
+  | "path"
+  | "polygon";
 
 // Base interface with common fields
 interface ShapeBase {
@@ -58,12 +65,34 @@ export interface TextShape extends ShapeBase {
   fontFamily: string;
 }
 
+export interface PathShape extends ShapeBase {
+  type: "path";
+  pathData: string; // SVG path array as JSON string
+  stroke: string;
+  strokeWidth: number;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PolygonShape extends ShapeBase {
+  type: "polygon";
+  points: { x: number; y: number }[];
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export type Shape =
   | RectangleShape
   | CircleShape
   | EllipseShape
   | LineShape
-  | TextShape;
+  | TextShape
+  | PathShape
+  | PolygonShape;
 
 // Utility types
 export interface RectangleProperties {

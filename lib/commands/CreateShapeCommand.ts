@@ -7,7 +7,14 @@ import type { Command } from "./types";
 import type { Shape } from "@/types/shapes";
 
 interface ShapeData {
-  type: "rectangle" | "circle" | "ellipse" | "line" | "text";
+  type:
+    | "rectangle"
+    | "circle"
+    | "ellipse"
+    | "line"
+    | "text"
+    | "path"
+    | "polygon";
   x?: number;
   y?: number;
   width?: number;
@@ -19,6 +26,9 @@ interface ShapeData {
   text?: string;
   fontSize?: number;
   fontFamily?: string;
+  pathData?: string;
+  stroke?: string;
+  points?: { x: number; y: number }[];
   angle?: number;
   strokeWidth?: number;
   strokeColor?: string;

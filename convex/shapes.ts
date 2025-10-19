@@ -12,7 +12,7 @@ import { v } from "convex/values";
 
 /**
  * Create a new shape on the canvas
- * Supports: rectangle, circle, ellipse, line, text
+ * Supports: rectangle, circle, ellipse, line, text, path
  */
 export const createShape = mutation({
   args: {
@@ -22,6 +22,7 @@ export const createShape = mutation({
       v.literal("ellipse"),
       v.literal("line"),
       v.literal("text"),
+      v.literal("path"),
     ),
     // Common fields
     x: v.optional(v.number()),
@@ -37,8 +38,12 @@ export const createShape = mutation({
     text: v.optional(v.string()),
     fontSize: v.optional(v.number()),
     fontFamily: v.optional(v.string()),
-    // Styling
-    fill: v.string(),
+    // Path fields
+    pathData: v.optional(v.string()),
+    stroke: v.optional(v.string()),
+    strokeWidth: v.optional(v.number()),
+    // Styling (optional for paths which use stroke instead)
+    fill: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     // Verify user is authenticated
@@ -61,6 +66,9 @@ export const createShape = mutation({
       text: args.text,
       fontSize: args.fontSize,
       fontFamily: args.fontFamily,
+      pathData: args.pathData,
+      stroke: args.stroke,
+      strokeWidth: args.strokeWidth,
       fill: args.fill,
       createdBy: user.subject, // Clerk user ID
       createdAt: Date.now(),
@@ -91,6 +99,10 @@ export const updateShape = mutation({
     y2: v.optional(v.number()),
     // Text fields
     text: v.optional(v.string()),
+    // Path fields
+    pathData: v.optional(v.string()),
+    stroke: v.optional(v.string()),
+    strokeWidth: v.optional(v.number()),
   },
   handler: async (ctx, args) => {
     // Verify user is authenticated
@@ -115,6 +127,9 @@ export const updateShape = mutation({
     if (args.x2 !== undefined) updates.x2 = args.x2;
     if (args.y2 !== undefined) updates.y2 = args.y2;
     if (args.text !== undefined) updates.text = args.text;
+    if (args.pathData !== undefined) updates.pathData = args.pathData;
+    if (args.stroke !== undefined) updates.stroke = args.stroke;
+    if (args.strokeWidth !== undefined) updates.strokeWidth = args.strokeWidth;
 
     // Update the shape
     await ctx.db.patch(args.shapeId, updates);

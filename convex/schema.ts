@@ -11,6 +11,8 @@ export default defineSchema({
       v.literal("ellipse"),
       v.literal("line"),
       v.literal("text"),
+      v.literal("path"),
+      v.literal("polygon"), // Polygon shape type
     ), // Shape type
     // Common position/size fields (used by rectangle, circle, ellipse, text)
     x: v.optional(v.number()), // X position on canvas
@@ -26,8 +28,14 @@ export default defineSchema({
     text: v.optional(v.string()), // Text content
     fontSize: v.optional(v.number()), // Font size
     fontFamily: v.optional(v.string()), // Font family
+    // Path-specific fields (for pencil/pen tool)
+    pathData: v.optional(v.string()), // SVG path data as JSON string
+    stroke: v.optional(v.string()), // Stroke color for paths
+    strokeWidth: v.optional(v.number()), // Stroke width for paths
+    // Polygon-specific fields
+    points: v.optional(v.array(v.object({ x: v.number(), y: v.number() }))), // Array of polygon vertices
     // Common styling
-    fill: v.string(), // Fill color (hex) - also used for text color and line stroke
+    fill: v.optional(v.string()), // Fill color (hex) - also used for text color and line stroke. Optional for paths which use stroke instead.
     angle: v.optional(v.number()), // Rotation angle in degrees (0-360)
     // Metadata
     createdBy: v.string(), // User ID (from Clerk)

@@ -5,11 +5,13 @@
 
 export enum KeyboardAction {
   SELECT_TOOL = "SELECT_TOOL",
+  HAND_TOOL = "HAND_TOOL",
   RECTANGLE_TOOL = "RECTANGLE_TOOL",
   CIRCLE_TOOL = "CIRCLE_TOOL",
   ELLIPSE_TOOL = "ELLIPSE_TOOL",
   LINE_TOOL = "LINE_TOOL",
   TEXT_TOOL = "TEXT_TOOL",
+  PENCIL_TOOL = "PENCIL_TOOL",
   DELETE_SHAPE = "DELETE_SHAPE",
   SHOW_HELP = "SHOW_HELP",
   UNDO = "UNDO",
@@ -29,6 +31,20 @@ export interface KeyboardShortcut {
 }
 
 export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
+  {
+    key: "v",
+    displayKey: "V",
+    action: KeyboardAction.SELECT_TOOL,
+    description: "Switch to select/move tool",
+    requiresSelection: false,
+  },
+  {
+    key: "h",
+    displayKey: "H",
+    action: KeyboardAction.HAND_TOOL,
+    description: "Toggle hand/pan tool",
+    requiresSelection: false,
+  },
   {
     key: "r",
     displayKey: "R",
@@ -62,6 +78,13 @@ export const KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     displayKey: "T",
     action: KeyboardAction.TEXT_TOOL,
     description: "Toggle text creation tool",
+    requiresSelection: false,
+  },
+  {
+    key: "p",
+    displayKey: "P",
+    action: KeyboardAction.PENCIL_TOOL,
+    description: "Toggle pencil/pen drawing tool",
     requiresSelection: false,
   },
   {

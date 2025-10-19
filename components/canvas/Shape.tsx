@@ -3,7 +3,16 @@
  * This is not a React component but a module for shape operations with Fabric.js
  */
 
-import { Rect, Circle, Ellipse, Line, IText, FabricObject } from "fabric";
+import {
+  Rect,
+  Circle,
+  Ellipse,
+  Line,
+  IText,
+  Polygon,
+  FabricObject,
+  Path,
+} from "fabric";
 import type { Shape } from "@/types/shapes";
 import { SELECTION_COLORS } from "@/constants/colors";
 import { DEFAULT_TEXT } from "@/constants/shapes";
@@ -34,7 +43,7 @@ export function createFabricShape(shape: Shape): FabricObject {
   const baseConfig = {
     ...commonShapeConfig,
     angle: shape.angle ?? 0,
-    fill: shape.fillColor,
+    fill: shape.type === "path" ? undefined : shape.fillColor, // Paths should never have fill
     data: { shapeId: shape._id },
   };
 
@@ -69,15 +78,12 @@ export function createFabricShape(shape: Shape): FabricObject {
       });
 
     case "line":
-      return new Line(
-        [shape.x1, shape.y1, shape.x2, shape.y2],
-        {
-          ...baseConfig,
-          fill: undefined,
-          stroke: shape.fillColor, // Lines use stroke, not fill
-          strokeWidth: 2,
-        }
-      );
+      return new Line([shape.x1, shape.y1, shape.x2, shape.y2], {
+        ...baseConfig,
+        fill: undefined,
+        stroke: shape.fillColor, // Lines use stroke, not fill
+        strokeWidth: 2,
+      });
 
     case "text":
       return new IText(shape.text || DEFAULT_TEXT.TEXT, {
@@ -90,6 +96,53 @@ export function createFabricShape(shape: Shape): FabricObject {
         editable: true,
         selectable: true,
         strokeWidth: 0,
+      });
+
+    case "path":
+      try {
+        const pathData = JSON.parse(shape.pathData);
+
+        console.log("🔷 [CREATE PATH] baseConfig.fill:", baseConfig.fill);
+        console.log("🔷 [CREATE PATH] shape.fillColor:", shape.fillColor);
+
+        // baseConfig already has fill: undefined for paths, so we can use it directly
+        const pathObj = new Path(pathData, {
+          ...baseConfig,
+          left: shape.x,
+          top: shape.y,
+          stroke: shape.stroke,
+          strokeWidth: shape.strokeWidth,
+        });
+
+        console.log(
+          "🔷 [CREATE PATH] pathObj.fill IMMEDIATELY after creation:",
+          pathObj.fill,
+        );
+
+        return pathObj;
+      } catch (error) {
+        console.error(
+          "❌ [RECONSTRUCT PATH] Failed to parse path data:",
+          error,
+          shape,
+        );
+        // Fallback to a simple line if path data is invalid
+        return new Line([0, 0, 100, 100], {
+          ...baseConfig,
+          fill: undefined,
+          stroke: shape.stroke || "#000000",
+          strokeWidth: shape.strokeWidth || 2,
+        });
+      }
+
+    case "polygon":
+      return new Polygon(shape.points, {
+        ...baseConfig,
+        left: shape.x,
+        top: shape.y,
+        fill: shape.fillColor,
+        stroke: "#000000",
+        strokeWidth: 1,
       });
 
     default:
@@ -157,6 +210,33 @@ export function updateFabricShape(fabricObj: FabricObject, shape: Shape): void {
         fill: shape.fillColor,
       });
       break;
+
+    case "path":
+      try {
+        const pathData = JSON.parse(shape.pathData);
+        const path = fabricObj as Path;
+        path.set({
+          path: pathData,
+          left: shape.x,
+          top: shape.y,
+          stroke: shape.stroke,
+          strokeWidth: shape.strokeWidth,
+          fill: undefined, // Remove fill completely for paths
+        });
+      } catch (error) {
+        console.error("Failed to update path data:", error);
+      }
+      break;
+
+    case "polygon":
+      const polygon = fabricObj as Polygon;
+      polygon.set({
+        points: shape.points,
+        left: shape.x,
+        top: shape.y,
+        fill: shape.fillColor,
+      });
+      break;
   }
 
   fabricObj.set(updates);
@@ -166,4 +246,3 @@ export function updateFabricShape(fabricObj: FabricObject, shape: Shape): void {
 // Legacy exports for backward compatibility
 export const createFabricRect = createFabricShape;
 export const updateFabricRect = updateFabricShape;
-

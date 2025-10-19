@@ -11,11 +11,13 @@ import {
 
 interface KeyboardShortcuts {
   onSelectTool?: () => void;
+  onHandTool?: () => void;
   onRectangleTool?: () => void;
   onCircleTool?: () => void;
   onEllipseTool?: () => void;
   onLineTool?: () => void;
   onTextTool?: () => void;
+  onPencilTool?: () => void;
   onDeleteShape?: () => void;
   onShowHelp?: () => void;
   onUndo?: () => void;
@@ -24,6 +26,8 @@ interface KeyboardShortcuts {
   onCopy?: () => void;
   onPaste?: () => void;
   onToggleSidebar?: () => void;
+  onSpacebarDown?: () => void;
+  onSpacebarUp?: () => void;
 }
 
 /**
@@ -57,6 +61,15 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
         target.isContentEditable;
 
       if (isInputField) {
+        return;
+      }
+
+      // Handle Spacebar for temporary hand tool - IMPORTANT: only when not repeated
+      if (e.code === "Space" && !e.repeat) {
+        e.preventDefault();
+        if (shortcuts.onSpacebarDown) {
+          shortcuts.onSpacebarDown();
+        }
         return;
       }
 
@@ -123,6 +136,13 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
           }
           break;
 
+        case KeyboardAction.HAND_TOOL:
+          if (shortcuts.onHandTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onHandTool();
+          }
+          break;
+
         case KeyboardAction.RECTANGLE_TOOL:
           // Only trigger 'R' shortcut if no modifier keys are pressed
           if (shortcuts.onRectangleTool && !hasModifier) {
@@ -159,6 +179,13 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
           }
           break;
 
+        case KeyboardAction.PENCIL_TOOL:
+          if (shortcuts.onPencilTool && !hasModifier) {
+            e.preventDefault();
+            shortcuts.onPencilTool();
+          }
+          break;
+
         case KeyboardAction.DELETE_SHAPE:
           if (shortcuts.onDeleteShape) {
             e.preventDefault();
@@ -175,10 +202,22 @@ export function useKeyboard(shortcuts: KeyboardShortcuts) {
       }
     };
 
+    const handleKeyUp = (e: KeyboardEvent) => {
+      // Handle Spacebar release for temporary hand tool
+      if (e.code === "Space") {
+        e.preventDefault();
+        if (shortcuts.onSpacebarUp) {
+          shortcuts.onSpacebarUp();
+        }
+      }
+    };
+
     window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
     };
   }, [shortcuts]);
 }

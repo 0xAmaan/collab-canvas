@@ -14,6 +14,9 @@ import {
   Ellipse,
   Line,
   IText,
+  Polygon,
+  PencilBrush,
+  Path,
 } from "fabric";
 import { CANVAS, ZOOM, DEFAULT_SHAPE, DEFAULT_TEXT } from "@/constants/shapes";
 import { calculateZoomFromWheel } from "@/lib/viewport-utils";
@@ -107,9 +110,21 @@ export function Canvas({
   const editingTextRef = useRef<IText | null>(null);
   const textUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Track polygon creation state
+  const isCreatingPolygonRef = useRef(false);
+  const polygonPointsRef = useRef<{ x: number; y: number }[]>([]);
+  const previewPolygonRef = useRef<Polygon | null>(null);
+  const previewLineRef = useRef<Line | null>(null);
+
   // Track Alt+drag duplication state
   const isDuplicatingRef = useRef(false);
   const originalShapeDataRef = useRef<Shape | null>(null);
+
+  // Track hovered object for selection preview
+  const hoveredObjectRef = useRef<FabricObject | null>(null);
+
+  // Track current selected color for drawing tools
+  const [selectedColor, setSelectedColor] = useState(DEFAULT_SHAPE.FILL_COLOR);
 
   // Set mounted state
   useEffect(() => {
@@ -414,6 +429,78 @@ export function Canvas({
     [userId, createShapeInConvex, deleteShapeInConvex],
   );
 
+  // Finalize polygon creation
+  const finalizePolygon = useCallback(
+    async (points: { x: number; y: number }[]) => {
+      if (points.length < 3) {
+        alert("Need at least 3 points to create a polygon");
+        return null;
+      }
+
+      if (!fabricCanvasRef.current) return null;
+
+      try {
+        // Create final polygon
+        const polygon = new Polygon(points, {
+          fill: selectedColor,
+          stroke: "#000000",
+          strokeWidth: 1,
+          selectable: true,
+          evented: true,
+          hasControls: true,
+          hasBorders: true,
+          borderColor: SELECTION_COLORS.BORDER,
+          cornerColor: SELECTION_COLORS.HANDLE,
+          cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
+          cornerSize: 10,
+          transparentCorners: false,
+          cornerStyle: "circle" as const,
+          borderScaleFactor: 2,
+          padding: 0,
+        });
+
+        fabricCanvasRef.current.add(polygon);
+
+        // Create shape data
+        const shapeData = {
+          type: "polygon" as const,
+          points: points,
+          fillColor: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+          x: polygon.left || 0,
+          y: polygon.top || 0,
+          width: polygon.width || 0,
+          height: polygon.height || 0,
+          createdBy: userId,
+          createdAt: Date.now(),
+          lastModified: Date.now(),
+          lastModifiedBy: userId,
+        };
+
+        const command = new CreateShapeCommand(
+          shapeData,
+          createShapeInConvex,
+          deleteShapeInConvex,
+        );
+
+        await historyRef.current.execute(command);
+
+        // Get the shapeId from the command and store it to prevent duplication
+        const shapeId = (command as any).shapeId;
+        if (shapeId) {
+          polygon.set("data", { shapeId: shapeId });
+        }
+
+        fabricCanvasRef.current.renderAll();
+
+        return shapeId;
+      } catch (error) {
+        console.error("Failed to create polygon:", error);
+        return null;
+      }
+    },
+    [userId, selectedColor, createShapeInConvex, deleteShapeInConvex],
+  );
+
   // Store history and shapes in refs to avoid recreating callbacks
   const historyRef = useRef(history);
   const shapesRef = useRef(shapes);
@@ -562,6 +649,32 @@ export function Canvas({
             text: shapeToDuplicate.text,
             fontSize: shapeToDuplicate.fontSize,
             fontFamily: shapeToDuplicate.fontFamily,
+            fillColor: shapeToDuplicate.fillColor,
+            angle: shapeToDuplicate.angle,
+          };
+          break;
+        case "path":
+          duplicateData = {
+            ...duplicateData,
+            x: shapeToDuplicate.x + 10,
+            y: shapeToDuplicate.y + 10,
+            width: shapeToDuplicate.width,
+            height: shapeToDuplicate.height,
+            pathData: shapeToDuplicate.pathData,
+            stroke: shapeToDuplicate.stroke,
+            strokeWidth: shapeToDuplicate.strokeWidth,
+            fillColor: shapeToDuplicate.fillColor,
+            angle: shapeToDuplicate.angle,
+          };
+          break;
+        case "polygon":
+          duplicateData = {
+            ...duplicateData,
+            x: shapeToDuplicate.x + 10,
+            y: shapeToDuplicate.y + 10,
+            width: shapeToDuplicate.width,
+            height: shapeToDuplicate.height,
+            points: shapeToDuplicate.points,
             fillColor: shapeToDuplicate.fillColor,
             angle: shapeToDuplicate.angle,
           };
@@ -797,6 +910,41 @@ export function Canvas({
         return;
       }
 
+      // Polygon creation mode - click to add points
+      if (activeToolRef.current === "polygon" && !opt.target) {
+        const newPoint = { x: pointer.x, y: pointer.y };
+        polygonPointsRef.current.push(newPoint);
+
+        // Start polygon creation mode
+        if (!isCreatingPolygonRef.current) {
+          isCreatingPolygonRef.current = true;
+        }
+
+        // Update preview polygon if we have at least 2 points
+        if (polygonPointsRef.current.length >= 2) {
+          // Remove old preview
+          if (previewPolygonRef.current) {
+            fabricCanvas.remove(previewPolygonRef.current);
+          }
+
+          // Create new preview polygon (dashed outline)
+          const poly = new Polygon(polygonPointsRef.current, {
+            fill: "transparent",
+            stroke: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+            strokeWidth: 2,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false,
+          });
+
+          fabricCanvas.add(poly);
+          previewPolygonRef.current = poly;
+        }
+
+        fabricCanvas.renderAll();
+        return;
+      }
+
       // Double-click existing text to edit
       if (opt.target && opt.target.type === "i-text") {
         const text = opt.target as IText;
@@ -807,7 +955,18 @@ export function Canvas({
         return;
       }
 
-      // Select mode with panning and Alt+drag duplication
+      // Hand tool mode - enable panning only (no object interaction)
+      if (activeToolRef.current === "hand") {
+        // Always enable panning in hand mode
+        isPanningRef.current = true;
+        fabricCanvas.selection = false;
+        lastPosXRef.current = e.clientX;
+        lastPosYRef.current = e.clientY;
+        fabricCanvas.setCursor("grabbing");
+        return;
+      }
+
+      // Select mode with Alt+drag features
       if (activeToolRef.current === "select") {
         // Alt+drag duplication: Clone the shape and drag the duplicate
         if (e.altKey && opt.target) {
@@ -859,20 +1018,26 @@ export function Canvas({
           return;
         }
 
+        // Alt+drag panning: Pan canvas when clicking empty space with Alt key
+        // This provides convenient panning without switching to hand tool
+        if (e.altKey && !opt.target) {
+          isPanningRef.current = true;
+          fabricCanvas.selection = false; // Temporarily disable selection box
+          lastPosXRef.current = e.clientX;
+          lastPosYRef.current = e.clientY;
+          fabricCanvas.setCursor("grabbing");
+          return;
+        }
+
         // If clicking on an object (not Alt), we're dragging a shape
         if (opt.target) {
           isDraggingShapeRef.current = true;
           return;
         }
 
-        // Enable panning when clicking empty space (removed Alt requirement for pan)
-        if (!opt.target) {
-          isPanningRef.current = true;
-          fabricCanvas.selection = false; // Disable selection during pan
-          lastPosXRef.current = e.clientX;
-          lastPosYRef.current = e.clientY;
-          fabricCanvas.setCursor("grabbing");
-        }
+        // If clicking empty space without Alt, let Fabric.js handle selection box
+        // Fabric.js will automatically draw a selection rectangle when dragging
+        // This enables multi-select by dragging over multiple objects
       }
     });
 
@@ -985,6 +1150,33 @@ export function Canvas({
 
         fabricCanvas.renderAll();
         return;
+      }
+
+      // Handle polygon preview line (show line from last point to cursor)
+      if (isCreatingPolygonRef.current && polygonPointsRef.current.length > 0) {
+        const lastPoint =
+          polygonPointsRef.current[polygonPointsRef.current.length - 1];
+
+        // Remove old preview line
+        if (previewLineRef.current) {
+          fabricCanvas.remove(previewLineRef.current);
+        }
+
+        // Create new preview line
+        const line = new Line(
+          [lastPoint.x, lastPoint.y, pointer.x, pointer.y],
+          {
+            stroke: selectedColor || DEFAULT_SHAPE.FILL_COLOR,
+            strokeWidth: 1,
+            strokeDashArray: [5, 5],
+            selectable: false,
+            evented: false,
+          },
+        );
+
+        fabricCanvas.add(line);
+        previewLineRef.current = line;
+        fabricCanvas.renderAll();
       }
 
       // Handle panning
@@ -1219,7 +1411,13 @@ export function Canvas({
         }
         isPanningRef.current = false;
         fabricCanvas.selection = activeToolRef.current === "select"; // Re-enable selection if in select mode
-        fabricCanvas.setCursor("default");
+
+        // Reset cursor based on active tool
+        if (activeToolRef.current === "hand") {
+          fabricCanvas.setCursor("grab");
+        } else {
+          fabricCanvas.setCursor("default");
+        }
       }
 
       isDraggingShapeRef.current = false;
@@ -1566,6 +1764,52 @@ export function Canvas({
       });
     });
 
+    // Handle hover preview in select mode - show border on mouse over
+    fabricCanvas.on("mouse:over", (opt) => {
+      // Only show hover effect in select mode
+      if (activeToolRef.current !== "select") return;
+
+      // Only for actual objects, not during interactions
+      if (
+        opt.target &&
+        !isDraggingShapeRef.current &&
+        !isPanningRef.current &&
+        !isCreatingRectRef.current &&
+        !isCreatingCircleRef.current &&
+        !isCreatingEllipseRef.current &&
+        !isCreatingLineRef.current
+      ) {
+        // Don't highlight if already selected
+        const isSelected = fabricCanvas.getActiveObjects().includes(opt.target);
+        if (isSelected) return;
+
+        // Store reference to hovered object
+        hoveredObjectRef.current = opt.target;
+
+        // Add hover effect - blue border
+        opt.target.set({
+          strokeWidth: 2,
+          stroke: "#3b82f6", // Blue highlight
+        });
+
+        fabricCanvas.requestRenderAll();
+      }
+    });
+
+    // Handle hover preview removal on mouse out
+    fabricCanvas.on("mouse:out", (opt) => {
+      if (opt.target && opt.target === hoveredObjectRef.current) {
+        // Remove hover effect
+        opt.target.set({
+          strokeWidth: 0,
+          stroke: undefined,
+        });
+
+        hoveredObjectRef.current = null;
+        fabricCanvas.requestRenderAll();
+      }
+    });
+
     // Notify parent component that canvas is ready
     onCanvasReady?.(fabricCanvas);
 
@@ -1604,30 +1848,60 @@ export function Canvas({
       activeToolRef.current = activeTool;
 
       const isSelectMode = activeTool === "select";
+      const isHandMode = activeTool === "hand";
+
+      // Enable selection only in select mode
       fabricCanvasRef.current.selection = isSelectMode;
 
       // Update cursor based on tool
-      if (
+      let newCursor = "default";
+      let newHoverCursor = "move";
+
+      if (isHandMode) {
+        // Hand tool: grab cursor
+        newCursor = "grab";
+        newHoverCursor = "grab";
+      } else if (
         activeTool === "rectangle" ||
         activeTool === "circle" ||
         activeTool === "ellipse" ||
-        activeTool === "line"
+        activeTool === "line" ||
+        activeTool === "polygon"
       ) {
-        fabricCanvasRef.current.defaultCursor = "crosshair";
-        fabricCanvasRef.current.hoverCursor = "crosshair";
+        newCursor = "crosshair";
+        newHoverCursor = "crosshair";
       } else if (activeTool === "text") {
-        fabricCanvasRef.current.defaultCursor = "text";
-        fabricCanvasRef.current.hoverCursor = "text";
-      } else {
-        fabricCanvasRef.current.defaultCursor = "default";
-        fabricCanvasRef.current.hoverCursor = "move";
+        newCursor = "text";
+        newHoverCursor = "text";
       }
 
-      // Make objects selectable in select mode OR rectangle mode (for color picker)
-      // In rectangle mode: shapes are selectable but canvas selection box is disabled
+      // Set the cursor properties
+      fabricCanvasRef.current.defaultCursor = newCursor;
+      fabricCanvasRef.current.hoverCursor = newHoverCursor;
+
+      // Force immediate cursor update (without waiting for mouse move)
+      fabricCanvasRef.current.setCursor(newCursor);
+
+      // Clear hover state when switching tools
+      if (hoveredObjectRef.current) {
+        hoveredObjectRef.current.set({
+          strokeWidth: 0,
+          stroke: undefined,
+        });
+        hoveredObjectRef.current = null;
+      }
+
+      // Make objects selectable/evented based on tool
       fabricCanvasRef.current.getObjects().forEach((obj) => {
-        obj.selectable = true; // Always selectable for color picker access
-        obj.evented = true;
+        if (isHandMode) {
+          // In hand mode, disable selection and interaction on all objects
+          obj.selectable = false;
+          obj.evented = false;
+        } else {
+          // In all other modes, objects are selectable
+          obj.selectable = true;
+          obj.evented = true;
+        }
       });
 
       // Important: Request render to show the objects
@@ -1635,23 +1909,364 @@ export function Canvas({
     }
   }, [activeTool]);
 
+  // Enable/disable pencil drawing mode when tool changes
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+
+    const canvas = fabricCanvasRef.current;
+
+    if (activeTool === "pencil") {
+      // Enable free drawing mode with simple, official Fabric.js v6 approach
+      const brush = new PencilBrush(canvas);
+      brush.color = selectedColor;
+      brush.width = 2;
+
+      canvas.freeDrawingBrush = brush;
+      canvas.isDrawingMode = true;
+
+      canvas.defaultCursor = "crosshair";
+      canvas.hoverCursor = "crosshair";
+
+      // Override _finalizeAndAddPath to skip closePath() and arc() which cause flash
+      console.log("🔧 [PENCIL SETUP] Checking _finalizeAndAddPath:", {
+        exists: typeof (brush as any)._finalizeAndAddPath === "function",
+        brushType: brush.constructor.name,
+      });
+
+      const originalFinalize = (brush as any)._finalizeAndAddPath?.bind(brush);
+      if (originalFinalize) {
+        console.log("✅ [PENCIL SETUP] Overriding _finalizeAndAddPath");
+
+        // Also override onMouseDown to see if drawing starts
+        const originalOnMouseDown = brush.onMouseDown.bind(brush);
+        brush.onMouseDown = function (pointer: any, options: any) {
+          console.log("🖱️ [BRUSH] Mouse down - starting to draw");
+          originalOnMouseDown(pointer, options);
+        };
+
+        const boundBrush = brush; // Capture brush in closure
+        (brush as any)._finalizeAndAddPath = function () {
+          console.log("🔵 [FINALIZE] CALLED!");
+          const ctx = canvas.contextTop;
+          if (!ctx) {
+            console.warn("⚠️ [FINALIZE] No contextTop - returning early");
+            return;
+          }
+
+          // Get path data - need to compute box first
+          console.log("🔵 [FINALIZE] Getting SVG path data...");
+          console.log("🔵 [FINALIZE] _points:", (this as any)._points?.length);
+
+          // Compute the bounding box (required for path data)
+          const points = (this as any)._points || [];
+          if (points.length === 0) {
+            console.warn("⚠️ [FINALIZE] No points - returning early");
+            return;
+          }
+
+          // Call getPathBoundingBox to set this.box
+          const boundingBox = (this as any).getPathBoundingBox?.(points);
+          if (!boundingBox) {
+            console.warn(
+              "⚠️ [FINALIZE] Failed to get bounding box - returning early",
+            );
+            return;
+          }
+          (this as any).box = boundingBox;
+          console.log("🔵 [FINALIZE] Box computed:", boundingBox);
+
+          // Now get the path data
+          const pathData =
+            (this as any)
+              .convertPointsToSVGPath?.(
+                points,
+                boundingBox.minx,
+                boundingBox.maxx,
+                boundingBox.miny,
+                boundingBox.maxy,
+              )
+              ?.join("") || "";
+
+          console.log("🔵 [FINALIZE] Path data length:", pathData.length);
+          console.log(
+            "🔵 [FINALIZE] Path data preview:",
+            pathData.substring(0, 100),
+          );
+
+          if (!pathData || pathData === "M 0 0 Q 0 0 0 0 L 0 0") {
+            console.warn("⚠️ [FINALIZE] Invalid path data - returning early");
+            canvas.renderAll();
+            return;
+          }
+
+          // Create path WITHOUT calling closePath() or arc()
+          console.log("🔵 [FINALIZE] Creating path object...");
+          const path = (this as any).createPath?.(pathData);
+          if (!path) {
+            console.warn(
+              "⚠️ [FINALIZE] Failed to create path - returning early",
+            );
+            return;
+          }
+          console.log("🔵 [FINALIZE] Path created successfully:", {
+            fill: path.fill,
+            stroke: path.stroke,
+          });
+
+          // Set position
+          const box = (this as any).box;
+          if (box) {
+            const originLeft = box.minx + (box.maxx - box.minx) / 2;
+            const originTop = box.miny + (box.maxy - box.miny) / 2;
+            path.set({ left: originLeft, top: originTop });
+            path.setCoords();
+          }
+
+          // Add to canvas
+          canvas.add(path);
+
+          // Clear preview and render
+          canvas.clearContext(ctx);
+          canvas.renderAll();
+
+          // Fire event
+          console.log("🔵 [FINALIZE] Firing path:created event for path:", {
+            hasPath: !!path,
+            fill: path?.fill,
+            pathData: pathData.substring(0, 50),
+          });
+          canvas.fire("path:created", { path: path });
+        };
+      } else {
+        console.warn(
+          "⚠️ [PENCIL SETUP] _finalizeAndAddPath method not found on brush!",
+        );
+      }
+
+      // DEBUG: Intercept BEFORE:path:created and fix fill BEFORE it's added to canvas
+      canvas.on("before:path:created", (e: any) => {
+        console.log("🔴 [BEFORE PATH CREATED]", {
+          pathExists: !!e.path,
+          fill: e.path?.fill,
+          stroke: e.path?.stroke,
+        });
+
+        // Try to fix fill BEFORE Fabric.js adds it to canvas
+        if (e.path) {
+          e.path.fill = null;
+          console.log(
+            "🔴 [BEFORE PATH CREATED] Set fill to null BEFORE adding to canvas",
+          );
+        }
+      });
+
+      // Register path:created event listener when pencil mode is active
+      const handlePathCreated = async (e: any) => {
+        console.log("🟡 [PATH CREATED - START] Path received:", {
+          fill: e.path?.fill,
+          stroke: e.path?.stroke,
+          onCanvas: canvas.getObjects().includes(e.path),
+        });
+
+        const path = e.path as Path;
+        if (!path) {
+          console.error("Failed to create path: no path in event");
+          return;
+        }
+
+        console.log("🟠 [PATH CREATED - BEFORE SET] About to set fill to null");
+
+        // Ensure path is stroke-only (no fill)
+        path.set({ fill: null });
+        path.dirty = true;
+
+        console.log("🟢 [PATH CREATED - AFTER SET] Fill is now:", path.fill);
+
+        // Generate a temporary ID to track this path while it's being saved
+        const tempId = `temp_path_${Date.now()}`;
+
+        try {
+          // Tag the path immediately with temp ID to prevent sync removal
+          path.set({
+            data: { shapeId: tempId },
+          });
+
+          // Mark as being saved to prevent removal during sync
+          savingShapesRef.current.add(tempId);
+
+          // Get path data for serialization
+          const pathData = JSON.stringify(path.path);
+
+          // Create shape data object
+          const shapeData = {
+            type: "path" as const,
+            pathData,
+            stroke: (path.stroke as string) || selectedColor,
+            strokeWidth: (path.strokeWidth as number) || 2,
+            x: path.left || 0,
+            y: path.top || 0,
+            width: path.width || 0,
+            height: path.height || 0,
+            fillColor: selectedColor, // Store color for metadata (NOT used for rendering)
+            createdBy: userId,
+            createdAt: Date.now(),
+            lastModified: Date.now(),
+            lastModifiedBy: userId,
+          };
+
+          const command = new CreateShapeCommand(
+            shapeData,
+            createShapeInConvex,
+            deleteShapeInConvex,
+          );
+
+          await historyRef.current.execute(command);
+
+          // Get the real shapeId from the command
+          const shapeId = (command as any).shapeId;
+
+          // Remove temp ID from saving set
+          savingShapesRef.current.delete(tempId);
+
+          if (shapeId) {
+            // Update with real ID
+            path.set("data", { shapeId });
+
+            // Add real ID to saving set briefly to prevent sync conflicts
+            savingShapesRef.current.add(shapeId);
+
+            setTimeout(() => {
+              savingShapesRef.current.delete(shapeId);
+            }, 500);
+          }
+
+          canvas.renderAll();
+        } catch (error) {
+          console.error("❌ [PATH CREATED] Failed to create path:", error);
+          console.error("❌ [PATH CREATED] Error details:", {
+            message: (error as Error).message,
+            stack: (error as Error).stack,
+          });
+          // Remove from saving set on error
+          savingShapesRef.current.delete(tempId);
+        }
+      };
+
+      canvas.on("path:created", handlePathCreated);
+      console.log("✅ [PENCIL SETUP] Registered path:created event listener");
+
+      // Cleanup function to remove listener when leaving pencil mode
+      return () => {
+        console.log("🔴 [PENCIL CLEANUP] Removing event listener");
+
+        canvas.off("path:created", handlePathCreated);
+        canvas.isDrawingMode = false;
+      };
+    } else {
+      // Disable free drawing mode
+      canvas.isDrawingMode = false;
+    }
+  }, [
+    activeTool,
+    selectedColor,
+    userId,
+    createShapeInConvex,
+    deleteShapeInConvex,
+  ]);
+
+  // Handle keyboard events for polygon tool (Enter to complete, Escape to cancel)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!fabricCanvasRef.current) return;
+
+      // Enter key - complete polygon
+      if (e.key === "Enter" && isCreatingPolygonRef.current) {
+        e.preventDefault();
+
+        // Clean up preview elements
+        if (previewPolygonRef.current) {
+          fabricCanvasRef.current.remove(previewPolygonRef.current);
+          previewPolygonRef.current = null;
+        }
+        if (previewLineRef.current) {
+          fabricCanvasRef.current.remove(previewLineRef.current);
+          previewLineRef.current = null;
+        }
+
+        // Finalize the polygon
+        finalizePolygon(polygonPointsRef.current);
+
+        // Reset state
+        isCreatingPolygonRef.current = false;
+        polygonPointsRef.current = [];
+
+        fabricCanvasRef.current.renderAll();
+      }
+
+      // Escape key - cancel polygon
+      if (e.key === "Escape" && isCreatingPolygonRef.current) {
+        e.preventDefault();
+
+        // Clean up preview elements
+        if (previewPolygonRef.current) {
+          fabricCanvasRef.current.remove(previewPolygonRef.current);
+          previewPolygonRef.current = null;
+        }
+        if (previewLineRef.current) {
+          fabricCanvasRef.current.remove(previewLineRef.current);
+          previewLineRef.current = null;
+        }
+
+        // Reset state
+        isCreatingPolygonRef.current = false;
+        polygonPointsRef.current = [];
+
+        fabricCanvasRef.current.renderAll();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [finalizePolygon]);
+
   // Sync shapes with Fabric canvas - ensure all shapes are rendered and updated
   useEffect(() => {
     if (!fabricCanvasRef.current) return;
+
+    // console.log("\n=== SYNC EFFECT START ===");
+    // console.log("[Sync] Shapes from DB:", shapes.length);
+    // console.log(
+    //   "[Sync] DB Shape IDs:",
+    //   shapes.map((s) => s._id),
+    // );
 
     const fabricCanvas = fabricCanvasRef.current;
 
     // Build map of Fabric objects by shape ID
     const fabricObjectMap = new Map();
-    fabricCanvas.getObjects().forEach((obj) => {
+    const canvasObjects = fabricCanvas.getObjects();
+    // console.log("[Sync] Canvas objects count:", canvasObjects.length);
+
+    canvasObjects.forEach((obj) => {
       const data = obj.get("data") as { shapeId?: string } | undefined;
       if (data?.shapeId) {
         fabricObjectMap.set(data.shapeId, obj);
+        // console.log(
+        //   `[Sync] Found canvas object with shapeId: ${data.shapeId}, type: ${obj.type}`,
+        // );
+      } else {
+        // console.log(
+        //   `[Sync] Found canvas object WITHOUT shapeId, type: ${obj.type}`,
+        // );
       }
     });
 
     // Track shapes from database
     const dbShapeIds = new Set(shapes.map((s) => s._id));
+    // console.log(
+    //   "[Sync] Currently saving shapes:",
+    //   Array.from(savingShapesRef.current),
+    // );
 
     // Performance optimization: Batch rendering by disabling auto-render
     const shouldBatchRender = shapes.length > 5; // Only batch if multiple shapes
@@ -1664,6 +2279,10 @@ export function Canvas({
       const fabricObj = fabricObjectMap.get(shape._id);
 
       if (fabricObj) {
+        // console.log(
+        //   `[Sync] Shape ${shape._id} (${shape.type}) already exists on canvas, checking if update needed...`,
+        // );
+
         // Skip updates if user is actively interacting with this object
         // This prevents jittery behavior and control glitching when editing
         const activeObject = fabricCanvas.getActiveObject();
@@ -1675,29 +2294,80 @@ export function Canvas({
           (activeObject as any)._objects?.includes(fabricObj);
 
         if (isActiveObject || isInActiveSelection) {
-          // Don't apply remote updates to objects you're currently manipulating
+          // console.log(
+          //   `[Sync] Skipping update for ${shape._id} - user is interacting with it`,
+          // );
           return;
         }
 
         // Skip updates if this shape is currently being saved
         // This prevents the old data from overwriting the new data before Convex syncs
         if (savingShapesRef.current.has(shape._id)) {
+          // console.log(
+          //   `[Sync] Skipping update for ${shape._id} - currently being saved`,
+          // );
           return;
         }
 
+        // console.log(`[Sync] Updating shape ${shape._id}`);
         // Update existing shape
         updateFabricRect(fabricObj, shape);
       } else {
+        // Only log when adding NEW shapes (important for debugging)
+        console.log(
+          `[Sync] ✅ Adding NEW shape ${shape._id} (${shape.type}) to canvas`,
+        );
+        // console.log(`[Sync] Shape data:`, shape);
+
         // Add new shape
         const fabricRect = createFabricRect(shape);
+
+        // DEBUG: Check fill before adding to canvas
+        if (shape.type === "path") {
+          console.log(
+            "🟣 [SYNC ADD] Path fill BEFORE canvas.add():",
+            (fabricRect as any).fill,
+          );
+        }
+
         fabricCanvas.add(fabricRect);
+
+        // DEBUG: Check fill after adding to canvas
+        if (shape.type === "path") {
+          console.log(
+            "🟣 [SYNC ADD] Path fill AFTER canvas.add():",
+            (fabricRect as any).fill,
+          );
+        }
       }
     });
 
     // Remove shapes that no longer exist in database
+    // console.log("[Sync] Checking for objects to remove...");
     fabricCanvas.getObjects().forEach((obj) => {
       const data = obj.get("data") as { shapeId?: string } | undefined;
-      if (data?.shapeId && !dbShapeIds.has(data.shapeId)) {
+
+      if (!data?.shapeId) {
+        // console.log(
+        //   `[Sync] Object has no shapeId (type: ${obj.type}) - keeping it (might be temporary)`,
+        // );
+        return;
+      }
+
+      const inDatabase = dbShapeIds.has(data.shapeId);
+      const beingSaved = savingShapesRef.current.has(data.shapeId);
+
+      // console.log(
+      //   `[Sync] Object ${data.shapeId} (${obj.type}): inDB=${inDatabase}, beingSaved=${beingSaved}`,
+      // );
+
+      // Only remove if:
+      // 1. It has a shapeId (it's been saved before)
+      // 2. That shapeId is not in the database anymore
+      // 3. It's not currently being saved (to prevent race condition)
+      if (!inDatabase && !beingSaved) {
+        // Only log when actually removing something (important!)
+        console.log(`[Sync] ❌ REMOVING object with shapeId: ${data.shapeId}`);
         fabricCanvas.remove(obj);
       }
     });
@@ -1707,6 +2377,7 @@ export function Canvas({
       fabricCanvas.renderOnAddRemove = true;
     }
     fabricCanvas.requestRenderAll();
+    // console.log("=== SYNC EFFECT END ===\n");
   }, [shapes]);
 
   return (

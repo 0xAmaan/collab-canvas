@@ -52,6 +52,9 @@ export function DashboardClient({ userName }: DashboardClientProps) {
   const cursorContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useUser();
 
+  // Track previous tool for spacebar temporary hand mode
+  const previousToolRef = useRef<Tool>("select");
+
   // AI command state
   const [aiStatus, setAIStatus] = useState<AIStatus>("idle");
   const [aiMessage, setAIMessage] = useState<string>("");
@@ -220,6 +223,10 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     }
   }, [fabricCanvas]);
 
+  const handleHandTool = useCallback(() => {
+    setActiveTool("hand");
+  }, []);
+
   const handleRectangleTool = useCallback(() => {
     setActiveTool("rectangle");
   }, []);
@@ -238,6 +245,10 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
   const handleTextTool = useCallback(() => {
     setActiveTool("text");
+  }, []);
+
+  const handlePencilTool = useCallback(() => {
+    setActiveTool("pencil");
   }, []);
 
   // Handle copy selected shape(s) - supports multi-select
@@ -326,6 +337,18 @@ export function DashboardClient({ userName }: DashboardClientProps) {
 
   const handleToggleSidebar = useCallback(() => {
     setIsSidebarOpen((prev) => !prev);
+  }, []);
+
+  // Handle Spacebar temporary hand mode
+  const handleSpacebarDown = useCallback(() => {
+    // Store current tool and switch to hand
+    previousToolRef.current = activeTool;
+    setActiveTool("hand");
+  }, [activeTool]);
+
+  const handleSpacebarUp = useCallback(() => {
+    // Return to previous tool
+    setActiveTool(previousToolRef.current);
   }, []);
 
   // Handle AI command
@@ -490,14 +513,24 @@ export function DashboardClient({ userName }: DashboardClientProps) {
       ? shapes.find((s) => s._id === selectedShapeIds[0])
       : null;
 
+  // Update previousToolRef when activeTool changes (but not from spacebar)
+  useEffect(() => {
+    // Only update if the new tool is not "hand" (to preserve previous tool during spacebar hold)
+    if (activeTool !== "hand") {
+      previousToolRef.current = activeTool;
+    }
+  }, [activeTool]);
+
   // Keyboard shortcuts with memoized handlers
   useKeyboard({
     onSelectTool: handleSelectTool,
+    onHandTool: handleHandTool,
     onRectangleTool: handleRectangleTool,
     onCircleTool: handleCircleTool,
     onEllipseTool: handleEllipseTool,
     onLineTool: handleLineTool,
     onTextTool: handleTextTool,
+    onPencilTool: handlePencilTool,
     onDeleteShape: handleDeleteSelected,
     onShowHelp: handleToggleHelp,
     onUndo: history.undo,
@@ -506,6 +539,8 @@ export function DashboardClient({ userName }: DashboardClientProps) {
     onCopy: handleCopy,
     onPaste: handlePaste,
     onToggleSidebar: handleToggleSidebar,
+    onSpacebarDown: handleSpacebarDown,
+    onSpacebarUp: handleSpacebarUp,
   });
 
   return (

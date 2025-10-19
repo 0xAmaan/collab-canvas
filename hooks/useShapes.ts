@@ -88,6 +88,28 @@ export function useShapes() {
             fontSize: s.fontSize ?? 16,
             fontFamily: s.fontFamily ?? "Inter",
           };
+        case "path":
+          return {
+            ...baseShape,
+            type: "path",
+            pathData: s.pathData ?? "[]",
+            stroke: s.stroke ?? "#000000",
+            strokeWidth: s.strokeWidth ?? 2,
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
+        case "polygon":
+          return {
+            ...baseShape,
+            type: "polygon",
+            points: s.points ?? [],
+            x: s.x ?? 0,
+            y: s.y ?? 0,
+            width: s.width ?? 0,
+            height: s.height ?? 0,
+          };
         default:
           // Fallback to rectangle if type is unknown
           return {
@@ -127,7 +149,6 @@ export function useShapes() {
         // Build mutation args based on shape type
         const mutationArgs: any = {
           type: shape.type,
-          fill: shape.fillColor,
         };
 
         // Add type-specific fields
@@ -135,23 +156,56 @@ export function useShapes() {
           case "rectangle":
           case "circle":
           case "ellipse":
+            mutationArgs.fill = shape.fillColor;
             mutationArgs.x = (shape as any).x;
             mutationArgs.y = (shape as any).y;
             mutationArgs.width = (shape as any).width;
             mutationArgs.height = (shape as any).height;
             break;
           case "line":
+            mutationArgs.fill = shape.fillColor;
             mutationArgs.x1 = (shape as any).x1;
             mutationArgs.y1 = (shape as any).y1;
             mutationArgs.x2 = (shape as any).x2;
             mutationArgs.y2 = (shape as any).y2;
             break;
           case "text":
+            mutationArgs.fill = shape.fillColor;
             mutationArgs.x = (shape as any).x;
             mutationArgs.y = (shape as any).y;
             mutationArgs.text = (shape as any).text;
             mutationArgs.fontSize = (shape as any).fontSize;
             mutationArgs.fontFamily = (shape as any).fontFamily;
+            break;
+          case "path":
+            console.log("🔵 [useShapes PATH] Building mutation args for path:");
+            console.log("  - x:", (shape as any).x);
+            console.log("  - y:", (shape as any).y);
+            console.log("  - width:", (shape as any).width);
+            console.log("  - height:", (shape as any).height);
+            console.log(
+              "  - pathData length:",
+              (shape as any).pathData?.length,
+            );
+            console.log("  - stroke:", (shape as any).stroke);
+            console.log("  - strokeWidth:", (shape as any).strokeWidth);
+            console.log("  - fillColor (WILL NOT SEND):", shape.fillColor);
+
+            // CRITICAL: Do NOT send fill for paths - they should be stroke-only
+            mutationArgs.x = (shape as any).x;
+            mutationArgs.y = (shape as any).y;
+            mutationArgs.width = (shape as any).width;
+            mutationArgs.height = (shape as any).height;
+            mutationArgs.pathData = (shape as any).pathData;
+            mutationArgs.stroke = (shape as any).stroke;
+            mutationArgs.strokeWidth = (shape as any).strokeWidth;
+            // NOTE: We store fillColor in our Shape type for metadata/consistency,
+            // but we do NOT send it to Convex for paths
+
+            console.log(
+              "✅ [useShapes PATH] Final mutationArgs (no fill):",
+              mutationArgs,
+            );
             break;
         }
 
