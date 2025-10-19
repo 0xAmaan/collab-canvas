@@ -392,11 +392,29 @@ export const DashboardClient = ({
       setAIMessage("");
 
       try {
+        // Calculate viewport center for positioning AI-generated shapes
+        let viewportCenter: { x: number; y: number } | undefined;
+        if (fabricCanvas) {
+          const vpt = fabricCanvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+          const zoom = vpt[0];
+          const panX = vpt[4];
+          const panY = vpt[5];
+          const canvasWidth = fabricCanvas.getWidth();
+          const canvasHeight = fabricCanvas.getHeight();
+
+          // Convert viewport center to canvas coordinates
+          viewportCenter = {
+            x: (canvasWidth / 2 - panX) / zoom,
+            y: (canvasHeight / 2 - panY) / zoom,
+          };
+        }
+
         // Call AI API endpoint
         const request: AICommandRequest = {
           command,
           shapes,
           selectedShapeIds,
+          viewportCenter,
         };
 
         const response = await fetch("/api/ai/canvas", {
@@ -431,6 +449,7 @@ export const DashboardClient = ({
           updateShape,
           deleteShape,
           selectedShapeIds,
+          viewportCenter,
         });
 
         if (result.success) {

@@ -55,6 +55,7 @@ export const PropertiesSidebar = ({
           status={status}
           statusColor={statusColor}
           isMounted={isMounted}
+          shapes={shapes}
         />
       </div>
 

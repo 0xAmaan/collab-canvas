@@ -8,20 +8,23 @@
 
 import { useState, useEffect, memo } from "react";
 import type { Canvas as FabricCanvas } from "fabric";
-import { ZoomOut, ZoomIn } from "lucide-react";
+import { ZoomOut, ZoomIn, Focus } from "lucide-react";
 import { useViewport } from "@/hooks/useViewport";
+import type { Shape } from "@/types/shapes";
 
 interface ZoomControlsProps {
   canvas: FabricCanvas | null;
+  shapes?: Shape[];
 }
 
-const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
+const ZoomControlsComponent = ({ canvas, shapes }: ZoomControlsProps) => {
   const [isMounted, setIsMounted] = useState(false);
   const {
     viewport,
     zoomIn,
     zoomOut,
     resetZoom,
+    focusOnDensity,
     zoomPercentage,
     canZoomIn,
     canZoomOut,
@@ -51,6 +54,13 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
           title="Zoom In (10%)"
         >
           <ZoomIn className="w-5 h-5" />
+        </button>
+        <button
+          disabled
+          className="w-8 h-8 flex items-center justify-center rounded-lg disabled:opacity-40 disabled:cursor-not-allowed text-white/70"
+          title="Focus on shapes"
+        >
+          <Focus className="w-5 h-5" />
         </button>
       </div>
     );
@@ -86,15 +96,28 @@ const ZoomControlsComponent = ({ canvas }: ZoomControlsProps) => {
       >
         <ZoomIn className="w-5 h-5" />
       </button>
+
+      {/* Focus on Density Button */}
+      <button
+        onClick={() => focusOnDensity(shapes || [])}
+        disabled={!canvas}
+        className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-white/70 hover:text-white cursor-pointer"
+        title="Focus on shapes"
+      >
+        <Focus className="w-5 h-5" />
+      </button>
     </div>
   );
 };
 
-// Memoize component to prevent re-renders when canvas reference hasn't changed
+// Memoize component to prevent re-renders when canvas or shapes haven't changed
 export const ZoomControls = memo(
   ZoomControlsComponent,
   (prevProps, nextProps) => {
-    // Only re-render if canvas reference changes
-    return prevProps.canvas === nextProps.canvas;
+    // Only re-render if canvas or shapes reference changes
+    return (
+      prevProps.canvas === nextProps.canvas &&
+      prevProps.shapes === nextProps.shapes
+    );
   },
 );

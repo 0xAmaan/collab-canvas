@@ -16,6 +16,7 @@ export interface AICommandRequest {
   command: string;
   shapes: Shape[];
   selectedShapeIds?: string[]; // IDs of currently selected shapes
+  viewportCenter?: { x: number; y: number }; // Current viewport center for positioning
 }
 
 /**
@@ -44,6 +45,8 @@ export interface CreateRectangleCommand extends BaseCommand {
   width: number;
   height: number;
   fill: string;
+  count?: number; // Number of rectangles to create (1-500)
+  spacing?: number; // Spacing between shapes in grid
 }
 
 /**
@@ -55,6 +58,8 @@ export interface CreateCircleCommand extends BaseCommand {
   y: number;
   radius: number;
   fill: string;
+  count?: number; // Number of circles to create (1-500)
+  spacing?: number; // Spacing between shapes in grid
 }
 
 /**
@@ -79,6 +84,8 @@ export interface CreateEllipseCommand extends BaseCommand {
   width: number;
   height: number;
   fill: string;
+  count?: number; // Number of ellipses to create (1-500)
+  spacing?: number; // Spacing between shapes in grid
 }
 
 /**

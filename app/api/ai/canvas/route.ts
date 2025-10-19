@@ -41,35 +41,68 @@ IMPORTANT - Relative Sizing:
 Guidelines:
 - Default positions to center (1000, 1000) if not specified
 - Default sizes: rectangles/circles/ellipses 100px, text 16px font, lines 200px, polygons radius 50px
-- Use sensible spacing when creating multiple shapes (e.g., 150px apart)
 - For colors, use hex values (e.g., #3b82f6 for blue, #ef4444 for red, #22c55e for green)
 - For relative positions like "to the right", offset by ~150px
 - For layouts (row/column), calculate positions mathematically
 - For lines, default stroke color is white (#ffffff), strokeWidth is 2
 - For polygons: 3 sides = triangle, 5 = pentagon, 6 = hexagon, 8 = octagon
 
+IMPORTANT - Multi-Shape Creation:
+- When user asks for multiple shapes (e.g., "create 25 squares", "make 100 circles"):
+  - Use the count parameter (e.g., count: 25)
+  - Shapes will automatically arrange in an intelligent grid
+  - For rectangles, circles, and ellipses ONLY
+  - Max count is 500
+  - Default spacing between shapes is 25px (adjust if user specifies "tight" or "spread out")
+
 Be helpful and assume reasonable defaults when user is vague.`;
 
 // Define AI tools
 const tools = {
   create_rectangle: tool({
-    description: "Create a rectangle on the canvas",
+    description:
+      "Create rectangle(s) on the canvas. Supports creating multiple shapes in a grid.",
     inputSchema: z.object({
-      x: z.number().describe("X position (center)"),
-      y: z.number().describe("Y position (center)"),
+      x: z.number().describe("X position (center) - ignored if count > 1"),
+      y: z.number().describe("Y position (center) - ignored if count > 1"),
       width: z.number().describe("Width in pixels"),
       height: z.number().describe("Height in pixels"),
       fill: z.string().describe("Fill color (hex)"),
+      count: z
+        .number()
+        .min(1)
+        .max(500)
+        .optional()
+        .describe(
+          "Number of rectangles to create (1-500, default: 1). Auto-arranges in grid if > 1.",
+        ),
+      spacing: z
+        .number()
+        .optional()
+        .describe("Spacing between shapes in grid (default: 25px)"),
     }),
   }),
 
   create_circle: tool({
-    description: "Create a circle on the canvas",
+    description:
+      "Create circle(s) on the canvas. Supports creating multiple shapes in a grid.",
     inputSchema: z.object({
-      x: z.number().describe("X position (center)"),
-      y: z.number().describe("Y position (center)"),
+      x: z.number().describe("X position (center) - ignored if count > 1"),
+      y: z.number().describe("Y position (center) - ignored if count > 1"),
       radius: z.number().describe("Radius in pixels"),
       fill: z.string().describe("Fill color (hex)"),
+      count: z
+        .number()
+        .min(1)
+        .max(500)
+        .optional()
+        .describe(
+          "Number of circles to create (1-500, default: 1). Auto-arranges in grid if > 1.",
+        ),
+      spacing: z
+        .number()
+        .optional()
+        .describe("Spacing between shapes in grid (default: 25px)"),
     }),
   }),
 
@@ -85,13 +118,26 @@ const tools = {
   }),
 
   create_ellipse: tool({
-    description: "Create an ellipse on the canvas",
+    description:
+      "Create ellipse(s) on the canvas. Supports creating multiple shapes in a grid.",
     inputSchema: z.object({
-      x: z.number().describe("X position (center)"),
-      y: z.number().describe("Y position (center)"),
+      x: z.number().describe("X position (center) - ignored if count > 1"),
+      y: z.number().describe("Y position (center) - ignored if count > 1"),
       width: z.number().describe("Width in pixels"),
       height: z.number().describe("Height in pixels"),
       fill: z.string().describe("Fill color (hex)"),
+      count: z
+        .number()
+        .min(1)
+        .max(500)
+        .optional()
+        .describe(
+          "Number of ellipses to create (1-500, default: 1). Auto-arranges in grid if > 1.",
+        ),
+      spacing: z
+        .number()
+        .optional()
+        .describe("Spacing between shapes in grid (default: 25px)"),
     }),
   }),
 

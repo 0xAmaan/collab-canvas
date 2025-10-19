@@ -4,6 +4,7 @@
 
 import { ZOOM, CANVAS } from "@/constants/shapes";
 import type { ViewportState, ViewportBounds, Point } from "@/types/viewport";
+import type { Shape } from "@/types/shapes";
 
 /**
  * Clamp a zoom level within allowed bounds
@@ -128,4 +129,97 @@ export const constrainPan = (
   if (y < maxY) y = maxY;
 
   return { x, y };
+};
+
+/**
+ * Get the center point of a shape
+ */
+const getShapeCenter = (shape: Shape): Point => {
+  if (shape.type === "line") {
+    // For lines, use the midpoint between endpoints
+    return {
+      x: (shape.x1 + shape.x2) / 2,
+      y: (shape.y1 + shape.y2) / 2,
+    };
+  }
+
+  if (shape.type === "text") {
+    // For text shapes, use the x, y position (they don't have width/height)
+    return {
+      x: shape.x,
+      y: shape.y,
+    };
+  }
+
+  // For all other shapes, use center of bounding box
+  return {
+    x: shape.x + shape.width / 2,
+    y: shape.y + shape.height / 2,
+  };
+};
+
+/**
+ * Calculate the point with highest density of shapes using grid-based algorithm
+ * Returns (1000, 1000) if no shapes exist
+ */
+export const calculateHighestDensityPoint = (shapes: Shape[]): Point => {
+  // Return default position if no shapes or shapes is undefined
+  if (!shapes || shapes.length === 0) {
+    return { x: 1000, y: 1000 };
+  }
+
+  // Define grid cell size
+  const CELL_SIZE = 200;
+
+  // Find bounds of all shapes to create appropriate grid
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+
+  shapes.forEach((shape) => {
+    const center = getShapeCenter(shape);
+    minX = Math.min(minX, center.x);
+    minY = Math.min(minY, center.y);
+    maxX = Math.max(maxX, center.x);
+    maxY = Math.max(maxY, center.y);
+  });
+
+  // Create grid and count shapes in each cell
+  const cellCounts = new Map<string, number>();
+  const cellCenters = new Map<string, Point>();
+
+  shapes.forEach((shape) => {
+    const center = getShapeCenter(shape);
+
+    // Determine which cell this shape belongs to
+    const cellX = Math.floor(center.x / CELL_SIZE);
+    const cellY = Math.floor(center.y / CELL_SIZE);
+    const cellKey = `${cellX},${cellY}`;
+
+    // Increment count for this cell
+    cellCounts.set(cellKey, (cellCounts.get(cellKey) || 0) + 1);
+
+    // Store cell center (if not already stored)
+    if (!cellCenters.has(cellKey)) {
+      cellCenters.set(cellKey, {
+        x: cellX * CELL_SIZE + CELL_SIZE / 2,
+        y: cellY * CELL_SIZE + CELL_SIZE / 2,
+      });
+    }
+  });
+
+  // Find the cell with the highest count
+  let maxCount = 0;
+  let densestCellKey = "";
+
+  cellCounts.forEach((count, cellKey) => {
+    if (count > maxCount) {
+      maxCount = count;
+      densestCellKey = cellKey;
+    }
+  });
+
+  // Return the center of the densest cell
+  return cellCenters.get(densestCellKey) || { x: 1000, y: 1000 };
 };

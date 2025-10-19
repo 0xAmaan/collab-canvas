@@ -26,7 +26,25 @@ interface ExecutorContext {
   updateShape: (shapeId: string, updates: any) => Promise<void>;
   deleteShape?: (shapeId: string) => Promise<void>;
   selectedShapeIds?: string[]; // IDs of currently selected shapes
+  viewportCenter?: { x: number; y: number }; // Current viewport center for positioning
 }
+
+/**
+ * Calculate optimal grid dimensions for a given count
+ * Returns most square-like grid layout
+ */
+const calculateGridDimensions = (
+  count: number,
+): { rows: number; cols: number } => {
+  if (count === 1) return { rows: 1, cols: 1 };
+
+  // Calculate closest to square
+  const sqrt = Math.sqrt(count);
+  const cols = Math.ceil(sqrt);
+  const rows = Math.ceil(count / cols);
+
+  return { rows, cols };
+};
 
 /**
  * Convert hex color to RGB
@@ -217,21 +235,68 @@ async function executeCreateRectangle(
   cmd: CreateRectangleCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  const shapeId = await context.createShape({
-    type: "rectangle",
-    x: cmd.x,
-    y: cmd.y,
-    width: cmd.width || 100,
-    height: cmd.height || 100,
-    fill: cmd.fill || "#3b82f6",
-    angle: 0,
-    createdBy: "ai",
-    createdAt: Date.now(),
-    lastModified: Date.now(),
-    lastModifiedBy: "ai",
-  });
+  const count = cmd.count || 1;
+  const width = cmd.width || 100;
+  const height = cmd.height || 100;
+  const spacing = cmd.spacing ?? 25;
 
-  return `Created rectangle at (${cmd.x}, ${cmd.y})`;
+  // Single shape - use provided position
+  if (count === 1) {
+    await context.createShape({
+      type: "rectangle",
+      x: cmd.x,
+      y: cmd.y,
+      width,
+      height,
+      fill: cmd.fill || "#3b82f6",
+      angle: 0,
+      createdBy: "ai",
+      createdAt: Date.now(),
+      lastModified: Date.now(),
+      lastModifiedBy: "ai",
+    });
+    return `Created rectangle at (${cmd.x}, ${cmd.y})`;
+  }
+
+  // Multiple shapes - calculate grid layout
+  const { rows, cols } = calculateGridDimensions(count);
+  const gridWidth = cols * width + (cols - 1) * spacing;
+  const gridHeight = rows * height + (rows - 1) * spacing;
+
+  // Position grid relative to viewport center (offset bottom-right) or canvas center
+  const baseX = context.viewportCenter ? context.viewportCenter.x + 300 : 1000;
+  const baseY = context.viewportCenter ? context.viewportCenter.y + 200 : 1000;
+
+  const startX = baseX - gridWidth / 2 + width / 2;
+  const startY = baseY - gridHeight / 2 + height / 2;
+
+  // Create shapes in grid
+  const shapes = [];
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = startX + col * (width + spacing);
+    const y = startY + row * (height + spacing);
+
+    shapes.push(
+      context.createShape({
+        type: "rectangle",
+        x,
+        y,
+        width,
+        height,
+        fill: cmd.fill || "#3b82f6",
+        angle: 0,
+        createdBy: "ai",
+        createdAt: Date.now(),
+        lastModified: Date.now(),
+        lastModifiedBy: "ai",
+      }),
+    );
+  }
+
+  await Promise.all(shapes);
+  return `Created ${count} rectangles in ${rows}x${cols} grid`;
 }
 
 /**
@@ -241,26 +306,68 @@ async function executeCreateCircle(
   cmd: CreateCircleCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  // Ensure radius has a default value
+  const count = cmd.count || 1;
   const radius = cmd.radius || 50;
+  const diameter = radius * 2;
+  const spacing = cmd.spacing ?? 25;
 
-  const shapeData = {
-    type: "circle" as const,
-    x: cmd.x,
-    y: cmd.y,
-    width: radius * 2,
-    height: radius * 2,
-    fill: cmd.fill,
-    angle: 0,
-    createdBy: "ai",
-    createdAt: Date.now(),
-    lastModified: Date.now(),
-    lastModifiedBy: "ai",
-  };
+  // Single shape - use provided position
+  if (count === 1) {
+    await context.createShape({
+      type: "circle",
+      x: cmd.x,
+      y: cmd.y,
+      width: diameter,
+      height: diameter,
+      fill: cmd.fill,
+      angle: 0,
+      createdBy: "ai",
+      createdAt: Date.now(),
+      lastModified: Date.now(),
+      lastModifiedBy: "ai",
+    });
+    return `Created circle at (${cmd.x}, ${cmd.y})`;
+  }
 
-  const shapeId = await context.createShape(shapeData);
+  // Multiple shapes - calculate grid layout
+  const { rows, cols } = calculateGridDimensions(count);
+  const gridWidth = cols * diameter + (cols - 1) * spacing;
+  const gridHeight = rows * diameter + (rows - 1) * spacing;
 
-  return `Created circle at (${cmd.x}, ${cmd.y})`;
+  // Position grid relative to viewport center (offset bottom-right) or canvas center
+  const baseX = context.viewportCenter ? context.viewportCenter.x + 300 : 1000;
+  const baseY = context.viewportCenter ? context.viewportCenter.y + 200 : 1000;
+
+  const startX = baseX - gridWidth / 2 + radius;
+  const startY = baseY - gridHeight / 2 + radius;
+
+  // Create shapes in grid
+  const shapes = [];
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = startX + col * (diameter + spacing);
+    const y = startY + row * (diameter + spacing);
+
+    shapes.push(
+      context.createShape({
+        type: "circle",
+        x,
+        y,
+        width: diameter,
+        height: diameter,
+        fill: cmd.fill,
+        angle: 0,
+        createdBy: "ai",
+        createdAt: Date.now(),
+        lastModified: Date.now(),
+        lastModifiedBy: "ai",
+      }),
+    );
+  }
+
+  await Promise.all(shapes);
+  return `Created ${count} circles in ${rows}x${cols} grid`;
 }
 
 /**
@@ -294,21 +401,68 @@ async function executeCreateEllipse(
   cmd: CreateEllipseCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  const shapeId = await context.createShape({
-    type: "ellipse",
-    x: cmd.x,
-    y: cmd.y,
-    width: cmd.width || 100,
-    height: cmd.height || 60,
-    fill: cmd.fill || "#3b82f6",
-    angle: 0,
-    createdBy: "ai",
-    createdAt: Date.now(),
-    lastModified: Date.now(),
-    lastModifiedBy: "ai",
-  });
+  const count = cmd.count || 1;
+  const width = cmd.width || 100;
+  const height = cmd.height || 60;
+  const spacing = cmd.spacing ?? 25;
 
-  return `Created ellipse at (${cmd.x}, ${cmd.y})`;
+  // Single shape - use provided position
+  if (count === 1) {
+    await context.createShape({
+      type: "ellipse",
+      x: cmd.x,
+      y: cmd.y,
+      width,
+      height,
+      fill: cmd.fill || "#3b82f6",
+      angle: 0,
+      createdBy: "ai",
+      createdAt: Date.now(),
+      lastModified: Date.now(),
+      lastModifiedBy: "ai",
+    });
+    return `Created ellipse at (${cmd.x}, ${cmd.y})`;
+  }
+
+  // Multiple shapes - calculate grid layout
+  const { rows, cols } = calculateGridDimensions(count);
+  const gridWidth = cols * width + (cols - 1) * spacing;
+  const gridHeight = rows * height + (rows - 1) * spacing;
+
+  // Position grid relative to viewport center (offset bottom-right) or canvas center
+  const baseX = context.viewportCenter ? context.viewportCenter.x + 300 : 1000;
+  const baseY = context.viewportCenter ? context.viewportCenter.y + 200 : 1000;
+
+  const startX = baseX - gridWidth / 2 + width / 2;
+  const startY = baseY - gridHeight / 2 + height / 2;
+
+  // Create shapes in grid
+  const shapes = [];
+  for (let i = 0; i < count; i++) {
+    const row = Math.floor(i / cols);
+    const col = i % cols;
+    const x = startX + col * (width + spacing);
+    const y = startY + row * (height + spacing);
+
+    shapes.push(
+      context.createShape({
+        type: "ellipse",
+        x,
+        y,
+        width,
+        height,
+        fill: cmd.fill || "#3b82f6",
+        angle: 0,
+        createdBy: "ai",
+        createdAt: Date.now(),
+        lastModified: Date.now(),
+        lastModifiedBy: "ai",
+      }),
+    );
+  }
+
+  await Promise.all(shapes);
+  return `Created ${count} ellipses in ${rows}x${cols} grid`;
 }
 
 /**

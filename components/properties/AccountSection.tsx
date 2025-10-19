@@ -9,6 +9,7 @@ import { PresencePanel } from "@/components/presence/PresencePanel";
 import { PropertySection } from "@/components/ui/PropertySection";
 import { ZoomControls } from "@/components/toolbar/ZoomControls";
 import type { Presence } from "@/types/presence";
+import type { Shape } from "@/types/shapes";
 import { UserButton } from "@clerk/nextjs";
 import type { Canvas as FabricCanvas } from "fabric";
 import { useRef, useState } from "react";
@@ -25,6 +26,7 @@ interface AccountSectionProps {
   status: string;
   statusColor: string;
   isMounted: boolean;
+  shapes: Shape[];
 }
 
 export const AccountSection = ({
@@ -34,6 +36,7 @@ export const AccountSection = ({
   status,
   statusColor,
   isMounted,
+  shapes,
 }: AccountSectionProps) => {
   const userButtonRef = useRef<HTMLDivElement>(null);
   const [isExportHovered, setIsExportHovered] = useState(false);
@@ -165,7 +168,7 @@ export const AccountSection = ({
 
       {/* Zoom Controls */}
       <PropertySection title="Zoom" divider>
-        <ZoomControls canvas={canvas} />
+        <ZoomControls canvas={canvas} shapes={shapes} />
       </PropertySection>
     </div>
   );

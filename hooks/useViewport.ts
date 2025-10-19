@@ -11,9 +11,11 @@ import {
   parseStoredViewport,
   serializeViewport,
   formatZoomPercentage,
+  calculateHighestDensityPoint,
 } from "@/lib/viewport-utils";
 import { getZoom, zoomToPoint, setViewportTransform } from "@/lib/canvas-utils";
 import type { ViewportState, Point } from "@/types/viewport";
+import type { Shape } from "@/types/shapes";
 
 export const useViewport = (canvas: FabricCanvas | null) => {
   const [viewport, setViewport] = useState<ViewportState>(() => {
@@ -154,6 +156,37 @@ export const useViewport = (canvas: FabricCanvas | null) => {
     updateViewportFromCanvas();
   }, [canvas, updateViewportFromCanvas]);
 
+  // Focus on the area with highest density of shapes
+  const focusOnDensity = useCallback(
+    (shapes: Shape[]) => {
+      if (!canvas) return;
+
+      // Calculate the highest density point
+      const densityPoint = calculateHighestDensityPoint(shapes);
+
+      // Get current viewport transform
+      const vpt = canvas.viewportTransform || [1, 0, 0, 1, 0, 0];
+      const currentZoom = vpt[0]; // Keep current zoom level
+
+      // Calculate viewport center
+      const viewportCenterX = canvas.getWidth() / 2;
+      const viewportCenterY = canvas.getHeight() / 2;
+
+      // Calculate new pan values to center the density point
+      // The formula: panX = viewportCenter - (canvasPoint * zoom)
+      const newPanX = viewportCenterX - densityPoint.x * currentZoom;
+      const newPanY = viewportCenterY - densityPoint.y * currentZoom;
+
+      // Update viewport transform with new pan values (keeping zoom)
+      vpt[4] = newPanX;
+      vpt[5] = newPanY;
+
+      setViewportTransform(canvas, vpt);
+      updateViewportFromCanvas();
+    },
+    [canvas, updateViewportFromCanvas],
+  );
+
   // Get formatted zoom percentage
   const zoomPercentage = formatZoomPercentage(viewport.zoom);
 
@@ -162,6 +195,7 @@ export const useViewport = (canvas: FabricCanvas | null) => {
     zoomIn,
     zoomOut,
     resetZoom,
+    focusOnDensity,
     zoomPercentage,
     canZoomIn: viewport.zoom < ZOOM.MAX,
     canZoomOut: viewport.zoom > ZOOM.MIN,
