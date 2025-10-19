@@ -640,7 +640,8 @@ export const Canvas = ({
         const isSelected = fabricCanvas.getActiveObjects().includes(opt.target);
         if (isSelected) return;
 
-        if (opt.target.type === "i-text") return;
+        // if (opt.target.type === "i-text") return;
+        if (opt.target.type === "i-text" || opt.target.type === "line") return;
 
         // Store reference to hovered object
         hoveredObjectRef.current = opt.target;
