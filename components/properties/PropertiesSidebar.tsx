@@ -63,6 +63,48 @@ export const PropertiesSidebar = ({
         {hasSelection ? (
           <div className="space-y-6 pb-6">
             <div className="border-t border-white/8 -mx-4 mb-6" />
+
+            {/* Object Name Header */}
+            {selectedShapeIds.length === 1 && (
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider">
+                  Object Name
+                </h3>
+                <div className="text-sm font-semibold text-white">
+                  {(() => {
+                    const shape = shapes.find(
+                      (s) => s._id === selectedShapeIds[0],
+                    );
+                    if (!shape) return "Unknown";
+
+                    // Get shape index (1-based for user display)
+                    const shapesByType = shapes.filter(
+                      (s) => s.type === shape.type,
+                    );
+                    const index =
+                      shapesByType.findIndex((s) => s._id === shape._id) + 1;
+
+                    // Capitalize first letter
+                    const typeName =
+                      shape.type.charAt(0).toUpperCase() + shape.type.slice(1);
+
+                    return `${typeName} ${index}`;
+                  })()}
+                </div>
+              </div>
+            )}
+
+            {selectedShapeIds.length > 1 && (
+              <div className="mb-6 flex items-center justify-between">
+                <h3 className="text-xs font-medium text-white/50 uppercase tracking-wider">
+                  Selection
+                </h3>
+                <div className="text-sm font-semibold text-white">
+                  {selectedShapeIds.length} objects
+                </div>
+              </div>
+            )}
+
             <PositionPanel
               shapes={shapes}
               selectedShapeIds={selectedShapeIds}

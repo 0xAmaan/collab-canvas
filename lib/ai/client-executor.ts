@@ -9,14 +9,23 @@ import type {
   CreateRectangleCommand,
   CreateCircleCommand,
   CreateTextCommand,
+  CreateEllipseCommand,
+  CreateLineCommand,
+  CreatePolygonCommand,
   UpdateShapeCommand,
   ArrangeShapesCommand,
+  ResizeShapeCommand,
+  DeleteShapeCommand,
+  DuplicateShapeCommand,
+  RotateShapeCommand,
 } from "@/lib/ai/types";
 
 interface ExecutorContext {
   shapes: Shape[];
   createShape: (shape: any) => Promise<string>;
   updateShape: (shapeId: string, updates: any) => Promise<void>;
+  deleteShape?: (shapeId: string) => Promise<void>;
+  selectedShapeIds?: string[]; // IDs of currently selected shapes
 }
 
 /**
@@ -114,9 +123,39 @@ const isColorMatch = (hex: string | undefined, colorName: string): boolean => {
 
 /**
  * Resolve selector to matching shapes
+ * Enhanced to support: selection context, IDs, shape numbers (e.g., "rectangle 14")
  */
-const resolveSelector = (selector: string, shapes: Shape[]): Shape[] => {
+const resolveSelector = (
+  selector: string | undefined,
+  shapes: Shape[],
+  selectedShapeIds?: string[],
+): Shape[] => {
+  // If no selector provided, use selected shapes
+  if (!selector || selector.toLowerCase() === "selected") {
+    if (selectedShapeIds && selectedShapeIds.length > 0) {
+      return shapes.filter((s) => selectedShapeIds.includes(s._id));
+    }
+    return [];
+  }
+
   const lower = selector.toLowerCase();
+
+  // Match by exact ID
+  const byId = shapes.find((s) => s._id === selector);
+  if (byId) return [byId];
+
+  // Match by shape number (e.g., "rectangle 14" = 14th rectangle)
+  const numberMatch = lower.match(/(\w+)\s+(\d+)/);
+  if (numberMatch) {
+    const [, shapeType, numberStr] = numberMatch;
+    const number = parseInt(numberStr, 10);
+    const matchingType = shapes.filter((s) =>
+      s.type.toLowerCase().includes(shapeType),
+    );
+    if (matchingType.length >= number && number > 0) {
+      return [matchingType[number - 1]]; // 1-indexed for user
+    }
+  }
 
   // List of common color names to check
   const colorNames = [
@@ -249,16 +288,120 @@ async function executeCreateText(
 }
 
 /**
+ * Execute create ellipse command
+ */
+async function executeCreateEllipse(
+  cmd: CreateEllipseCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  const shapeId = await context.createShape({
+    type: "ellipse",
+    x: cmd.x,
+    y: cmd.y,
+    width: cmd.width || 100,
+    height: cmd.height || 60,
+    fill: cmd.fill || "#3b82f6",
+    angle: 0,
+    createdBy: "ai",
+    createdAt: Date.now(),
+    lastModified: Date.now(),
+    lastModifiedBy: "ai",
+  });
+
+  return `Created ellipse at (${cmd.x}, ${cmd.y})`;
+}
+
+/**
+ * Execute create line command
+ */
+async function executeCreateLine(
+  cmd: CreateLineCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  const shapeId = await context.createShape({
+    type: "line",
+    x1: cmd.x1,
+    y1: cmd.y1,
+    x2: cmd.x2,
+    y2: cmd.y2,
+    strokeWidth: cmd.strokeWidth || 2,
+    strokeColor: cmd.strokeColor || "#ffffff",
+    fill: cmd.strokeColor || "#ffffff", // For consistency
+    createdBy: "ai",
+    createdAt: Date.now(),
+    lastModified: Date.now(),
+    lastModifiedBy: "ai",
+  });
+
+  return `Created line from (${cmd.x1}, ${cmd.y1}) to (${cmd.x2}, ${cmd.y2})`;
+}
+
+/**
+ * Execute create polygon command
+ */
+async function executeCreatePolygon(
+  cmd: CreatePolygonCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  // Calculate polygon points based on sides and radius
+  const points: { x: number; y: number }[] = [];
+  const sides = cmd.sides || 6;
+  const radius = cmd.radius || 50;
+
+  for (let i = 0; i < sides; i++) {
+    const angle = (i * 2 * Math.PI) / sides - Math.PI / 2; // Start at top
+    points.push({
+      x: Math.cos(angle) * radius,
+      y: Math.sin(angle) * radius,
+    });
+  }
+
+  const shapeId = await context.createShape({
+    type: "polygon",
+    x: cmd.x,
+    y: cmd.y,
+    points,
+    width: radius * 2,
+    height: radius * 2,
+    fill: cmd.fill || "#3b82f6",
+    angle: 0,
+    createdBy: "ai",
+    createdAt: Date.now(),
+    lastModified: Date.now(),
+    lastModifiedBy: "ai",
+  });
+
+  const shapeName =
+    sides === 3
+      ? "triangle"
+      : sides === 5
+        ? "pentagon"
+        : sides === 6
+          ? "hexagon"
+          : sides === 8
+            ? "octagon"
+            : `${sides}-sided polygon`;
+
+  return `Created ${shapeName} at (${cmd.x}, ${cmd.y})`;
+}
+
+/**
  * Execute update shape command
  */
 async function executeUpdateShape(
   cmd: UpdateShapeCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  const targetShapes = resolveSelector(cmd.selector, context.shapes);
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
 
   if (targetShapes.length === 0) {
-    throw new Error(`No shapes found matching "${cmd.selector}"`);
+    throw new Error(
+      `No shapes found matching "${cmd.selector || "selection"}"`,
+    );
   }
 
   // Build updates object
@@ -268,6 +411,7 @@ async function executeUpdateShape(
   if (cmd.fill !== undefined) updates.fill = cmd.fill;
   if (cmd.width !== undefined) updates.width = cmd.width;
   if (cmd.height !== undefined) updates.height = cmd.height;
+  if ((cmd as any).angle !== undefined) updates.angle = (cmd as any).angle;
 
   // Update each shape
   await Promise.all(
@@ -284,7 +428,11 @@ async function executeArrangeShapes(
   cmd: ArrangeShapesCommand,
   context: ExecutorContext,
 ): Promise<string> {
-  const targetShapes = resolveSelector(cmd.selector, context.shapes);
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
   const spacing = cmd.spacing || 150;
 
   if (targetShapes.length === 0) {
@@ -324,6 +472,211 @@ async function executeArrangeShapes(
 }
 
 /**
+ * Execute resize shape command (relative sizing with math)
+ */
+async function executeResizeShape(
+  cmd: ResizeShapeCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
+
+  if (targetShapes.length === 0) {
+    throw new Error(
+      `No shapes found matching "${cmd.selector || "selection"}"`,
+    );
+  }
+
+  // Resize each shape
+  const results = await Promise.all(
+    targetShapes.map(async (shape) => {
+      const updates: any = {};
+
+      // Get current dimensions
+      const currentWidth = "width" in shape ? (shape as any).width : undefined;
+      const currentHeight =
+        "height" in shape ? (shape as any).height : undefined;
+
+      // Apply scale if provided (multiplier for both dimensions)
+      if (cmd.scale !== undefined) {
+        if (currentWidth !== undefined) {
+          updates.width = Math.round(currentWidth * cmd.scale);
+        }
+        if (currentHeight !== undefined) {
+          updates.height = Math.round(currentHeight * cmd.scale);
+        }
+        // For circles, update diameter
+        if (shape.type === "circle" && currentWidth !== undefined) {
+          updates.width = Math.round(currentWidth * cmd.scale);
+          updates.height = Math.round(currentWidth * cmd.scale); // Keep circular
+        }
+      }
+
+      // Apply width delta (additive change)
+      if (cmd.widthDelta !== undefined && currentWidth !== undefined) {
+        updates.width = currentWidth + cmd.widthDelta;
+      }
+
+      // Apply height delta (additive change)
+      if (cmd.heightDelta !== undefined && currentHeight !== undefined) {
+        updates.height = currentHeight + cmd.heightDelta;
+      }
+
+      // For circles, keep dimensions equal (maintain circular shape)
+      if (shape.type === "circle" && (updates.width || updates.height)) {
+        const newDimension = updates.width || updates.height;
+        updates.width = newDimension;
+        updates.height = newDimension;
+      }
+
+      // Apply updates
+      if (Object.keys(updates).length > 0) {
+        await context.updateShape(shape._id, updates);
+      }
+
+      return shape;
+    }),
+  );
+
+  // Build descriptive message
+  let message = `Resized ${results.length} shape(s)`;
+  if (cmd.scale) {
+    message += ` by ${cmd.scale}x`;
+  }
+  if (cmd.widthDelta) {
+    message += ` (width ${cmd.widthDelta > 0 ? "+" : ""}${cmd.widthDelta}px)`;
+  }
+  if (cmd.heightDelta) {
+    message += ` (height ${cmd.heightDelta > 0 ? "+" : ""}${cmd.heightDelta}px)`;
+  }
+
+  return message;
+}
+
+/**
+ * Execute delete shape command
+ */
+async function executeDeleteShape(
+  cmd: DeleteShapeCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  if (!context.deleteShape) {
+    throw new Error("Delete operation not available");
+  }
+
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
+
+  if (targetShapes.length === 0) {
+    throw new Error(
+      `No shapes found matching "${cmd.selector || "selection"}"`,
+    );
+  }
+
+  // Delete each shape
+  await Promise.all(
+    targetShapes.map((shape) => context.deleteShape!(shape._id)),
+  );
+
+  return `Deleted ${targetShapes.length} shape(s)`;
+}
+
+/**
+ * Execute duplicate shape command
+ */
+async function executeDuplicateShape(
+  cmd: DuplicateShapeCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
+
+  if (targetShapes.length === 0) {
+    throw new Error(
+      `No shapes found matching "${cmd.selector || "selection"}"`,
+    );
+  }
+
+  const offsetX = cmd.offsetX ?? 10;
+  const offsetY = cmd.offsetY ?? 10;
+
+  // Duplicate each shape
+  const duplicated = await Promise.all(
+    targetShapes.map(async (shape) => {
+      // Create a copy with offset position
+      const duplicate: any = { ...shape };
+      delete duplicate._id; // Remove ID so a new one is generated
+
+      // Handle different shape types
+      if (shape.type === "line") {
+        duplicate.x1 = shape.x1 + offsetX;
+        duplicate.y1 = shape.y1 + offsetY;
+        duplicate.x2 = shape.x2 + offsetX;
+        duplicate.y2 = shape.y2 + offsetY;
+      } else if ("x" in shape && "y" in shape) {
+        duplicate.x = (shape as any).x + offsetX;
+        duplicate.y = (shape as any).y + offsetY;
+      }
+
+      // Update metadata
+      duplicate.createdBy = "ai";
+      duplicate.createdAt = Date.now();
+      duplicate.lastModified = Date.now();
+      duplicate.lastModifiedBy = "ai";
+
+      await context.createShape(duplicate);
+      return duplicate;
+    }),
+  );
+
+  return `Duplicated ${duplicated.length} shape(s)`;
+}
+
+/**
+ * Execute rotate shape command
+ */
+async function executeRotateShape(
+  cmd: RotateShapeCommand,
+  context: ExecutorContext,
+): Promise<string> {
+  const targetShapes = resolveSelector(
+    cmd.selector,
+    context.shapes,
+    context.selectedShapeIds,
+  );
+
+  if (targetShapes.length === 0) {
+    throw new Error(
+      `No shapes found matching "${cmd.selector || "selection"}"`,
+    );
+  }
+
+  const isRelative = cmd.relative ?? true;
+
+  // Rotate each shape
+  await Promise.all(
+    targetShapes.map(async (shape) => {
+      const currentAngle = shape.angle ?? 0;
+      const newAngle = isRelative ? currentAngle + cmd.angle : cmd.angle;
+
+      await context.updateShape(shape._id, { angle: newAngle });
+    }),
+  );
+
+  const rotationType = isRelative ? "by" : "to";
+  return `Rotated ${targetShapes.length} shape(s) ${rotationType} ${cmd.angle}°`;
+}
+
+/**
  * Execute a single command
  */
 async function executeCommand(
@@ -340,11 +693,32 @@ async function executeCommand(
     case "create_text":
       return executeCreateText(command, context);
 
+    case "create_ellipse":
+      return executeCreateEllipse(command, context);
+
+    case "create_line":
+      return executeCreateLine(command, context);
+
+    case "create_polygon":
+      return executeCreatePolygon(command, context);
+
     case "update_shape":
       return executeUpdateShape(command, context);
 
     case "arrange_shapes":
       return executeArrangeShapes(command, context);
+
+    case "resize_shape":
+      return executeResizeShape(command, context);
+
+    case "delete_shape":
+      return executeDeleteShape(command, context);
+
+    case "duplicate_shape":
+      return executeDuplicateShape(command, context);
+
+    case "rotate_shape":
+      return executeRotateShape(command, context);
 
     default:
       throw new Error(`Unknown command type: ${(command as any).type}`);

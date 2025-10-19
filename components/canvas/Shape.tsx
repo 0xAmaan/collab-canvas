@@ -75,14 +75,25 @@ export const createFabricShape = (shape: Shape): FabricObject => {
         rx: shape.width / 2, // Horizontal radius
         ry: shape.height / 2, // Vertical radius
         strokeWidth: 0,
+        originX: "left",
+        originY: "top",
       });
 
     case "line":
+      console.log("Creating line:", {
+        x1: shape.x1,
+        y1: shape.y1,
+        x2: shape.x2,
+        y2: shape.y2,
+        strokeColor: shape.strokeColor,
+        strokeWidth: shape.strokeWidth,
+        fill: shape.fill,
+      });
       return new Line([shape.x1, shape.y1, shape.x2, shape.y2], {
         ...baseConfig,
         fill: undefined,
-        stroke: shape.fill, // Lines use stroke, not fill
-        strokeWidth: 2,
+        stroke: shape.strokeColor || shape.fill, // Lines use stroke, not fill
+        strokeWidth: shape.strokeWidth || 2,
       });
 
     case "text":
@@ -128,6 +139,12 @@ export const createFabricShape = (shape: Shape): FabricObject => {
       }
 
     case "polygon":
+      console.log("Creating polygon:", {
+        x: shape.x,
+        y: shape.y,
+        points: shape.points,
+        fill: shape.fill,
+      });
       return new Polygon(shape.points, {
         ...baseConfig,
         left: shape.x,
@@ -135,6 +152,8 @@ export const createFabricShape = (shape: Shape): FabricObject => {
         fill: shape.fill,
         stroke: undefined,
         strokeWidth: 0,
+        originX: "left",
+        originY: "top",
       });
 
     default:
@@ -191,8 +210,10 @@ export const updateFabricShape = (
         x2: shape.x2,
         y2: shape.y2,
         stroke: shape.fill, // Lines use stroke
+        angle: shape.angle ?? 0,
       });
-      break;
+      fabricObj.setCoords();
+      return; // Skip the generic updates.set() call
 
     case "text":
       const text = fabricObj as IText;
@@ -203,8 +224,10 @@ export const updateFabricShape = (
         fontSize: shape.fontSize || DEFAULT_TEXT.FONT_SIZE,
         fontFamily: shape.fontFamily || DEFAULT_TEXT.FONT_FAMILY,
         fill: shape.fill,
+        angle: shape.angle ?? 0,
       });
-      break;
+      fabricObj.setCoords();
+      return; // Skip the generic updates.set() call
 
     case "path":
       try {
@@ -217,13 +240,15 @@ export const updateFabricShape = (
           stroke: shape.stroke,
           strokeWidth: shape.strokeWidth,
           fill: null,
+          angle: shape.angle ?? 0,
         });
         // Critical: Override _renderFill to completely prevent fill rendering
         (path as any)._renderFill = function () {};
       } catch (error) {
         console.error("Failed to update path:", error);
       }
-      break;
+      fabricObj.setCoords();
+      return; // Skip the generic updates.set() call
 
     case "polygon":
       const polygon = fabricObj as Polygon;
@@ -232,8 +257,10 @@ export const updateFabricShape = (
         left: shape.x,
         top: shape.y,
         fill: shape.fill,
+        angle: shape.angle ?? 0,
       });
-      break;
+      fabricObj.setCoords();
+      return; // Skip the generic updates.set() call
   }
 
   fabricObj.set(updates);

@@ -396,6 +396,7 @@ export const DashboardClient = ({
         const request: AICommandRequest = {
           command,
           shapes,
+          selectedShapeIds,
         };
 
         const response = await fetch("/api/ai/canvas", {
@@ -428,6 +429,8 @@ export const DashboardClient = ({
           shapes,
           createShape,
           updateShape,
+          deleteShape,
+          selectedShapeIds,
         });
 
         if (result.success) {

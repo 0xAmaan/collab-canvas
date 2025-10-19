@@ -3,6 +3,13 @@
 /**
  * Main Canvas component using Fabric.js
  * Handles pan/zoom functionality, shape creation, selection, and dragging
+ *
+ * MULTI-SELECT COORDINATE HANDLING:
+ * - When multiple shapes are selected, Fabric.js groups them into an ActiveSelection
+ * - During grouping, object coordinates become RELATIVE to the group
+ * - We skip real-time sync during ActiveSelection drag to avoid coordinate race conditions
+ * - Final positions are saved in selection:cleared after Fabric.js restores absolute coordinates
+ * - This three-phase strategy (moving → modified → cleared) prevents shapes from jumping/disappearing
  */
 
 import { CANVAS, DEFAULT_SHAPE } from "@/constants/shapes";
@@ -426,7 +433,7 @@ export const Canvas = ({
     });
 
     // Handle object moving (real-time sync during drag) - throttled to 100ms
-    fabricCanvas.on("object:moving", async (opt) => {
+    fabricCanvas.on("object:moving", (opt) => {
       if (!opt.target) return;
 
       // Throttle to 100ms (10 updates per second)
@@ -434,31 +441,11 @@ export const Canvas = ({
       if (now - lastMoveUpdateRef.current < 100) return;
       lastMoveUpdateRef.current = now;
 
-      // Handle ActiveSelection (multi-select) movement
+      // Skip real-time sync for ActiveSelection (multi-select)
+      // Coordinates will be synced in selection:cleared after Fabric.js ungroups
+      // This prevents race conditions where grouped coordinates interfere with absolute positions
       if (opt.target.type === "activeselection") {
-        const objects =
-          (opt.target as { _objects?: FabricObject[] })._objects || [];
-        const groupLeft = opt.target.left || 0;
-        const groupTop = opt.target.top || 0;
-
-        // Update each object's position in real-time
-        objects.forEach(async (obj: FabricObject) => {
-          const data = obj.get("data") as { shapeId?: string } | undefined;
-          const shapeId = data?.shapeId;
-
-          if (!shapeId || shapeId.startsWith("temp_")) return;
-
-          // Calculate absolute position: group position + relative position
-          const absoluteLeft = groupLeft + (obj.left || 0);
-          const absoluteTop = groupTop + (obj.top || 0);
-
-          try {
-            await moveShapeInConvex(shapeId, absoluteLeft, absoluteTop);
-          } catch (error) {
-            console.error("Failed to sync ActiveSelection movement:", error);
-          }
-        });
-
+        canvasState.isDraggingShape = true;
         return;
       }
 
@@ -469,16 +456,15 @@ export const Canvas = ({
       // Skip if no shapeId or it's a temporary shape still being created
       if (!shapeId || shapeId.startsWith("temp_")) return;
 
-      try {
-        // Only sync position during drag - not size/rotation
-        await moveShapeInConvex(
-          shapeId,
-          opt.target.left || 0,
-          opt.target.top || 0,
-        );
-      } catch (error) {
+      // Fire-and-forget: Don't await to avoid blocking the drag handler
+      // This ensures the drag feels instant and smooth
+      moveShapeInConvex(
+        shapeId,
+        opt.target.left || 0,
+        opt.target.top || 0,
+      ).catch((error) => {
         console.error("Failed to sync shape movement:", error);
-      }
+      });
     });
 
     // Store object state before modifications for undo/redo
@@ -727,8 +713,13 @@ export const Canvas = ({
         const isSelected = fabricCanvas.getActiveObjects().includes(opt.target);
         if (isSelected) return;
 
-        // if (opt.target.type === "i-text") return;
-        if (opt.target.type === "i-text" || opt.target.type === "line") return;
+        // Don't apply hover effect to text, lines, or paths (stroke-only objects)
+        if (
+          opt.target.type === "i-text" ||
+          opt.target.type === "line" ||
+          opt.target.type === "path"
+        )
+          return;
 
         // Store reference to hovered object
         hoveredObjectRef.current = opt.target;
@@ -745,11 +736,14 @@ export const Canvas = ({
     // Handle hover preview removal on mouse out
     fabricCanvas.on("mouse:out", (opt) => {
       if (opt.target && opt.target === hoveredObjectRef.current) {
-        // Remove hover effect
-        opt.target.set({
-          strokeWidth: 0,
-          stroke: undefined,
-        });
+        // Remove hover effect (only for objects that had it applied)
+        // Don't remove stroke from stroke-only objects (line, path)
+        if (opt.target.type !== "line" && opt.target.type !== "path") {
+          opt.target.set({
+            strokeWidth: 0,
+            stroke: undefined,
+          });
+        }
 
         hoveredObjectRef.current = null;
         fabricCanvas.requestRenderAll();
@@ -933,8 +927,7 @@ export const Canvas = ({
       const fabricObj = fabricObjectMap.get(shape._id);
 
       if (fabricObj) {
-        // Skip updates if user is actively interacting with this object
-        // This prevents jittery behavior and control glitching when editing
+        // Check if user is actively interacting with this object
         const activeObject = fabricCanvas.getActiveObject();
 
         // Check if this object is the active object OR part of an active selection
@@ -945,17 +938,37 @@ export const Canvas = ({
             fabricObj,
           );
 
-        if (isActiveObject || isInActiveSelection) {
-          return;
-        }
-
         // Skip updates if this shape is currently being saved
         // This prevents the old data from overwriting the new data before Convex syncs
         if (savingShapesRef.current.has(shape._id)) {
           return;
         }
 
-        // Update existing shape
+        // CRITICAL: Skip ALL updates for objects in ActiveSelection (multi-select)
+        // When objects are grouped, their coordinates are RELATIVE to the group
+        // Applying absolute coordinates from the database will cause them to jump
+        // They will be updated in selection:cleared after Fabric.js restores absolute coordinates
+        if (isInActiveSelection) {
+          return;
+        }
+
+        // If object is selected AND being dragged, skip position updates to prevent glitch
+        // The drag handler manages position; database sync should not interfere
+        if (isActiveObject && canvasState.isDraggingShape) {
+          return; // Skip ALL updates during active drag
+        }
+
+        // If object is selected but NOT being dragged, apply updates (for AI features)
+        // This ensures AI changes show up instantly while shape is still selected
+        if (isActiveObject) {
+          // Apply the full shape update using the same function
+          // This handles all shape types correctly (rectangle, circle, ellipse, line, text, path, polygon)
+          updateFabricRect(fabricObj, shape);
+          fabricObj.setCoords();
+          return; // Don't do full update twice
+        }
+
+        // Update existing shape (full update for non-selected objects)
         updateFabricRect(fabricObj, shape);
       } else {
         // Add new shape
