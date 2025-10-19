@@ -133,20 +133,24 @@ export function Canvas({
 
   // Initialize canvas dimensions
   useEffect(() => {
-    const updateDimensions = () => {
-      // Get the canvas container dimensions
-      const container = canvasRef.current?.parentElement;
-      if (container) {
-        setDimensions({
-          width: container.clientWidth,
-          height: container.clientHeight,
-        });
-      }
-    };
+    const container = canvasRef.current?.parentElement;
+    if (!container) return;
 
-    updateDimensions();
-    window.addEventListener("resize", updateDimensions);
-    return () => window.removeEventListener("resize", updateDimensions);
+    const resizeObserver = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      if (entry) {
+        const { width, height } = entry.contentRect;
+        if (width > 0 && height > 0) {
+          setDimensions({ width, height });
+        }
+      }
+    });
+
+    resizeObserver.observe(container);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   // Finalize rectangle creation
@@ -1819,13 +1823,26 @@ export function Canvas({
       fabricCanvasRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    dimensions.width,
-    dimensions.height,
-    finalizeRectangle,
-    userId,
-    updateCursorPosition,
-  ]);
+  }, [finalizeRectangle, userId, updateCursorPosition]);
+
+  // Separate effect to handle canvas resize without recreating it
+  useEffect(() => {
+    if (!fabricCanvasRef.current) return;
+
+    // Update canvas dimensions without recreating the entire canvas
+    fabricCanvasRef.current.setDimensions({
+      width: dimensions.width,
+      height: dimensions.height,
+    });
+
+    // Update viewport coordinates for selected objects
+    const activeObject = fabricCanvasRef.current.getActiveObject();
+    if (activeObject) {
+      activeObject.setCoords();
+    }
+
+    fabricCanvasRef.current.requestRenderAll();
+  }, [dimensions.width, dimensions.height]);
 
   // Pass delete handler to parent component
   useEffect(() => {
@@ -2398,42 +2415,7 @@ export function Canvas({
         }}
       ></div>
 
-      <canvas ref={canvasRef} className="relative z-10" />
-
-      {/* Multiplayer cursors - rendered by parent component */}
-
-      {/* Canvas info overlay (for development) - only render on client */}
-      {isMounted && (
-        <div className="absolute bottom-6 left-6 bg-slate-900/80 backdrop-blur-xl border border-white/10 text-white text-xs px-4 py-3 rounded-xl pointer-events-none shadow-2xl">
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-            <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full"></div>
-            <span className="text-white/70 font-semibold">Canvas Stats</span>
-          </div>
-          <div className="space-y-1 text-white/60">
-            <div className="flex justify-between gap-4">
-              <span>Dimensions:</span>
-              <span className="text-white/90 font-mono">
-                {dimensions.width}×{dimensions.height}
-              </span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Shapes:</span>
-              <span className="text-white/90 font-mono">{shapes.length}</span>
-            </div>
-            <div className="flex justify-between gap-4">
-              <span>Active Tool:</span>
-              <span className="text-white/90 capitalize">{activeTool}</span>
-            </div>
-          </div>
-          <div className="mt-3 pt-2 border-t border-white/10 text-white/50 text-[10px]">
-            {activeTool === "rectangle"
-              ? "🖱️ Click & drag to create rectangle"
-              : activeTool === "text"
-                ? "✍️ Click to place text"
-                : "✌️ Pinch to zoom • Pan with scroll"}
-          </div>
-        </div>
-      )}
+      <canvas ref={canvasRef} />
     </div>
   );
 }
