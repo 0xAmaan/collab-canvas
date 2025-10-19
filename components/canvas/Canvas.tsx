@@ -35,6 +35,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { Tool } from "@/components/toolbar/BottomToolbar";
 import { configureSelectionStyle } from "@/components/canvas/SelectionBox";
 import { createFabricRect, updateFabricRect } from "@/components/canvas/Shape";
+import { CanvasState } from "@/components/canvas/state/CanvasState";
+import { createSelectTool } from "@/components/canvas/tools/useSelectTool";
+import type {
+  ToolContext,
+  ToolHandlers,
+} from "@/components/canvas/tools/types";
 
 interface CanvasProps {
   onCanvasReady?: (canvas: FabricCanvas) => void;
@@ -130,6 +136,12 @@ export function Canvas({
 
   // Track current selected color for drawing tools
   const [selectedColor, setSelectedColor] = useState(DEFAULT_SHAPE.FILL_COLOR);
+
+  // NEW: Centralized canvas state (replaces 16+ refs)
+  const canvasState = useRef(new CanvasState()).current;
+
+  // NEW: Tool handlers (initialized lazily, stored in ref)
+  const selectToolRef = useRef<ToolHandlers | null>(null);
 
   // Set mounted state
   useEffect(() => {
@@ -398,6 +410,23 @@ export function Canvas({
 
     fabricCanvasRef.current = fabricCanvas;
 
+    // NEW: Initialize select tool now that canvas is created
+    const toolContext: ToolContext = {
+      canvas: fabricCanvas,
+      state: canvasState,
+      userId,
+      userName,
+      shapes,
+      createShape: createShapeInConvex,
+      moveShape: moveShapeInConvex,
+      updateShape: updateShapeInConvex,
+      deleteShape: deleteShapeInConvex,
+      history,
+      updateCursorPosition,
+      selectedColor,
+    };
+    selectToolRef.current = createSelectTool(toolContext);
+
     // Setup mouse wheel handling for pan/zoom
     fabricCanvas.on("mouse:wheel", (opt) => {
       const e = opt.e as WheelEvent;
@@ -655,76 +684,10 @@ export function Canvas({
         return;
       }
 
-      // Select mode with Alt+drag features
-      if (activeToolRef.current === "select") {
-        // Alt+drag duplication: Clone the shape and drag the duplicate
-        if (e.altKey && opt.target) {
-          const data = opt.target.get("data") as
-            | { shapeId?: string }
-            | undefined;
-          if (data?.shapeId) {
-            // Find the original shape data
-            const originalShape = shapesRef.current.find(
-              (s) => s._id === data.shapeId,
-            );
-            if (originalShape && originalShape.type === "rectangle") {
-              // Only rectangles supported for now
-              // Store original shape data for duplication on mouse up
-              originalShapeDataRef.current = originalShape;
-              isDuplicatingRef.current = true;
-
-              // Clone the Fabric object visually
-              const clonedRect = new Rect({
-                left: opt.target.left,
-                top: opt.target.top,
-                width: opt.target.width,
-                height: opt.target.height,
-                angle: opt.target.angle,
-                fill: originalShape.fillColor,
-                strokeWidth: 0,
-                selectable: true,
-                evented: true,
-                hasControls: true,
-                hasBorders: true,
-                borderColor: SELECTION_COLORS.BORDER,
-                cornerColor: SELECTION_COLORS.HANDLE,
-                cornerStrokeColor: SELECTION_COLORS.HANDLE_BORDER,
-                cornerSize: 10,
-                transparentCorners: false,
-                cornerStyle: "circle" as const,
-                borderScaleFactor: 2,
-                padding: 0,
-                data: { shapeId: "temp_duplicate" }, // Temporary ID
-              });
-
-              fabricCanvas.add(clonedRect);
-              fabricCanvas.setActiveObject(clonedRect);
-              fabricCanvas.requestRenderAll();
-            }
-          }
-          return;
-        }
-
-        // Alt+drag panning: Pan canvas when clicking empty space with Alt key
-        // This provides convenient panning without switching to hand tool
-        if (e.altKey && !opt.target) {
-          isPanningRef.current = true;
-          fabricCanvas.selection = false; // Temporarily disable selection box
-          lastPosXRef.current = e.clientX;
-          lastPosYRef.current = e.clientY;
-          fabricCanvas.setCursor("grabbing");
-          return;
-        }
-
-        // If clicking on an object (not Alt), we're dragging a shape
-        if (opt.target) {
-          isDraggingShapeRef.current = true;
-          return;
-        }
-
-        // If clicking empty space without Alt, let Fabric.js handle selection box
-        // Fabric.js will automatically draw a selection rectangle when dragging
-        // This enables multi-select by dragging over multiple objects
+      // NEW: Delegate to select tool if in select mode
+      if (activeToolRef.current === "select" && selectToolRef.current) {
+        selectToolRef.current.onMouseDown(e, pointer, opt.target || null);
+        return;
       }
     });
 
@@ -866,8 +829,13 @@ export function Canvas({
         fabricCanvas.renderAll();
       }
 
+      // NEW: Delegate to select tool if in select mode (for Alt+drag panning)
+      if (activeToolRef.current === "select" && selectToolRef.current) {
+        selectToolRef.current.onMouseMove(e, pointer);
+      }
+
       // Handle panning
-      if (!isPanningRef.current) return;
+      if (!isPanningRef.current && !canvasState.isPanning) return;
 
       const vpt = fabricCanvas.viewportTransform;
 
@@ -887,7 +855,9 @@ export function Canvas({
       }
     });
 
-    fabricCanvas.on("mouse:up", () => {
+    fabricCanvas.on("mouse:up", (opt) => {
+      const e = opt.e as MouseEvent;
+      const pointer = fabricCanvas.getPointer(e);
       // Handle rectangle creation completion
       if (isCreatingRectRef.current && creatingRectRef.current) {
         const createdRect = creatingRectRef.current;
@@ -1050,46 +1020,13 @@ export function Canvas({
         return;
       }
 
-      // Handle Alt+drag duplication completion
-      if (isDuplicatingRef.current && originalShapeDataRef.current) {
-        const activeObject = fabricCanvas.getActiveObject();
-        if (activeObject && originalShapeDataRef.current.type === "rectangle") {
-          const originalShape = originalShapeDataRef.current;
-
-          // Create duplicate shape data at the new position (only rectangles for now)
-          const duplicateData = {
-            type: "rectangle" as const,
-            x: activeObject.left || originalShape.x,
-            y: activeObject.top || originalShape.y,
-            width: activeObject.width || originalShape.width,
-            height: activeObject.height || originalShape.height,
-            angle: activeObject.angle || originalShape.angle,
-            fillColor: originalShape.fillColor,
-            createdBy: userId,
-            createdAt: Date.now(),
-            lastModified: Date.now(),
-            lastModifiedBy: userId,
-          };
-
-          // Remove the temporary visual clone
-          fabricCanvas.remove(activeObject);
-
-          // Create the actual shape via command pattern
-          const command = new CreateShapeCommand(
-            duplicateData,
-            createShapeInConvex,
-            deleteShapeInConvex,
-          );
-          historyRef.current.execute(command);
-        }
-
-        // Reset duplication state
-        isDuplicatingRef.current = false;
-        originalShapeDataRef.current = null;
+      // NEW: Delegate to select tool if in select mode (handles Alt+drag duplication & panning)
+      if (activeToolRef.current === "select" && selectToolRef.current) {
+        selectToolRef.current.onMouseUp(e, pointer);
         return;
       }
 
-      // Handle panning end
+      // Handle panning end (for hand tool)
       if (isPanningRef.current) {
         const vpt = fabricCanvas.viewportTransform;
         if (vpt) {
@@ -1898,22 +1835,12 @@ export function Canvas({
 
   return (
     <div
-      className="relative w-full h-full overflow-hidden bg-slate-900"
+      className="relative w-full h-full overflow-hidden"
       onWheel={(e) => {
         // Prevent browser navigation gestures (back/forward swipe)
         e.preventDefault();
       }}
     >
-      {/* Subtle dot pattern background */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
-        style={{
-          backgroundImage:
-            "radial-gradient(circle, rgba(255, 255, 255, 0.15) 1px, transparent 1px)",
-          backgroundSize: "30px 30px",
-        }}
-      ></div>
-
       <canvas ref={canvasRef} />
     </div>
   );

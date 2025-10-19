@@ -41,7 +41,6 @@ export const CURSOR_COLOR_ARRAY = [
 export const DEFAULT_COLORS = {
   SHAPE: SHAPE_COLORS.BLUE,
   CURSOR: CURSOR_COLORS.BLUE,
-  CANVAS_BACKGROUND: "#f9fafb", // Tailwind gray-50
 } as const;
 
 // Color picker preset palette (matches Phase 1 requirements)

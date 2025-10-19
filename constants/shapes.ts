@@ -21,7 +21,7 @@ export const DEFAULT_TEXT = {
 export const CANVAS = {
   VIRTUAL_WIDTH: 5000,
   VIRTUAL_HEIGHT: 5000,
-  BACKGROUND_COLOR: "#f9fafb", // Tailwind gray-50
+  BACKGROUND_COLOR: "#E5E5E5", // Figma-style gray
 } as const;
 
 // Zoom constraints
